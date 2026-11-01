@@ -1,0 +1,99 @@
+import { useEffect, useState } from 'react'
+import { useAuth } from '../auth/AuthProvider'
+import { useProfile } from '../auth/ProfileProvider'
+import { supabase } from '../lib/supabase'
+import { CanIcon } from '../caffeine/CanIcon'
+import { avatarUrl } from '../profile/imageUpload'
+import { weekStart } from './weekStart'
+
+interface Entry {
+  user_id: string
+  display_name: string
+  avatar_path: string | null
+  days_met: number
+  streak: number
+  redbulls: number
+  monster_until: string | null
+}
+
+const REFRESH_MS = 30_000
+
+export function LeaderboardPage() {
+  const { user } = useAuth()
+  const { profile } = useProfile()
+  const tz = profile?.tz ?? new Intl.DateTimeFormat().resolvedOptions().timeZone
+  const week = weekStart(new Date(), tz)
+  const [entries, setEntries] = useState<Entry[] | null>(null)
+  const [failed, setFailed] = useState(false)
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    let active = true
+    Promise.resolve(supabase.rpc('get_leaderboard', { week_start: week })).then(({ data, error }) => {
+      if (!active) return
+      if (error) setFailed(true)
+      else setEntries((data ?? []) as Entry[])
+    })
+    return () => {
+      active = false
+    }
+  }, [week])
+
+  // Il segno Monster deve sparire anche a pagina aperta.
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), REFRESH_MS)
+    return () => clearInterval(timer)
+  }, [])
+
+  const started = entries?.some((e) => e.days_met > 0)
+
+  return (
+    <main className="page">
+      <h1>Classifica</h1>
+      <p className="hint">Vince chi raggiunge il proprio obiettivo in più giorni, da lunedì a domenica. A parità, conta la serie più lunga di giorni consecutivi.</p>
+
+      {failed && <p role="alert" className="error">Classifica non disponibile. Controlla la connessione.</p>}
+      {!entries && !failed && <p className="center-note">Caricamento…</p>}
+      {entries && !started && <p>Nessuno ha ancora raggiunto l'obiettivo questa settimana. Il primo posto è libero.</p>}
+
+      {entries && entries.length > 0 && (
+        <ol className="list">
+          {entries.map((entry, index) => {
+            const first = entries.findIndex((e) => e.days_met === entry.days_met && e.streak === entry.streak)
+            const leftMs = entry.monster_until ? Date.parse(entry.monster_until) - now : 0
+            const marked = leftMs > 0
+            const minutesLeft = Math.ceil(leftMs / 60_000)
+            return (
+              <li key={entry.user_id} className={entry.user_id === user?.id ? 'me' : undefined}>
+                <span className="rank" data-testid="rank">{first === -1 ? index + 1 : first + 1}</span>
+                {entry.avatar_path ? (
+                  <img className="avatar" src={avatarUrl(entry.avatar_path)} alt="" />
+                ) : (
+                  <span className="avatar" aria-hidden="true">{entry.display_name.slice(0, 1).toUpperCase()}</span>
+                )}
+                <span className="grow board-name">
+                  <span>{entry.display_name}</span>
+                  <span className="board-badges">
+                    <span className="board-cans" aria-label={`${entry.redbulls} Red Bull questa settimana`}>
+                      <CanIcon />
+                      {entry.redbulls}
+                    </span>
+                    {marked && (
+                      <span className="board-mark" aria-label={`Segno negativo per Monster, ancora ${minutesLeft} min`}>
+                        − Monster {minutesLeft} min
+                      </span>
+                    )}
+                  </span>
+                </span>
+                <span className="hint">serie {entry.streak}</span>
+                <span className="num"><strong>{entry.days_met}/7</strong></span>
+              </li>
+            )
+          })}
+        </ol>
+      )}
+
+      <p className="hint">Nome e foto sono visibili a tutti gli utenti dell'app, insieme alle Red Bull della settimana e al segno Monster. Le altre quantità restano private.</p>
+    </main>
+  )
+}

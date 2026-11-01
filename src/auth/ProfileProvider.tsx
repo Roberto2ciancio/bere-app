@@ -1,0 +1,86 @@
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { readCache, writeCache } from '../lib/cache'
+import { supabase } from '../lib/supabase'
+import { useAuth } from './AuthProvider'
+
+const cacheKey = (userId: string) => `bere.profile.${userId}`
+
+export type HomeStyle = 'bottle' | 'ring' | 'drops'
+
+export interface Profile {
+  id: string
+  display_name: string
+  avatar_path: string | null
+  background_path: string | null
+  home_style: HomeStyle
+  sound: string
+  drink_ml: number
+  tz: string
+}
+
+interface ProfileValue {
+  profile: Profile | null
+  loading: boolean
+  updateProfile(patch: Partial<Profile>): Promise<void>
+}
+
+const ProfileContext = createContext<ProfileValue | null>(null)
+
+export function ProfileProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth()
+  const userId = user?.id ?? null
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!userId) {
+      setProfile(null)
+      setLoading(false)
+      return
+    }
+    let active = true
+    const cached = readCache<Profile>(cacheKey(userId))
+    setProfile(cached)
+    setLoading(!cached)
+    Promise.resolve(supabase.from('profiles').select('*').eq('id', userId).maybeSingle()).then(({ data }) => {
+      if (!active) return
+      const loaded = data as Profile | null
+      if (loaded) {
+        const next = { ...loaded }
+        const deviceTz = new Intl.DateTimeFormat().resolvedOptions().timeZone
+        if (deviceTz && loaded.tz !== deviceTz) {
+          next.tz = deviceTz
+          void supabase.from('profiles').update({ tz: deviceTz }).eq('id', userId).then()
+        }
+        writeCache(cacheKey(userId), next)
+        setProfile(next)
+      }
+      setLoading(false)
+    })
+    return () => {
+      active = false
+    }
+  }, [userId])
+
+  const updateProfile = useCallback(
+    async (patch: Partial<Profile>) => {
+      if (!userId) return
+      setProfile((current) => {
+        if (!current) return current
+        const next = { ...current, ...patch }
+        writeCache(cacheKey(userId), next)
+        return next
+      })
+      await supabase.from('profiles').update(patch).eq('id', userId)
+    },
+    [userId],
+  )
+
+  return <ProfileContext.Provider value={{ profile, loading, updateProfile }}>{children}</ProfileContext.Provider>
+}
+
+export function useProfile(): ProfileValue {
+  const value = useContext(ProfileContext)
+  if (!value) throw new Error('useProfile fuori da ProfileProvider')
+  return value
+}
