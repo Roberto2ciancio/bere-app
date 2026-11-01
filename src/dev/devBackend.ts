@@ -219,13 +219,7 @@ function leaderboard(week: string): Row[] {
     if (run > 0) daysMet += 1
     streak = Math.max(streak, run)
   }
-  const intakes = rowsOf('caffeine_intakes')
-  const lastMonster = intakes
-    .filter((c) => c.kind === 'monster')
-    .map((c) => Math.min(Date.parse(c.taken_at as string), Date.now()))
-    .reduce((latest, at) => Math.max(latest, at), 0)
   const profile = rowsOf('profiles')[0]
-  const inHalfHour = new Date(Date.now() + 30 * 60_000).toISOString()
   return [
     {
       user_id: DEV_USER_ID,
@@ -233,12 +227,10 @@ function leaderboard(week: string): Row[] {
       avatar_path: profile?.avatar_path ?? null,
       days_met: daysMet,
       streak,
-      redbulls: intakes.filter((c) => c.kind === 'redbull' && days.includes(c.local_date as string)).length,
-      monster_until: lastMonster > Date.now() - 3_600_000 ? new Date(lastMonster + 3_600_000).toISOString() : null,
     },
-    { user_id: 'finto-1', display_name: 'Marta (finta)', avatar_path: null, days_met: 5, streak: 3, redbulls: 9, monster_until: null },
-    { user_id: 'finto-2', display_name: 'Luca (finto)', avatar_path: null, days_met: 3, streak: 2, redbulls: 2, monster_until: inHalfHour },
-    { user_id: 'finto-3', display_name: 'Sara (finta)', avatar_path: null, days_met: 1, streak: 1, redbulls: 0, monster_until: null },
+    { user_id: 'finto-1', display_name: 'Marta (finta)', avatar_path: null, days_met: 5, streak: 3 },
+    { user_id: 'finto-2', display_name: 'Luca (finto)', avatar_path: null, days_met: 3, streak: 2 },
+    { user_id: 'finto-3', display_name: 'Sara (finta)', avatar_path: null, days_met: 1, streak: 1 },
   ].sort((a, b) => b.days_met - a.days_met || b.streak - a.streak || a.display_name.localeCompare(b.display_name))
 }
 

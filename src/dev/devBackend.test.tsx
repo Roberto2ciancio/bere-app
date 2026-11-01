@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('../lib/supabase', async () => ({ supabase: (await import('./devBackend')).supabase }))
 
 import App from '../App'
-import { addDays, localParts } from '../domain/time'
+import { localParts } from '../domain/time'
 import { weekStart } from '../leaderboard/weekStart'
 import { storageKey, storagePrefix } from '../lib/storageKey'
 import { DevBar } from './DevBar'
@@ -125,20 +125,11 @@ describe('classifica finta', () => {
     expect(days).toEqual([...days].sort((a, b) => b - a))
   })
 
-  it('conta i giorni con l\'obiettivo raggiunto e le Red Bull della settimana', async () => {
+  it('conta i giorni con l\'obiettivo raggiunto', async () => {
     await supabase.from('drinks').insert({ user_id: DEV_USER_ID, client_id: 'a', amount_ml: 3000, drunk_at: new Date().toISOString(), local_date: today() })
-    await supabase.from('caffeine_intakes').insert({ user_id: DEV_USER_ID, client_id: 'b', kind: 'redbull', mg: 80, taken_at: new Date().toISOString(), local_date: today() })
-    await supabase.from('caffeine_intakes').insert({ user_id: DEV_USER_ID, client_id: 'c', kind: 'redbull', mg: 80, taken_at: new Date().toISOString(), local_date: addDays(weekStart(new Date(), tz), -1) })
-    expect(await me()).toMatchObject({ days_met: 1, streak: 1, redbulls: 1 })
+    expect(await me()).toMatchObject({ days_met: 1, streak: 1 })
   })
 
-  it('una Monster recente dà il segno, una vecchia di due ore no', async () => {
-    const add = (taken_at: string) => supabase.from('caffeine_intakes').insert({ user_id: DEV_USER_ID, client_id: taken_at, kind: 'monster', mg: 160, taken_at, local_date: today() })
-    await add(new Date(Date.now() - 2 * 3600_000).toISOString())
-    expect((await me()).monster_until).toBeNull()
-    await add(new Date().toISOString())
-    expect(Date.parse((await me()).monster_until as string)).toBeGreaterThan(Date.now())
-  })
 })
 
 describe('notifica di prova', () => {

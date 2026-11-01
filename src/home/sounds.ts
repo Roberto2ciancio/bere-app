@@ -21,16 +21,6 @@ function tone(ctx: AudioContext, from: number, to: number, start: number, durati
   oscillator.stop(start + duration)
 }
 
-/** Il verso della Monster: stonato, ma a volume moderato. Rispetta chi ha scelto "Nessuno". */
-export function playBuzzer(soundId: string) {
-  if (soundId === 'none' || typeof AudioContext === 'undefined') return
-  context ??= new AudioContext()
-  void context.resume()
-  const now = context.currentTime
-  tone(context, 140, 70, now, 0.9, 0.18, 'sawtooth')
-  tone(context, 149, 74, now, 0.9, 0.18, 'sawtooth')
-}
-
 /** Suono in-app: deve partire da un tocco, altrimenti iOS lo blocca. */
 export function playSound(id: string) {
   if (id === 'none' || typeof AudioContext === 'undefined') return

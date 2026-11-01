@@ -176,7 +176,7 @@ input[type='time'] { width: auto; }
 
 /* Caffeina */
 .caffeine { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.caffeine-tiles { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.caffeine-tiles { width: 100%; display: grid; gap: 8px; }
 .caffeine-tile {
   display: flex;
   align-items: center;
@@ -194,9 +194,7 @@ input[type='time'] { width: auto; }
   transition: transform 0.12s var(--ease-out);
 }
 .caffeine-tile:active { transform: scale(0.97); }
-.caffeine-tile-special { border: 2px solid var(--water-deep); }
 .caffeine-count { font-family: var(--display); font-size: 1.5rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; animation: count-pop 0.3s var(--ease-out); }
-.caffeine-tile-special .caffeine-count { color: var(--water-deep); }
 .caffeine-total { color: var(--ink-soft); font-size: 0.88rem; }
 .caffeine-total.error { color: var(--danger); }
 @keyframes count-pop { from { transform: scale(1.35); } }
@@ -246,43 +244,9 @@ select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid va
 .dev-pill { pointer-events: auto; min-height: 24px; padding: 2px 10px; border: 0; border-radius: 999px; background: #d6430e; color: #fff; font: inherit; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; }
 .dev-panel { pointer-events: auto; width: 100%; display: flex; flex-direction: column; gap: 8px; padding: 14px; border: 2px solid #d6430e; border-radius: var(--radius); background: var(--surface); }
 
-/* Monster: una scossa sola e nessun lampeggio, per non far male a chi è sensibile alle luci. */
-.caffeine-tile-monster { border-style: dashed; color: var(--ink-soft); }
-.monster-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: rgba(70, 8, 8, 0.88);
-  animation: monster-shake 0.6s linear;
-}
-.monster-card {
-  max-width: 340px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 24px;
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--ink);
-  text-align: center;
-}
-.monster-card h2 { font-family: var(--display); font-size: 1.6rem; line-height: 1.15; color: var(--danger); }
-.monster-card button:disabled { opacity: 0.45; }
-@keyframes monster-shake {
-  0%, 100% { transform: translateX(0); }
-  15%, 45%, 75% { transform: translateX(-12px) rotate(-1deg); }
-  30%, 60%, 90% { transform: translateX(12px) rotate(1deg); }
-}
-
 /* Classifica */
 .board-name { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .board-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.85rem; }
-.board-cans { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.can-icon { flex: none; }
-.board-mark { padding: 0 7px; border-radius: 999px; background: var(--danger); color: var(--surface); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* Bottiglia */
 .bottle-box { position: relative; height: min(100%, 300px); aspect-ratio: 104 / 220; min-height: 150px; }

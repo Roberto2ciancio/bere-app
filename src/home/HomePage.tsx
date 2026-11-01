@@ -7,7 +7,6 @@ import { DEFAULT_DRINK_ML, goalForDate, type GoalChange } from '../domain/goals'
 import { nextReminder, type Reminder } from '../domain/reminders'
 import { addDays, localParts, weekdayOf } from '../domain/time'
 import { CAFFEINE_LIMIT_MG } from '../caffeine/caffeine'
-import { MonsterPunishment } from '../caffeine/MonsterPunishment'
 import { useCaffeine } from '../caffeine/useCaffeine'
 import { DrinkSheet } from '../drinks/DrinkSheet'
 import { useDrinks, type DrinkInput } from '../drinks/useDrinks'
@@ -21,7 +20,7 @@ import { BottleView } from './BottleView'
 import { CharacterView } from './CharacterView'
 import { DropsView } from './DropsView'
 import { RingView } from './RingView'
-import { playBuzzer, playSound } from './sounds'
+import { playSound } from './sounds'
 import type { ViewProps } from './views'
 
 const DAYS = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica']
@@ -55,7 +54,6 @@ export function HomePage() {
   const [goals, setGoals] = useState<GoalChange[]>([])
   const [reminders, setReminders] = useState<Reminder[] | null>(null)
   const [pulse, setPulse] = useState(0)
-  const [punished, setPunished] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
 
   // Tiene aggiornati giorno e prossimo promemoria anche se l'app resta aperta o torna in primo piano.
@@ -114,13 +112,6 @@ export function HomePage() {
     playSound(profile?.sound ?? 'goccia')
   }
 
-  function onMonster() {
-    if (!caffeine.add('monster')) return
-    setPunished(true)
-    playBuzzer(profile?.sound ?? 'goccia')
-    navigator.vibrate?.([200, 80, 400])
-  }
-
   // La quantità viene dal profilo: non si segna nulla finché non è disponibile.
   if (!profile) {
     return <p className="center-note">{loading ? 'Caricamento…' : 'Profilo non disponibile. Controlla la connessione e riapri l\'app.'}</p>
@@ -161,17 +152,9 @@ export function HomePage() {
 
         <section className="caffeine" aria-label="Caffeina">
           <div className="caffeine-tiles">
-            <button className="caffeine-tile caffeine-tile-special" aria-label={`Red Bull, ${caffeine.redBulls} oggi. Aggiungi`} onClick={() => caffeine.add('redbull')}>
-              <span key={caffeine.redBulls} className="caffeine-count">{caffeine.redBulls}</span>
-              <span>Red Bull</span>
-            </button>
-            <button className="caffeine-tile" aria-label={`Caffè, ${caffeine.coffees} oggi. Aggiungi`} onClick={() => caffeine.add('coffee')}>
+            <button className="caffeine-tile" aria-label={`Caffè, ${caffeine.coffees} oggi. Aggiungi`} onClick={() => caffeine.add()}>
               <span key={caffeine.coffees} className="caffeine-count">{caffeine.coffees}</span>
               <span>Caffè</span>
-            </button>
-            <button className="caffeine-tile caffeine-tile-monster" aria-label={`Monster, ${caffeine.monsters} oggi. Aggiungi`} onClick={onMonster}>
-              <span key={caffeine.monsters} className="caffeine-count">{caffeine.monsters}</span>
-              <span>Monster</span>
             </button>
           </div>
           <p className={caffeine.overLimit ? 'caffeine-total error' : 'caffeine-total'}>
@@ -189,7 +172,6 @@ export function HomePage() {
         )}
       </footer>
 
-      {punished && <MonsterPunishment onClose={() => setPunished(false)} />}
       {sheetOpen && <DrinkSheet userId={userId} units={units} defaultMl={drinkMl} onDrink={onDrink} onClose={() => setSheetOpen(false)} />}
     </main>
   )

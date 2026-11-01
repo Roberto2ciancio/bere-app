@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createFakeSupabase, type FakeSupabase } from '../test/fakeSupabase'
 
@@ -20,8 +20,6 @@ const entry = (user_id: string, display_name: string, days_met: number, streak: 
   avatar_path,
   days_met,
   streak,
-  redbulls: 0,
-  monster_until: null as string | null,
 })
 
 function renderPage() {
@@ -97,54 +95,12 @@ describe('LeaderboardPage', () => {
     expect(await screen.findByText(/nessuno ha ancora raggiunto/i)).toBeInTheDocument()
   })
 
-  it('mostra le Red Bull della settimana accanto all\'icona', async () => {
-    fake.rpcResults.get_leaderboard = [{ ...entry('u2', 'Bruno', 3, 2), redbulls: 7 }]
-    renderPage()
-    const row = (await screen.findByText('Bruno')).closest('li')!
-    const count = within(row).getByLabelText('7 Red Bull questa settimana')
-    expect(count).toHaveTextContent('7')
-    expect(count.querySelector('svg')).toBeInTheDocument()
-  })
-
-  it('il segno Monster mostra i minuti che mancano', async () => {
-    fake.rpcResults.get_leaderboard = [{ ...entry('u2', 'Bruno', 3, 2), monster_until: new Date(Date.now() + 42 * 60_000).toISOString() }]
-    renderPage()
-    const row = (await screen.findByText('Bruno')).closest('li')!
-    expect(within(row).getByLabelText('Segno negativo per Monster, ancora 42 min')).toBeInTheDocument()
-  })
-
-  it('senza Monster non mostra il segno', async () => {
+  it('non mostra più Red Bull né segno Monster', async () => {
     fake.rpcResults.get_leaderboard = [entry('u2', 'Bruno', 3, 2)]
     renderPage()
     const row = (await screen.findByText('Bruno')).closest('li')!
-    expect(within(row).queryByLabelText(/segno negativo/i)).not.toBeInTheDocument()
-  })
-
-  it('il segno sparisce da solo allo scadere, con la pagina aperta', async () => {
-    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'Date'] })
-    try {
-      fake.rpcResults.get_leaderboard = [{ ...entry('u2', 'Bruno', 3, 2), monster_until: new Date(Date.now() + 60_000).toISOString() }]
-      renderPage()
-      const row = (await screen.findByText('Bruno')).closest('li')!
-      expect(within(row).getByLabelText(/segno negativo/i)).toBeInTheDocument()
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(61_000)
-      })
-      expect(within(row).queryByLabelText(/segno negativo/i)).not.toBeInTheDocument()
-    } finally {
-      vi.useRealTimers()
-    }
-  })
-
-  it('il segno Monster e le Red Bull non cambiano le posizioni', async () => {
-    fake.rpcResults.get_leaderboard = [
-      { ...entry('u1', 'Anna', 3, 2), monster_until: new Date(Date.now() + 60_000).toISOString() },
-      { ...entry('u2', 'Bruno', 1, 1), redbulls: 20 },
-    ]
-    renderPage()
-    await screen.findByText('Anna')
-    expect(within(screen.getByText('Anna').closest('li')!).getByTestId('rank').textContent).toBe('1')
-    expect(within(screen.getByText('Bruno').closest('li')!).getByTestId('rank').textContent).toBe('2')
+    expect(row.querySelector('svg')).toBeNull()
+    expect(screen.queryByText(/red bull|monster/i)).not.toBeInTheDocument()
   })
 
   it('spiega chi vede nome e foto', async () => {

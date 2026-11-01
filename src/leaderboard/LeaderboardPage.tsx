@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
 import { supabase } from '../lib/supabase'
-import { CanIcon } from '../caffeine/CanIcon'
 import { avatarUrl } from '../profile/imageUpload'
 import { weekStart } from './weekStart'
 
@@ -12,11 +11,8 @@ interface Entry {
   avatar_path: string | null
   days_met: number
   streak: number
-  redbulls: number
-  monster_until: string | null
 }
 
-const REFRESH_MS = 30_000
 
 export function LeaderboardPage() {
   const { user } = useAuth()
@@ -25,7 +21,6 @@ export function LeaderboardPage() {
   const week = weekStart(new Date(), tz)
   const [entries, setEntries] = useState<Entry[] | null>(null)
   const [failed, setFailed] = useState(false)
-  const [now, setNow] = useState(() => Date.now())
   const [pokeMessage, setPokeMessage] = useState<string | null>(null)
   const [poking, setPoking] = useState(false)
 
@@ -40,12 +35,6 @@ export function LeaderboardPage() {
       active = false
     }
   }, [week])
-
-  // Il segno Monster deve sparire anche a pagina aperta.
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), REFRESH_MS)
-    return () => clearInterval(timer)
-  }, [])
 
   async function poke(entry: Entry) {
     setPoking(true)
@@ -79,9 +68,6 @@ export function LeaderboardPage() {
         <ol className="list">
           {entries.map((entry, index) => {
             const first = entries.findIndex((e) => e.days_met === entry.days_met && e.streak === entry.streak)
-            const leftMs = entry.monster_until ? Date.parse(entry.monster_until) - now : 0
-            const marked = leftMs > 0
-            const minutesLeft = Math.ceil(leftMs / 60_000)
             return (
               <li key={entry.user_id} className={entry.user_id === user?.id ? 'me' : undefined}>
                 <span className="rank" data-testid="rank">{first === -1 ? index + 1 : first + 1}</span>
@@ -93,17 +79,8 @@ export function LeaderboardPage() {
                 <span className="grow board-name">
                   <span>{entry.display_name}</span>
                   <span className="board-badges">
-                    <span className="board-cans" aria-label={`${entry.redbulls} Red Bull questa settimana`}>
-                      <CanIcon />
-                      {entry.redbulls}
-                    </span>
                     {entry.user_id !== user?.id && (
                       <button className="link-button" disabled={poking} aria-label={`Sprona ${entry.display_name}`} onClick={() => void poke(entry)}>Sprona</button>
-                    )}
-                    {marked && (
-                      <span className="board-mark" aria-label={`Segno negativo per Monster, ancora ${minutesLeft} min`}>
-                        − Monster {minutesLeft} min
-                      </span>
                     )}
                   </span>
                 </span>
@@ -115,7 +92,7 @@ export function LeaderboardPage() {
         </ol>
       )}
 
-      <p className="hint">Nome e foto sono visibili a tutti gli utenti dell'app, insieme alle Red Bull della settimana e al segno Monster. Le altre quantità restano private.</p>
+      <p className="hint">Nome e foto sono visibili a tutti gli utenti dell'app, insieme ai giorni in cui hai raggiunto l'obiettivo. Le quantità bevute restano private.</p>
     </main>
   )
 }

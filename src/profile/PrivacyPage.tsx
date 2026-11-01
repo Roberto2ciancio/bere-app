@@ -16,7 +16,7 @@ export function PrivacyPage() {
 
       <section className="section">
         <h2>Chi lo vede</h2>
-        <p>Nome e foto sono visibili a tutti gli utenti dell'app, insieme ai giorni in cui hai raggiunto l'obiettivo, alle Red Bull della settimana e a un segno per un'ora dopo una Monster. L'acqua, il caffè, gli orari e lo sfondo restano privati. I suggerimenti li legge solo chi gestisce l'app.</p>
+        <p>Nome e foto sono visibili a tutti gli utenti dell'app, insieme ai giorni in cui hai raggiunto l'obiettivo. L'acqua, il caffè, gli orari e lo sfondo restano privati. I suggerimenti li legge solo chi gestisce l'app.</p>
       </section>
 
       <section className="section">

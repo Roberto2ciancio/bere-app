@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { readCache, writeCache } from '../lib/cache'
 import { supabase } from '../lib/supabase'
-import { summarizeCaffeine, type CaffeineKind } from './caffeine'
+import { summarizeCaffeine } from './caffeine'
 import { enqueueCaffeine, flushCaffeine, pendingCaffeine, removeQueuedCaffeine, type QueuedCaffeine } from './caffeineQueue'
 
 const DOUBLE_TAP_MS = 400
@@ -9,7 +9,7 @@ const RETRY_MS = 30_000
 
 interface Entry {
   client_id: string
-  kind: CaffeineKind
+  kind: string
   mg: number
   taken_at: string
 }
@@ -26,13 +26,13 @@ export function useCaffeine(userId: string | null, date: string, tz: string) {
   const cacheKey = `bere.caffeine.${userId}`
 
   const refreshQueue = useCallback(() => {
-    setQueued(userId ? pendingCaffeine(userId).filter((c) => c.local_date === date) : [])
+    setQueued(userId ? pendingCaffeine(userId).filter((c) => c.local_date === date && c.kind === 'coffee') : [])
   }, [userId, date])
 
   const sync = useCallback(async () => {
     if (!userId) return
     await flushCaffeine(userId, send)
-    const { data, error } = await supabase.from('caffeine_intakes').select('client_id, kind, mg, taken_at').eq('user_id', userId).eq('local_date', date)
+    const { data, error } = await supabase.from('caffeine_intakes').select('client_id, kind, mg, taken_at').eq('user_id', userId).eq('local_date', date).eq('kind', 'coffee')
     if (!error && data) {
       setSynced(data as Entry[])
       writeCache(cacheKey, { date, entries: data })
@@ -63,15 +63,15 @@ export function useCaffeine(userId: string | null, date: string, tz: string) {
 
   // Una voce appena inviata può comparire sia in coda sia sul server.
   const queuedIds = new Set(queued.map((c) => c.client_id))
-  const entries: Entry[] = [...synced.filter((c) => !queuedIds.has(c.client_id)), ...queued]
+  const entries: Entry[] = [...synced.filter((c) => c.kind === 'coffee' && !queuedIds.has(c.client_id)), ...queued]
 
   const add = useCallback(
-    (kind: CaffeineKind): boolean => {
+    (): boolean => {
       if (!userId) return false
       const now = Date.now()
       if (now - lastTap.current < DOUBLE_TAP_MS) return false
       lastTap.current = now
-      enqueueCaffeine({ userId, kind, tz })
+      enqueueCaffeine({ userId, tz })
       refreshQueue()
       void sync()
       return true

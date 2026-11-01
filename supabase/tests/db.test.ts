@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql']
+const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql', '0012_remove_energy_drinks.sql']
 const A = '00000000-0000-0000-0000-00000000000a'
 const B = '00000000-0000-0000-0000-00000000000b'
 const WEEK = '2026-11-02'
@@ -178,42 +178,12 @@ describe('caffeina', () => {
     expect(await count(`select count(*) n from caffeine_intakes where kind = 'monster'`)).toBe(1)
   })
 
-  describe('in classifica', () => {
-    const add = (user: string, kind: string, date: string, takenAt: string) =>
-      db.exec(`insert into caffeine_intakes (user_id, client_id, kind, mg, taken_at, local_date) values ('${user}', gen_random_uuid(), '${kind}', 80, ${takenAt}, '${date}')`)
-    const rowOf = async (id: string) => (await board()).find((r) => r.user_id === id)!
-
-    it('conta solo le Red Bull della settimana, visibili agli altri', async () => {
-      await add(B, 'redbull', WEEK, 'now()')
-      await add(B, 'redbull', WEEK, 'now()')
-      await add(B, 'coffee', WEEK, 'now()')
-      await add(B, 'redbull', '2000-01-01', 'now()')
-      expect(await rowOf(B)).toMatchObject({ redbulls: 2 })
-    })
-    it('senza Red Bull restituisce zero', async () => {
-      expect(await rowOf(A)).toMatchObject({ redbulls: 0, monster_until: null })
-    })
-    it('una Monster recente dà il segno fino a un\'ora dopo', async () => {
-      await add(B, 'monster', WEEK, `now() - interval '10 minutes'`)
-      const until = new Date((await rowOf(B)).monster_until as string).getTime()
-      const expected = Date.now() + 50 * 60_000
-      expect(Math.abs(until - expected)).toBeLessThan(5_000)
-    })
-    it('dopo un\'ora il segno non c\'è più', async () => {
-      await add(B, 'monster', WEEK, `now() - interval '61 minutes'`)
-      expect(await rowOf(B)).toMatchObject({ monster_until: null })
-    })
-    it('una Monster con orario nel futuro non allunga il segno', async () => {
-      await add(B, 'monster', WEEK, `now() + interval '10 days'`)
-      const until = new Date((await rowOf(B)).monster_until as string).getTime()
-      expect(until).toBeLessThanOrEqual(Date.now() + 60 * 60_000 + 5_000)
-    })
-    it('Monster e Red Bull non cambiano l\'ordine', async () => {
-      await drinkFull(A, WEEK, 3000)
-      await add(A, 'monster', WEEK, 'now()')
-      for (let i = 0; i < 5; i++) await add(B, 'redbull', WEEK, 'now()')
-      expect((await board()).map((r) => r.display_name)).toEqual(['Anna', 'Bruno'])
-    })
+  it('non entra più nella classifica, che resta visibile a tutti', async () => {
+    await db.exec(insert(B, 'redbull'))
+    await db.exec(insert(B, 'monster', 160))
+    const row = (await board()).find((r) => r.user_id === B)!
+    expect(row).not.toHaveProperty('redbulls')
+    expect(row).not.toHaveProperty('monster_until')
   })
 
   it('sparisce con il profilo', async () => {
@@ -479,7 +449,7 @@ describe('classifica', () => {
   })
   it('restituisce solo i campi pubblici', async () => {
     const [row] = await board()
-    expect(Object.keys(row).sort()).toEqual(['avatar_path', 'days_met', 'display_name', 'monster_until', 'redbulls', 'streak', 'user_id'])
+    expect(Object.keys(row).sort()).toEqual(['avatar_path', 'days_met', 'display_name', 'streak', 'user_id'])
   })
   it('non è accessibile senza login', async () => {
     await db.exec(`set role anon;`)
