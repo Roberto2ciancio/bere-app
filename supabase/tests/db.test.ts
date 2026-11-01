@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql']
+const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql']
 const A = '00000000-0000-0000-0000-00000000000a'
 const B = '00000000-0000-0000-0000-00000000000b'
 const WEEK = '2026-11-02'
@@ -308,6 +308,7 @@ describe('spronare un amico', () => {
 describe('profilo esteso', () => {
   it('accetta i nuovi personaggi e rifiuta quelli inesistenti', async () => {
     await db.query(`update profiles set home_style = 'cat' where id = $1`, [A])
+    await db.query(`update profiles set home_style = 'can' where id = $1`, [A])
     await expect(db.query(`update profiles set home_style = 'drago' where id = $1`, [A])).rejects.toThrow(/check/)
   })
   it('rifiuta un peso impossibile', async () => {

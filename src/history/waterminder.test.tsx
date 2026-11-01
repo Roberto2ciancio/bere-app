@@ -310,7 +310,24 @@ describe('preferenze nel profilo', () => {
     await waitFor(() => expect(fake.tables.profiles[0]).toMatchObject({ units: 'oz', home_style: 'cat', sound: 'bolla' }))
   })
 
-  it.each([['drop-face', 'character-drop-face'], ['cat', 'character-cat'], ['fish', 'character-fish']])('il personaggio %s appare in home', async (style, id) => {
+  it('si può scegliere la lattina di Red Bull', async () => {
+    render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Lattina Red Bull' }))
+    await waitFor(() => expect(fake.tables.profiles[0].home_style).toBe('can'))
+  })
+
+  it('la lattina si riempie e non ha la faccia degli altri personaggi', async () => {
+    fake.tables.profiles[0].home_style = 'can'
+    fake.tables.drinks = [{ user_id: 'u1', client_id: 'x', amount_ml: 1500, hydration_pct: 100, drink_type: 'water', local_date: today(), drunk_at: new Date().toISOString() }]
+    window.location.hash = '#/home'
+    render(<App />)
+    await screen.findByText('1,5 L')
+    const can = await screen.findByTestId('character-can')
+    expect(can.querySelector('.character-water')?.getAttribute('height')).toBe('50')
+    expect(can.querySelector('.character-face')).toBeNull()
+  })
+
+  it.each([['drop-face', 'character-drop-face'], ['cat', 'character-cat'], ['fish', 'character-fish'], ['can', 'character-can']])('il personaggio %s appare in home', async (style, id) => {
     fake.tables.profiles[0].home_style = style
     window.location.hash = '#/home'
     render(<App />)

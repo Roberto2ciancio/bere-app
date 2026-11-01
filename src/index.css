@@ -219,6 +219,12 @@ select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid va
 .character-outline { fill: none; stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; }
 .character-face { fill: var(--ink); }
 .character-smile { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+.character-can .character-body { fill: #d4dae2; }
+.character-can .character-water { fill: #1d3f8f; }
+.character-can .character-outline { stroke: #5c6875; stroke-width: 1.5; }
+.can-rim { fill: none; stroke: #8b95a3; stroke-width: 1.5; }
+.can-tab { fill: none; stroke: #8b95a3; stroke-width: 3; stroke-linecap: round; }
+.can-pattern path { fill: #ffffff; opacity: 0.16; }
 
 /* Storico: barre sottili con base comune e una sola linea di riferimento. */
 .chart { position: relative; height: 170px; display: flex; align-items: flex-end; border-bottom: 1px solid var(--line); }

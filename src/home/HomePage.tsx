@@ -32,6 +32,7 @@ const VIEWS = {
   'drop-face': (props: ViewProps) => <CharacterView shape="drop-face" {...props} />,
   cat: (props: ViewProps) => <CharacterView shape="cat" {...props} />,
   fish: (props: ViewProps) => <CharacterView shape="fish" {...props} />,
+  can: (props: ViewProps) => <CharacterView shape="can" {...props} />,
 }
 
 function describeNext(next: { date: string; minutes: number }, today: string): string {

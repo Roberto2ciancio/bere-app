@@ -20,6 +20,7 @@ const STYLES: { id: HomeStyle; label: string }[] = [
   { id: 'drop-face', label: 'Gocciolina' },
   { id: 'cat', label: 'Gatto' },
   { id: 'fish', label: 'Pesce' },
+  { id: 'can', label: 'Lattina Red Bull' },
 ]
 const UNITS: { id: Units; label: string }[] = [
   { id: 'ml', label: 'Litri' },

@@ -6,7 +6,7 @@ import { useAuth } from './AuthProvider'
 
 const cacheKey = (userId: string) => `bere.profile.${userId}`
 
-export type HomeStyle = 'bottle' | 'ring' | 'drops' | 'drop-face' | 'cat' | 'fish'
+export type HomeStyle = 'bottle' | 'ring' | 'drops' | 'drop-face' | 'cat' | 'fish' | 'can'
 
 export interface Profile {
   id: string
