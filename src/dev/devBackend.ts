@@ -3,6 +3,7 @@
  * raggiunge il server vero, quindi niente account e niente tracce nella classifica vera.
  */
 import { addDays } from '../domain/time'
+import { readCache } from '../lib/cache'
 import { storageKey } from '../lib/storageKey'
 import { notificationOptions } from '../push/notification'
 
@@ -233,7 +234,7 @@ function leaderboard(week: string): Row[] {
 }
 
 async function showLocal(title: string, body: string): Promise<'sent' | 'no-device' | 'failed'> {
-  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return 'no-device'
+  if (readCache<boolean>('bere.pushOff') || typeof Notification === 'undefined' || Notification.permission !== 'granted') return 'no-device'
   try {
     const registration = await Promise.race([
       navigator.serviceWorker.ready,

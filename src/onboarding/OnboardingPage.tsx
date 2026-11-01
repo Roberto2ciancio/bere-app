@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
 import { InstallGuide } from '../push/InstallGuide'
-import { pushSupportState, sendTestPush, subscribePush, syncPushSubscription } from '../push/subscribe'
+import { isPushOff, pushSupportState, sendTestPush, subscribePush, syncPushSubscription } from '../push/subscribe'
 import { IntervalCreator } from '../schedules/IntervalCreator'
 import { ScheduleEditor } from '../schedules/ScheduleEditor'
 import { saveSchedule, type ScheduleDraft } from '../schedules/schedulesApi'
@@ -12,7 +12,7 @@ import { markOnboarded, type OnboardingStep } from './onboardingFlag'
 
 type Step = OnboardingStep | 'test'
 
-const stepAfterSchedule = (): Step => (pushSupportState() === 'granted' ? 'test' : 'notifications')
+const stepAfterSchedule = (): Step => (pushSupportState() === 'granted' && !isPushOff() ? 'test' : 'notifications')
 
 export function OnboardingPage() {
   const { user } = useAuth()

@@ -1,4 +1,10 @@
+import { readCache, removeCache, writeCache } from '../lib/cache'
 import { supabase } from '../lib/supabase'
+
+const PUSH_OFF = 'bere.pushOff'
+const PUSH_ACTIVATED_AT = 'bere.pushActivatedAt'
+
+export const isPushOff = () => readCache<boolean>(PUSH_OFF) === true
 
 export type PushState = 'needs-install' | 'unsupported' | 'denied' | 'prompt' | 'granted'
 
@@ -71,11 +77,27 @@ export async function subscribePush(): Promise<void> {
   // Il browser può restituire un'iscrizione già scartata dal servizio push: se ne chiede una nuova.
   await (await registration.pushManager.getSubscription())?.unsubscribe()
   await register(await newSubscription(registration))
+  removeCache(PUSH_OFF)
+  writeCache(PUSH_ACTIVATED_AT, Date.now())
+}
+
+/** Gli invii mancati prima di questo momento non dicono nulla sull'iscrizione attuale. */
+export const pushActivatedAt = () => readCache<number>(PUSH_ACTIVATED_AT) ?? 0
+
+/** Vale per questo telefono: resta spento anche riaprendo l'app, finché non si riattiva. */
+export async function turnPushOff(): Promise<void> {
+  writeCache(PUSH_OFF, true)
+  try {
+    await unregisterPush()
+  } catch (error) {
+    removeCache(PUSH_OFF)
+    throw error
+  }
 }
 
 /** All'apertura dell'app riallinea il server: un'iscrizione può cambiare o passare a un altro utente. */
 export async function syncPushSubscription(): Promise<void> {
-  if (pushSupportState() !== 'granted') return
+  if (pushSupportState() !== 'granted' || isPushOff()) return
   const registration = await navigator.serviceWorker.ready
   await register((await registration.pushManager.getSubscription()) ?? (await newSubscription(registration)))
 }

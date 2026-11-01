@@ -181,6 +181,13 @@ describe('promemoria con l\'app aperta', () => {
     expect(await rows('push_log')).toMatchObject([{ status: 'sent', schedule_time_id: 't' }])
   })
 
+  it('con le notifiche spente non avvisa', async () => {
+    localStorage.setItem('bere.pushOff', 'true')
+    await checkDueReminders(monday8)
+    expect((await supabase.functions.invoke('test-push')).data).toEqual({ status: 'no-device' })
+    expect(show).not.toHaveBeenCalled()
+  })
+
   it('non avvisa in un altro minuto, in un altro giorno o con il programma spento', async () => {
     await checkDueReminders(new Date(2026, 10, 2, 8, 1))
     await checkDueReminders(new Date(2026, 10, 3, 8, 0))

@@ -6,7 +6,7 @@ import { formatTime } from '../domain/format'
 import { localParts } from '../domain/time'
 import { supabase } from '../lib/supabase'
 import { InstallGuide } from './InstallGuide'
-import { hasDeviceSubscription, pushSupportState, sendTestPush, subscribePush, type PushState } from './subscribe'
+import { hasDeviceSubscription, isPushOff, pushActivatedAt, pushSupportState, sendTestPush, subscribePush, turnPushOff, type PushState } from './subscribe'
 
 interface LogRow {
   id?: string
@@ -55,6 +55,7 @@ export function NotificationStatusPage() {
   const [busy, setBusy] = useState(false)
   const [serviceStopped, setServiceStopped] = useState(false)
   const [reactivated, setReactivated] = useState(false)
+  const [off, setOff] = useState(isPushOff)
 
   const loadLog = useCallback(async () => {
     if (!userId) return
@@ -81,11 +82,26 @@ export function NotificationStatusPage() {
       await subscribePush()
       setRegistered(true)
       setReactivated(true)
+      setOff(false)
       setMessage('Notifiche attive su questo telefono.')
     } catch {
       setError('Non è stato possibile attivare le notifiche. Controlla la connessione e riprova.')
     }
     setState(pushSupportState())
+    setBusy(false)
+  }
+
+  async function disable() {
+    setBusy(true)
+    setError(null)
+    setMessage(null)
+    try {
+      await turnPushOff()
+      setOff(true)
+      setRegistered(false)
+    } catch {
+      setError('Non è stato possibile disattivare le notifiche. Controlla la connessione e riprova.')
+    }
     setBusy(false)
   }
 
@@ -107,10 +123,10 @@ export function NotificationStatusPage() {
   }
 
   // Il telefono può credersi iscritto dopo che il servizio push ha scartato l'iscrizione.
-  const discarded = log[0]?.status === 'no-device' && !reactivated
+  const discarded = log[0]?.status === 'no-device' && !reactivated && Date.parse(log[0].scheduled_at) > pushActivatedAt()
   const unregistered = registered === false || (registered === true && discarded)
-  const ready = state === 'granted' && registered === true && !discarded
-  const canEnable = state === 'prompt' || (state === 'granted' && unregistered)
+  const ready = state === 'granted' && registered === true && !discarded && !off
+  const canEnable = state === 'prompt' || (state === 'granted' && (unregistered || off))
 
   return (
     <main className="page">
@@ -130,11 +146,13 @@ export function NotificationStatusPage() {
         </section>
       )}
       {serviceStopped && <p className="error">Il servizio di invio è fermo: per ora i promemoria non partono.</p>}
-      {state === 'granted' && unregistered && <p className="error">Questo telefono non è registrato: non riceverà i promemoria.</p>}
+      {state === 'granted' && off && <p>Le notifiche sono disattivate su questo telefono. I tuoi programmi restano salvati.</p>}
+      {state === 'granted' && unregistered && !off && <p className="error">Questo telefono non è registrato: non riceverà i promemoria.</p>}
       {ready && <p>Le notifiche sono attive su questo telefono.</p>}
 
       {canEnable && <button className="primary" disabled={busy} onClick={() => void enable()}>Attiva le notifiche</button>}
       {ready && <button className="secondary" disabled={busy} onClick={() => void test()}>Invia notifica di prova</button>}
+      {ready && <button className="ghost" disabled={busy} onClick={() => void disable()}>Disattiva le notifiche</button>}
 
       {error && <p role="alert" className="error">{error}</p>}
       {message && <p role="status" className="hint">{message}</p>}
