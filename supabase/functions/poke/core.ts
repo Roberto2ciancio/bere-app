@@ -1,0 +1,22 @@
+import { sendToDevices, type Deps, type Subscription } from '../send-reminders/core.ts'
+
+export interface PokeDeps extends Pick<Deps, 'push' | 'removeSubscription' | 'touchSubscription'> {
+  claim(from: string, to: string): Promise<string>
+  senderName(id: string): Promise<string>
+  subscriptions(id: string): Promise<Subscription[]>
+}
+
+export type PokeResult = 'sent' | 'no-device' | 'failed' | 'limit' | 'blocked' | 'self'
+
+export async function runPoke(deps: PokeDeps, from: string, to: string): Promise<PokeResult> {
+  const claim = await deps.claim(from, to)
+  if (claim !== 'ok') return claim as PokeResult
+  const name = await deps.senderName(from)
+  const status = await sendToDevices(deps, await deps.subscriptions(to), {
+    title: `${name} ti sprona`,
+    body: 'È ora di bere!',
+    url: '#/home',
+    logId: '',
+  })
+  return status === 'sent' || status === 'no-device' ? status : 'failed'
+}

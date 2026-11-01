@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql']
+const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql']
 const A = '00000000-0000-0000-0000-00000000000a'
 const B = '00000000-0000-0000-0000-00000000000b'
 const WEEK = '2026-11-02'
@@ -220,6 +220,98 @@ describe('caffeina', () => {
     await db.exec(insert(A))
     await db.exec(`delete from auth.users where id = '${A}'`)
     expect(await count(`select count(*) n from caffeine_intakes`)).toBe(0)
+  })
+})
+
+describe('tipi di bevanda', () => {
+  const drinkAs = (id: string, ml: number, pct: number, date = WEEK) =>
+    db.query(`insert into drinks (user_id, client_id, amount_ml, drunk_at, local_date, drink_type, hydration_pct) values ($1, gen_random_uuid(), $2, now(), $3, 'x', $4)`, [id, ml, date, pct])
+
+  it('una bevuta senza tipo resta acqua al 100%', async () => {
+    await drink(A, WEEK, 200)
+    expect((await db.query(`select drink_type, hydration_pct from drinks`)).rows).toEqual([{ drink_type: 'water', hydration_pct: 100 }])
+  })
+  it('la classifica conta l\'acqua equivalente, non il volume', async () => {
+    await drinkAs(A, 2000, 50)
+    await drinkAs(A, 2000, 50)
+    expect((await board()).find((r) => r.user_id === A)).toMatchObject({ days_met: 0 })
+    await drinkAs(A, 1000, 100)
+    expect((await board()).find((r) => r.user_id === A)).toMatchObject({ days_met: 1 })
+  })
+  it('i totali per giorno riguardano solo chi li chiede', async () => {
+    await drinkAs(A, 1000, 50)
+    await drinkAs(A, 300, 100)
+    await drinkAs(B, 999, 100)
+    const rows = await asUser(A, async () => (await db.query(`select day::text, total_ml, drinks from daily_totals()`)).rows)
+    expect(rows).toEqual([{ day: WEEK, total_ml: 800, drinks: 2 }])
+  })
+  it('tazze e bevande personalizzate sono private', async () => {
+    await db.query(`insert into cups (user_id, name, amount_ml) values ($1, 'b', 500)`, [B])
+    await db.query(`insert into drink_types (user_id, name, hydration_pct) values ($1, 'b', 50)`, [B])
+    expect(await asUser(A, () => count(`select count(*) n from cups`))).toBe(0)
+    expect(await asUser(A, () => count(`select count(*) n from drink_types`))).toBe(0)
+    await expect(asUser(A, () => db.query(`insert into cups (user_id, name, amount_ml) values ('${B}', 'x', 500)`))).rejects.toThrow(/row-level security/)
+  })
+  it('rifiuta percentuali fuori intervallo', async () => {
+    await expect(drinkAs(A, 200, 151)).rejects.toThrow(/check/)
+  })
+})
+
+describe('promemoria fermati all\'obiettivo', () => {
+  const today = `(now() at time zone 'Europe/Rome')::date`
+  const reached = async () => (await db.query<{ goal_reached: boolean }>(`select goal_reached from reminder_rows()`)).rows[0].goal_reached
+
+  beforeEach(async () => {
+    const s = (await db.query<{ id: string }>(`insert into schedules (user_id, name, weekdays) values ($1, 'a', '{1,2,3,4,5,6,7}') returning id`, [A])).rows[0].id
+    await db.query(`insert into schedule_times (schedule_id, minutes) values ($1, 480)`, [s])
+    await db.query(`update profiles set tz = 'Europe/Rome' where id = $1`, [A])
+  })
+  const fill = () => db.exec(`insert into drinks (user_id, client_id, amount_ml, drunk_at, local_date) select '${A}', gen_random_uuid(), 1500, now(), ${today} from generate_series(1, 2)`)
+
+  it('senza la scelta dell\'utente non si ferma mai', async () => {
+    await fill()
+    expect(await reached()).toBe(false)
+  })
+  it('con la scelta si ferma solo a obiettivo raggiunto', async () => {
+    await db.query(`update profiles set stop_at_goal = true where id = $1`, [A])
+    expect(await reached()).toBe(false)
+    await fill()
+    expect(await reached()).toBe(true)
+  })
+  it('non è accessibile agli utenti', async () => {
+    await expect(asUser(A, () => db.query(`select * from reminder_rows()`))).rejects.toThrow(/permission denied/)
+  })
+})
+
+describe('spronare un amico', () => {
+  const poke = async (from = A, to = B) => (await db.query<{ r: string }>(`select claim_poke($1, $2) r`, [from, to])).rows[0].r
+
+  it('al massimo tre volte in un giorno per persona', async () => {
+    expect([await poke(), await poke(), await poke(), await poke()]).toEqual(['ok', 'ok', 'ok', 'limit'])
+    expect(await poke(B, A)).toBe('ok')
+  })
+  it('non a se stessi', async () => {
+    expect(await poke(A, A)).toBe('self')
+  })
+  it('non chi ha detto di no, né chi non esiste', async () => {
+    await db.query(`update profiles set allow_pokes = false where id = $1`, [B])
+    expect(await poke()).toBe('blocked')
+    expect(await poke(A, '00000000-0000-0000-0000-0000000000ff')).toBe('blocked')
+  })
+  it('gli utenti non possono chiamarla direttamente né leggere gli altri', async () => {
+    await expect(asUser(A, () => db.query(`select claim_poke('${A}', '${B}')`))).rejects.toThrow(/permission denied/)
+    await poke()
+    expect(await asUser(A, () => count(`select count(*) n from pokes`))).toBe(0)
+  })
+})
+
+describe('profilo esteso', () => {
+  it('accetta i nuovi personaggi e rifiuta quelli inesistenti', async () => {
+    await db.query(`update profiles set home_style = 'cat' where id = $1`, [A])
+    await expect(db.query(`update profiles set home_style = 'drago' where id = $1`, [A])).rejects.toThrow(/check/)
+  })
+  it('rifiuta un peso impossibile', async () => {
+    await expect(db.query(`update profiles set weight_kg = 5 where id = $1`, [A])).rejects.toThrow(/check/)
   })
 })
 

@@ -2,6 +2,7 @@
  * Sostituisce Supabase nell'app di prova: tutto resta nella memoria del telefono e nulla
  * raggiunge il server vero, quindi niente account e niente tracce nella classifica vera.
  */
+import { effectiveMl } from '../domain/hydration'
 import { addDays } from '../domain/time'
 import { readCache } from '../lib/cache'
 import { storageKey } from '../lib/storageKey'
@@ -74,6 +75,7 @@ class Query implements PromiseLike<Result> {
   private filters: ((row: Row) => boolean)[] = []
   private sort: { column: string; ascending: boolean } | null = null
   private max: number | null = null
+  private skip = 0
   private one = false
   private action: () => Row[] | null = () => null
   private readonly table: string
@@ -97,6 +99,11 @@ class Query implements PromiseLike<Result> {
     this.sort = { column, ascending: options?.ascending ?? true }
     return this
   }
+  range(from: number, to: number) {
+    this.skip = from
+    this.max = to - from + 1
+    return this
+  }
   limit(max: number) {
     this.max = max
     return this
@@ -116,12 +123,14 @@ class Query implements PromiseLike<Result> {
     }
     return this
   }
-  upsert(values: Row, options: { onConflict: string; ignoreDuplicates?: boolean }) {
+  upsert(values: Row | Row[], options: { onConflict: string; ignoreDuplicates?: boolean }) {
     this.action = () => {
       const keys = options.onConflict.split(',')
-      const existing = rowsOf(this.table).find((row) => keys.every((key) => row[key] === values[key]))
-      if (!existing) rowsOf(this.table).push({ id: crypto.randomUUID(), ...values })
-      else if (!options.ignoreDuplicates) Object.assign(existing, values)
+      for (const value of [values].flat()) {
+        const existing = rowsOf(this.table).find((row) => keys.every((key) => row[key] === value[key]))
+        if (!existing) rowsOf(this.table).push({ id: crypto.randomUUID(), ...value })
+        else if (!options.ignoreDuplicates) Object.assign(existing, value)
+      }
       return []
     }
     return this
@@ -158,7 +167,7 @@ class Query implements PromiseLike<Result> {
       const { column, ascending } = this.sort
       rows = [...rows].sort((a, b) => ((a[column] as number) < (b[column] as number) ? -1 : 1) * (ascending ? 1 : -1))
     }
-    if (this.max !== null) rows = rows.slice(0, this.max)
+    if (this.max !== null) rows = rows.slice(this.skip, this.skip + this.max)
     return { data: this.wrap(rows), error: null }
   }
 
@@ -204,7 +213,7 @@ function leaderboard(week: string): Row[] {
   let streak = 0
   let run = 0
   for (const day of days) {
-    const total = rowsOf('drinks').filter((d) => d.local_date === day).reduce((sum, d) => sum + (d.amount_ml as number), 0)
+    const total = rowsOf('drinks').filter((d) => d.local_date === day).reduce((sum, d) => sum + effectiveMl(d.amount_ml as number, (d.hydration_pct as number | undefined) ?? 100), 0)
     const goal = goalOn(day)
     run = total >= goal && goal >= 1500 ? run + 1 : 0
     if (run > 0) daysMet += 1
@@ -231,6 +240,18 @@ function leaderboard(week: string): Row[] {
     { user_id: 'finto-2', display_name: 'Luca (finto)', avatar_path: null, days_met: 3, streak: 2, redbulls: 2, monster_until: inHalfHour },
     { user_id: 'finto-3', display_name: 'Sara (finta)', avatar_path: null, days_met: 1, streak: 1, redbulls: 0, monster_until: null },
   ].sort((a, b) => b.days_met - a.days_met || b.streak - a.streak || a.display_name.localeCompare(b.display_name))
+}
+
+function dailyTotals() {
+  const days = new Map<string, { day: string; total_ml: number; drinks: number }>()
+  for (const drink of rowsOf('drinks')) {
+    const day = drink.local_date as string
+    const entry = days.get(day) ?? { day, total_ml: 0, drinks: 0 }
+    entry.total_ml += effectiveMl(drink.amount_ml as number, (drink.hydration_pct as number | undefined) ?? 100)
+    entry.drinks += 1
+    days.set(day, entry)
+  }
+  return [...days.values()].sort((a, b) => a.day.localeCompare(b.day))
 }
 
 async function showLocal(title: string, body: string): Promise<'sent' | 'no-device' | 'failed'> {
@@ -288,10 +309,12 @@ if (import.meta.env.MODE === 'devapp') {
 export const supabase = {
   from: (table: string) => new Query(table),
   async rpc(name: string, args?: { week_start?: string }): Promise<Result> {
+    if (name === 'daily_totals') return { data: dailyTotals(), error: null }
     return { data: name === 'get_leaderboard' ? leaderboard(args?.week_start ?? '') : null, error: null }
   },
   functions: {
-    async invoke(name: string): Promise<Result> {
+    async invoke(name: string, _options?: unknown): Promise<Result> {
+      if (name === 'poke') return { data: { status: 'sent' }, error: null }
       if (name === 'delete-account') {
         resetDevData()
         return { data: {}, error: null }

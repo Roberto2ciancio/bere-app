@@ -23,6 +23,7 @@ export interface ReminderRow {
   drink_ml: number
   created_at?: string
   subscriptions: Subscription[]
+  goal_reached?: boolean
 }
 
 export interface PushPayload {
@@ -144,7 +145,9 @@ export async function sendToDevices(
 export async function runSendReminders(deps: Deps, now: Date): Promise<Summary> {
   const summary: Summary = { sent: 0, missed: 0, failed: 0, errors: 0 }
   await deps.heartbeat().catch((error) => console.error('segno di vita non registrato', error))
-  const plans = planSends(await deps.load(), now, (error) => {
+  // Chi ha raggiunto l'obiettivo e ha chiesto di fermarsi non deve risultare neppure come promemoria mancato.
+  const rows = (await deps.load()).filter((row) => !row.goal_reached)
+  const plans = planSends(rows, now, (error) => {
     summary.errors++
     console.error('riga non valida', error)
   })

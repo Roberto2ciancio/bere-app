@@ -40,6 +40,7 @@ export function TabsLayout() {
       </div>
       <nav className="tabs" aria-label="Sezioni">
         <NavLink to="/home">Oggi</NavLink>
+        <NavLink to="/storico">Storico</NavLink>
         <NavLink to="/classifica">Classifica</NavLink>
         <NavLink to="/profilo">Profilo</NavLink>
       </nav>

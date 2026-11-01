@@ -17,6 +17,22 @@ const row = (over: Partial<ReminderRow> = {}): ReminderRow => ({
   ...over,
 })
 
+describe('fermarsi all\'obiettivo', () => {
+  it('non invia e non registra nulla, nemmeno se in ritardo', async () => {
+    for (const now of [AT_8, new Date(AT_8.getTime() + 20 * 60_000)]) {
+      const d = deps([row({ goal_reached: true })])
+      expect(await runSendReminders(d.value, now)).toEqual({ sent: 0, missed: 0, failed: 0, errors: 0 })
+      expect(d.log).toEqual([])
+      expect(d.sent).toEqual([])
+    }
+  })
+
+  it('gli altri utenti ricevono comunque il promemoria', async () => {
+    const d = deps([row({ goal_reached: true }), row({ schedule_time_id: 't2', user_id: 'u2', goal_reached: false })])
+    expect((await runSendReminders(d.value, AT_8)).sent).toBe(1)
+  })
+})
+
 function deps(rows: ReminderRow[], push: Deps['push'] = async () => 201) {
   const log: { id: string; userId: string; timeId: string; date: string; scheduledAt: string; status: string; sentAt?: string }[] = []
   const removed: string[] = []

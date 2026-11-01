@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
 import { formatLiters } from '../domain/format'
+import { GoalCalculator } from './GoalCalculator'
 import { goalChangeDate, goalForDate, LEADERBOARD_MIN_GOAL_ML, parseGoalLiters } from '../domain/goals'
 import { supabase } from '../lib/supabase'
 
@@ -54,6 +55,7 @@ export function GoalForm() {
   }
 
   return (
+    <>
     <form className="stack" onSubmit={submit} noValidate>
       <label>
         Obiettivo giornaliero (litri)
@@ -66,5 +68,12 @@ export function GoalForm() {
       )}
       <button className="secondary">Salva obiettivo</button>
     </form>
+    <GoalCalculator
+      onUse={(goalMl) => {
+        setText(formatLiters(goalMl).replace(' L', ''))
+        setSavedMl(null)
+      }}
+    />
+    </>
   )
 }

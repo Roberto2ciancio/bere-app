@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile, type HomeStyle } from '../auth/ProfileProvider'
+import type { Units } from '../domain/hydration'
 import { playSound, SOUNDS } from '../home/sounds'
 import {
   AVATAR_SIDE,
@@ -16,6 +17,13 @@ const STYLES: { id: HomeStyle; label: string }[] = [
   { id: 'bottle', label: 'Bottiglia' },
   { id: 'ring', label: 'Anello' },
   { id: 'drops', label: 'Gocce' },
+  { id: 'drop-face', label: 'Gocciolina' },
+  { id: 'cat', label: 'Gatto' },
+  { id: 'fish', label: 'Pesce' },
+]
+const UNITS: { id: Units; label: string }[] = [
+  { id: 'ml', label: 'Litri' },
+  { id: 'oz', label: 'Once' },
 ]
 const AMOUNTS = [150, 200, 250, 300, 500]
 
@@ -77,6 +85,18 @@ export function AppearanceForm() {
               onClick={() => void updateProfile({ home_style: style.id })}
             >
               {style.label}
+            </button>
+          ))}
+        </div>
+        <div className="choices" role="group" aria-label="Unità di misura">
+          {UNITS.map((unit) => (
+            <button
+              key={unit.id}
+              className="choice"
+              aria-pressed={(profile.units ?? 'ml') === unit.id}
+              onClick={() => void updateProfile({ units: unit.id })}
+            >
+              {unit.label}
             </button>
           ))}
         </div>

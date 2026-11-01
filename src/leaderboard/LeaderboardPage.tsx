@@ -26,6 +26,8 @@ export function LeaderboardPage() {
   const [entries, setEntries] = useState<Entry[] | null>(null)
   const [failed, setFailed] = useState(false)
   const [now, setNow] = useState(() => Date.now())
+  const [pokeMessage, setPokeMessage] = useState<string | null>(null)
+  const [poking, setPoking] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -45,6 +47,21 @@ export function LeaderboardPage() {
     return () => clearInterval(timer)
   }, [])
 
+  async function poke(entry: Entry) {
+    setPoking(true)
+    const { data, error } = await supabase.functions.invoke('poke', { body: { to: entry.user_id } })
+    const status = (data as { status?: string } | null)?.status
+    const name = entry.display_name
+    const messages: Record<string, string> = {
+      sent: `Notifica inviata a ${name}.`,
+      limit: `Hai già spronato ${name} 3 volte nelle ultime 24 ore.`,
+      blocked: `${name} preferisce non ricevere sproni.`,
+      'no-device': `${name} non ha le notifiche attive.`,
+    }
+    setPokeMessage((!error && status && messages[status]) || `Non è stato possibile spronare ${name}. Riprova.`)
+    setPoking(false)
+  }
+
   const started = entries?.some((e) => e.days_met > 0)
 
   return (
@@ -55,6 +72,8 @@ export function LeaderboardPage() {
       {failed && <p role="alert" className="error">Classifica non disponibile. Controlla la connessione.</p>}
       {!entries && !failed && <p className="center-note">Caricamento…</p>}
       {entries && !started && <p>Nessuno ha ancora raggiunto l'obiettivo questa settimana. Il primo posto è libero.</p>}
+
+      {pokeMessage && <p role="status" className="hint">{pokeMessage}</p>}
 
       {entries && entries.length > 0 && (
         <ol className="list">
@@ -78,6 +97,9 @@ export function LeaderboardPage() {
                       <CanIcon />
                       {entry.redbulls}
                     </span>
+                    {entry.user_id !== user?.id && (
+                      <button className="link-button" disabled={poking} aria-label={`Sprona ${entry.display_name}`} onClick={() => void poke(entry)}>Sprona</button>
+                    )}
                     {marked && (
                       <span className="board-mark" aria-label={`Segno negativo per Monster, ancora ${minutesLeft} min`}>
                         − Monster {minutesLeft} min

@@ -5,7 +5,9 @@ import { ProfileProvider } from './auth/ProfileProvider'
 import { LoginPage } from './auth/LoginPage'
 import { RegisterPage } from './auth/RegisterPage'
 import { NewPasswordPage, ResetPasswordPage } from './auth/ResetPasswordPage'
+import { CupsPage } from './drinks/CupsPage'
 import { FeedbackForm } from './feedback/FeedbackForm'
+import { HistoryPage } from './history/HistoryPage'
 import { HomePage } from './home/HomePage'
 import { LeaderboardPage } from './leaderboard/LeaderboardPage'
 import { OnboardingPage } from './onboarding/OnboardingPage'
@@ -47,6 +49,8 @@ export default function App() {
               <Route element={<TabsLayout />}>
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/classifica" element={<LeaderboardPage />} />
+                <Route path="/storico" element={<HistoryPage />} />
+                <Route path="/tazze" element={<CupsPage />} />
                 <Route path="/profilo" element={<ProfilePage />} />
                 <Route path="/promemoria" element={<SchedulesPage />} />
                 <Route path="/notifiche" element={<NotificationStatusPage />} />

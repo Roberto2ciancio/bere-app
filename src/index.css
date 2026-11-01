@@ -163,12 +163,12 @@ input[type='time'] { width: auto; }
   .home { padding-top: calc(env(safe-area-inset-top) + 12px); padding-bottom: 8px; }
   .home-total { font-size: 2.6rem; }
   .home-view { flex-basis: 130px; min-height: 130px; padding: 8px 0 6px; }
-  .bottle-box, .ring-box { min-height: 110px; }
+  .bottle-box, .ring-box, .character-box { min-height: 110px; }
   .home-actions { gap: 6px; }
-  .drink { min-height: 52px; }
+  .drink, .drink-more { min-height: 52px; }
 }
 @media (max-height: 620px) {
-  .ring-box { height: 112px; min-height: 112px; }
+  .ring-box, .character-box { height: 112px; min-height: 112px; }
 }
 .home-actions { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
 .home-next { color: var(--ink-soft); font-size: 0.93rem; }
@@ -200,6 +200,40 @@ input[type='time'] { width: auto; }
 .caffeine-total { color: var(--ink-soft); font-size: 0.88rem; }
 .caffeine-total.error { color: var(--danger); }
 @keyframes count-pop { from { transform: scale(1.35); } }
+
+/* Altre bevande */
+.drink-row { width: 100%; display: flex; gap: 8px; }
+.drink-row .drink { flex: 1; width: auto; }
+.drink-more { flex: none; width: 60px; min-height: 60px; font-size: 1.6rem; line-height: 1; }
+.sheet-overlay { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; justify-content: center; background: rgba(0, 0, 0, 0.45); }
+.sheet { width: 100%; max-width: 480px; max-height: 90%; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 20px 20px calc(env(safe-area-inset-bottom) + 16px); border-radius: var(--radius) var(--radius) 0 0; background: var(--surface); text-align: left; }
+select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; }
+.link-button { min-height: 28px; padding: 0 4px; border: 0; background: none; color: var(--ink-soft); font: inherit; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Personaggi */
+.character-box { position: relative; height: min(100%, 280px); aspect-ratio: 1; min-height: 150px; }
+.character-box.slosh { animation: slosh 0.7s var(--ease-out); }
+.character-box svg { width: 100%; height: 100%; }
+.character-body { fill: var(--surface); }
+.character-water { fill: var(--water); transition: y 0.9s var(--ease-out), height 0.9s var(--ease-out); }
+.character-outline { fill: none; stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; }
+.character-face { fill: var(--ink); }
+.character-smile { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+
+/* Storico: barre sottili con base comune e una sola linea di riferimento. */
+.chart { position: relative; height: 170px; display: flex; align-items: flex-end; border-bottom: 1px solid var(--line); }
+.chart-col { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; background: none; display: flex; align-items: flex-end; justify-content: center; }
+.chart-col[aria-pressed='true'] { background: color-mix(in srgb, var(--water) 12%, transparent); }
+.chart-bar { width: 100%; max-width: 26px; min-height: 2px; border-radius: 4px 4px 0 0; background: var(--water); transition: height 0.4s var(--ease-out); }
+.chart-goal { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--ink-soft); pointer-events: none; }
+.chart-goal span { position: absolute; right: 0; bottom: 2px; padding: 0 4px; border-radius: 4px; background: var(--bg); color: var(--ink-soft); font-size: 0.75rem; }
+.chart-axis { display: flex; justify-content: space-between; color: var(--ink-soft); font-size: 0.8rem; }
+.data-table { width: 100%; margin-top: 8px; border-collapse: collapse; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.data-table th, .data-table td { padding: 4px 0; border-bottom: 1px solid var(--line); text-align: left; }
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0; }
+.stat-grid dt { color: var(--ink-soft); font-size: 0.85rem; }
+.stat-grid dd { margin: 0; font-family: var(--display); font-size: 1.4rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.locked { color: var(--ink-soft); }
 
 /* App di prova */
 .dev-bar { position: fixed; z-index: 40; top: calc(env(safe-area-inset-top) + 2px); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(92vw, 360px); pointer-events: none; }

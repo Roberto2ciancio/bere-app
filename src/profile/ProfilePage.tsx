@@ -2,8 +2,10 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
+import { NotificationPrefs } from '../push/NotificationPrefs'
 import { PushToggle } from '../push/PushToggle'
 import { AppearanceForm } from './AppearanceForm'
+import { DataBackup } from './DataBackup'
 import { GoalForm } from './GoalForm'
 import { PasswordForm } from './PasswordForm'
 
@@ -50,13 +52,17 @@ export function ProfilePage() {
         <h2>Obiettivo e promemoria</h2>
         <GoalForm />
         <p><Link to="/promemoria">Gestisci i promemoria</Link></p>
+        <p><Link to="/tazze">Tazze e bevande</Link></p>
       </section>
 
       <section className="section">
         <h2>Notifiche</h2>
         <PushToggle />
+        <NotificationPrefs />
         <p><Link to="/notifiche">Stato notifiche</Link></p>
       </section>
+
+      <DataBackup />
 
       <PasswordForm />
 

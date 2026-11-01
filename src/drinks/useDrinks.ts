@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { effectiveMl } from '../domain/hydration'
 import { readCache, writeCache } from '../lib/cache'
 import { supabase } from '../lib/supabase'
 import { enqueueDrink, flushQueue, pendingDrinks, removeQueued, type QueuedDrink } from './drinkQueue'
@@ -10,6 +11,13 @@ interface Entry {
   client_id: string
   amount_ml: number
   drunk_at: string
+  hydration_pct?: number
+}
+
+export interface DrinkInput {
+  amountMl: number
+  drinkType: string
+  hydrationPct: number
 }
 
 async function sendDrink(drink: QueuedDrink) {
@@ -32,7 +40,7 @@ export function useDrinks(userId: string | null, date: string, tz: string, drink
   const sync = useCallback(async () => {
     if (!userId) return
     await flushQueue(userId, sendDrink)
-    const { data, error } = await supabase.from('drinks').select('client_id, amount_ml, drunk_at').eq('user_id', userId).eq('local_date', date)
+    const { data, error } = await supabase.from('drinks').select('client_id, amount_ml, drunk_at, hydration_pct').eq('user_id', userId).eq('local_date', date)
     if (!error && data) {
       setSynced(data as Entry[])
       writeCache(cacheKey, { date, entries: data })
@@ -67,14 +75,14 @@ export function useDrinks(userId: string | null, date: string, tz: string, drink
   // Una bevuta appena inviata può comparire sia in coda sia sul server.
   const queuedIds = new Set(queued.map((d) => d.client_id))
   const entries: Entry[] = [...synced.filter((d) => !queuedIds.has(d.client_id)), ...queued]
-  const totalMl = entries.reduce((sum, d) => sum + d.amount_ml, 0)
+  const totalMl = entries.reduce((sum, d) => sum + effectiveMl(d.amount_ml, d.hydration_pct ?? 100), 0)
 
-  const drink = useCallback((): boolean => {
+  const drink = useCallback((input?: DrinkInput): boolean => {
     if (!userId) return false
     const now = Date.now()
     if (now - lastTap.current < DOUBLE_TAP_MS) return false
     lastTap.current = now
-    enqueueDrink({ userId, amountMl: drinkMl, tz })
+    enqueueDrink({ userId, amountMl: input?.amountMl ?? drinkMl, drinkType: input?.drinkType, hydrationPct: input?.hydrationPct, tz })
     refreshQueue()
     void sync()
     return true

@@ -1,11 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import type { Activity, Units } from '../domain/hydration'
 import { readCache, writeCache } from '../lib/cache'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthProvider'
 
 const cacheKey = (userId: string) => `bere.profile.${userId}`
 
-export type HomeStyle = 'bottle' | 'ring' | 'drops'
+export type HomeStyle = 'bottle' | 'ring' | 'drops' | 'drop-face' | 'cat' | 'fish'
 
 export interface Profile {
   id: string
@@ -16,6 +17,11 @@ export interface Profile {
   sound: string
   drink_ml: number
   tz: string
+  weight_kg?: number | null
+  activity?: Activity | null
+  units?: Units
+  stop_at_goal?: boolean
+  allow_pokes?: boolean
 }
 
 interface ProfileValue {

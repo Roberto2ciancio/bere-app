@@ -30,6 +30,7 @@ export function createFakeSupabase() {
     const filters: ((r: Row) => boolean)[] = []
     let order: { column: string; ascending: boolean } | null = null
     let max: number | null = null
+    let offset = 0
     let single = false
     let action: { kind: 'select' | 'delete' } | { kind: 'update'; patch: Row } = { kind: 'select' }
 
@@ -50,7 +51,7 @@ export function createFakeSupabase() {
         const { column, ascending } = order
         matched = [...matched].sort((a, b) => (String(a[column]) < String(b[column]) ? -1 : 1) * (ascending ? 1 : -1))
       }
-      if (max !== null) matched = matched.slice(0, max)
+      if (max !== null) matched = matched.slice(offset, offset + max)
       return { data: single ? (matched[0] ?? null) : matched, error: null }
     }
 
@@ -62,6 +63,11 @@ export function createFakeSupabase() {
       },
       gte(column: string, value: string) {
         filters.push((r) => String(r[column]) >= value)
+        return builder
+      },
+      range(from: number, to: number) {
+        offset = from
+        max = to - from + 1
         return builder
       },
       in(column: string, values: unknown[]) {
@@ -102,14 +108,16 @@ export function createFakeSupabase() {
         }
         return inserted
       },
-      upsert(values: Row, options?: { onConflict?: string; ignoreDuplicates?: boolean }) {
+      upsert(values: Row | Row[], options?: { onConflict?: string; ignoreDuplicates?: boolean }) {
         if (failures.upsert) return Promise.resolve({ data: null, error: { message: failures.upsert } })
         const keys = options?.onConflict?.split(',').map((k) => k.trim()) ?? ['id']
-        const existing = rows().find((r) => keys.every((k) => r[k] === values[k]))
-        if (existing) {
-          if (!options?.ignoreDuplicates) Object.assign(existing, values)
-        } else {
-          rows().push({ id: crypto.randomUUID(), ...values })
+        for (const value of [values].flat()) {
+          const existing = rows().find((r) => keys.every((k) => r[k] === value[k]))
+          if (existing) {
+            if (!options?.ignoreDuplicates) Object.assign(existing, value)
+          } else {
+            rows().push({ id: crypto.randomUUID(), ...value })
+          }
         }
         return Promise.resolve({ data: null, error: null })
       },
