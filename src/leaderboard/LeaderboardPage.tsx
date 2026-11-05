@@ -14,8 +14,6 @@ interface Entry {
   streak: number
 }
 
-const MEDALS = ['🥇', '🥈', '🥉']
-
 /** "2 – 8 novembre", oppure "30 novembre – 6 dicembre" a cavallo di due mesi. */
 function weekLabel(start: string): string {
   const end = addDays(start, 6)
@@ -120,32 +118,31 @@ export function LeaderboardPage() {
           {entries.map((entry, index) => {
             const rank = positions[index]
             const isMe = entry.user_id === user?.id
-            const medal = entry.days_met > 0 ? MEDALS[rank - 1] : undefined
+            const podium = entry.days_met > 0 && rank <= 3 ? ` podium-${rank}` : ''
             return (
               <li key={entry.user_id} className={isMe ? 'board-row me' : 'board-row'}>
-                <span className="rank" data-testid="rank">{rank}</span>
                 <span className="board-avatar">
                   <Avatar entry={entry} />
-                  {medal && <span className="medal" aria-hidden="true">{medal}</span>}
+                  <span className={`rank${podium}`} data-testid="rank">{rank}</span>
                 </span>
-                <span className="grow board-name">
-                  <span className="board-who">
-                    <span>{entry.display_name}</span>
-                    {isMe && <span className="tag">Tu</span>}
-                  </span>
-                  <span className="hint">serie {days(entry.streak)}</span>
-                </span>
-                <span className="board-score">
-                  <strong className="num">{entry.days_met}/7</strong>
+                <div className="board-main">
+                  <div className="board-line">
+                    <span className="board-who">
+                      <span className="board-name">{entry.display_name}</span>
+                      {isMe && <span className="tag">Tu</span>}
+                    </span>
+                    <strong className="num board-pts">{entry.days_met}/7</strong>
+                  </div>
                   <WeekBar met={entry.days_met} />
-                </span>
-                {isMe ? (
-                  <span className="poke-space" aria-hidden="true" />
-                ) : (
-                  <button className="poke" disabled={poking} aria-label={`Sprona ${entry.display_name}`} onClick={() => void poke(entry)}>
-                    👋
-                  </button>
-                )}
+                  <div className="board-line">
+                    <span className="hint">serie {days(entry.streak)}</span>
+                    {!isMe && (
+                      <button className="poke" disabled={poking} aria-label={`Sprona ${entry.display_name}`} onClick={() => void poke(entry)}>
+                        👋 Sprona
+                      </button>
+                    )}
+                  </div>
+                </div>
               </li>
             )
           })}
@@ -156,7 +153,7 @@ export function LeaderboardPage() {
         <summary>Come funziona</summary>
         <div className="fold-body">
           <p className="hint">Vince chi raggiunge il proprio obiettivo in più giorni, da lunedì a domenica. A parità, conta la serie più lunga di giorni consecutivi. Valgono solo obiettivi da 1,5 L in su.</p>
-          <p className="hint">Con 👋 sproni un amico: gli arriva una notifica. Al massimo 3 volte al giorno, e una volta all'ora per la stessa persona.</p>
+          <p className="hint">Con «Sprona» mandi a un amico una notifica per ricordargli di bere. Al massimo 3 volte al giorno, e una volta all'ora per la stessa persona.</p>
           <p className="hint">Nome e foto sono visibili a tutti gli utenti dell'app, insieme ai giorni in cui hai raggiunto l'obiettivo. Le quantità bevute restano private.</p>
         </div>
       </details>
