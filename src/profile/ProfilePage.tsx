@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
 import { NotificationPrefs } from '../push/NotificationPrefs'
 import { PushToggle } from '../push/PushToggle'
+import { ActiveHoursForm } from './ActiveHoursForm'
 import { AppearanceForm } from './AppearanceForm'
 import { DataBackup } from './DataBackup'
 import { GoalForm } from './GoalForm'
@@ -51,6 +52,7 @@ export function ProfilePage() {
       <section className="section">
         <h2>Obiettivo e promemoria</h2>
         <GoalForm />
+        <ActiveHoursForm />
         <p><Link to="/promemoria">Gestisci i promemoria</Link></p>
         <p><Link to="/tazze">Tazze e bevande</Link></p>
       </section>

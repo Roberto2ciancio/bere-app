@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql', '0012_remove_energy_drinks.sql', '0013_poke_cooldown.sql']
+const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql', '0012_remove_energy_drinks.sql', '0013_poke_cooldown.sql', '0014_active_hours.sql']
 const A = '00000000-0000-0000-0000-00000000000a'
 const B = '00000000-0000-0000-0000-00000000000b'
 const WEEK = '2026-11-02'
@@ -250,6 +250,45 @@ describe('promemoria fermati all\'obiettivo', () => {
   })
   it('non è accessibile agli utenti', async () => {
     await expect(asUser(A, () => db.query(`select * from reminder_rows()`))).rejects.toThrow(/permission denied/)
+  })
+})
+
+describe('fascia attiva', () => {
+  const today = `(now() at time zone 'Europe/Rome')::date`
+  const setHours = (start: number, end: number) => db.query(`update profiles set active_start_min = $1, active_end_min = $2 where id = $3`, [start, end, A])
+
+  it('di default è spenta, dalle 8 alle 18', async () => {
+    const p = (await db.query<Record<string, unknown>>(`select active_split, active_start_min, active_end_min from profiles where id = $1`, [A])).rows[0]
+    expect(p).toEqual({ active_split: false, active_start_min: 480, active_end_min: 1080 })
+  })
+
+  it("rifiuta una fine prima dell'inizio, uguale o a meno di un'ora", async () => {
+    await expect(setHours(1080, 480)).rejects.toThrow(/check/)
+    await expect(setHours(480, 480)).rejects.toThrow(/check/)
+    await expect(setHours(480, 510)).rejects.toThrow(/check/)
+    await expect(setHours(-60, 480)).rejects.toThrow(/check/)
+    await expect(setHours(480, 1500)).rejects.toThrow(/check/)
+    await setHours(540, 1320)
+  })
+
+  it('i promemoria ricevono fascia, bevuto e obiettivo di oggi', async () => {
+    const s = (await db.query<{ id: string }>(`insert into schedules (user_id, name, weekdays) values ($1, 'a', '{1,2,3,4,5,6,7}') returning id`, [A])).rows[0].id
+    await db.query(`insert into schedule_times (schedule_id, minutes) values ($1, 600)`, [s])
+    await db.query(`update profiles set tz = 'Europe/Rome', active_split = true where id = $1`, [A])
+    await db.query(`insert into goal_changes (user_id, effective_from, goal_ml) values ($1, '2026-02-01', 2500)`, [A])
+    // 500 ml d'acqua e 200 ml di caffè all'80%: 660 ml
+    await db.exec(`insert into drinks (user_id, client_id, amount_ml, drunk_at, local_date) values ('${A}', gen_random_uuid(), 500, now(), ${today})`)
+    await db.exec(`insert into drinks (user_id, client_id, amount_ml, hydration_pct, drunk_at, local_date) values ('${A}', gen_random_uuid(), 200, 80, now(), ${today})`)
+    // ieri non conta
+    await db.exec(`insert into drinks (user_id, client_id, amount_ml, drunk_at, local_date) values ('${A}', gen_random_uuid(), 900, now(), ${today} - 1)`)
+    const row = (await db.query<Record<string, unknown>>(`select active_split, active_start_min, active_end_min, drunk_ml, goal_ml, goal_reached from reminder_rows()`)).rows[0]
+    expect(row).toEqual({ active_split: true, active_start_min: 480, active_end_min: 1080, drunk_ml: 660, goal_ml: 2500, goal_reached: false })
+  })
+
+  it('senza bevute il bevuto è zero', async () => {
+    const s = (await db.query<{ id: string }>(`insert into schedules (user_id, name, weekdays) values ($1, 'a', '{1}') returning id`, [A])).rows[0].id
+    await db.query(`insert into schedule_times (schedule_id, minutes) values ($1, 600)`, [s])
+    expect((await db.query<{ drunk_ml: number }>(`select drunk_ml from reminder_rows()`)).rows[0].drunk_ml).toBe(0)
   })
 })
 

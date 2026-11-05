@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
+import { activePace, DEFAULT_ACTIVE_END, DEFAULT_ACTIVE_START, inActiveHours, MAX_HOURLY_ML, type ActiveHours, type Pace } from '../domain/activeHours'
 import { formatTime } from '../domain/format'
 import { DEFAULT_DRINK_ML, goalForDate, type GoalChange } from '../domain/goals'
 import { nextReminder, type Reminder } from '../domain/reminders'
@@ -10,7 +11,7 @@ import { CAFFEINE_LIMIT_MG } from '../caffeine/caffeine'
 import { useCaffeine } from '../caffeine/useCaffeine'
 import { DrinkSheet } from '../drinks/DrinkSheet'
 import { useDrinks, type DrinkInput } from '../drinks/useDrinks'
-import { expectedByNow, formatAmount, formatVolume, HIGH_INTAKE_ML } from '../domain/hydration'
+import { expectedByNow, formatAmount, formatVolume, HIGH_INTAKE_ML, type Units } from '../domain/hydration'
 import { pendingOnboardingStep } from '../onboarding/onboardingFlag'
 import { pushSupportState } from '../push/subscribe'
 import { readCache, writeCache } from '../lib/cache'
@@ -40,6 +41,28 @@ function describeNext(next: { date: string; minutes: number }, today: string): s
   if (next.date === addDays(today, 1)) return `domani alle ${time}`
   const weekday = new Date(`${next.date}T00:00:00Z`).getUTCDay()
   return `${DAYS[(weekday + 6) % 7]} alle ${time}`
+}
+
+/** Dove sei rispetto alla fascia attiva, in parole semplici. */
+function describePace(pace: Pace, hours: ActiveHours, units: Units | undefined): { status: string; next?: string; capped?: boolean } | null {
+  switch (pace.phase) {
+    case 'done':
+      return null
+    case 'before':
+      return { status: `Riprendo alle ${formatTime(pace.resumesAt)}` }
+    case 'after':
+      return { status: `Fascia attiva finita: riprendo domani alle ${formatTime(hours.start)}` }
+    case 'active': {
+      const expected = formatVolume(pace.expectedMl, units)
+      const status =
+        pace.status === 'on-track'
+          ? `Sei in linea: a quest'ora dovresti essere a ${expected}`
+          : pace.status === 'behind'
+            ? `Sei indietro di ${formatAmount(-pace.diffMl, units)}: a quest'ora dovresti essere a ${expected}`
+            : `Sei avanti di ${formatAmount(pace.diffMl, units)}: a quest'ora dovresti essere a ${expected}`
+      return { status, next: `Da ora circa ${formatAmount(pace.hourlyMl, units)} all'ora fino alle ${formatTime(hours.end)}`, capped: pace.capped }
+    }
+  }
 }
 
 export function HomePage() {
@@ -102,7 +125,11 @@ export function HomePage() {
   const goalMl = goalForDate(goals, today)
   const { totalMl, pending, canUndo, drink, undoLast } = useDrinks(userId, today, tz, drinkMl)
   const caffeine = useCaffeine(userId, today, tz)
-  const next = reminders ? nextReminder(reminders, now, tz) : null
+  const split = profile?.active_split ?? false
+  const hours: ActiveHours = { start: profile?.active_start_min ?? DEFAULT_ACTIVE_START, end: profile?.active_end_min ?? DEFAULT_ACTIVE_END }
+  // Con la fascia attiva i promemoria fuori fascia non partono: non vanno annunciati.
+  const activeReminders = reminders && split ? reminders.filter((r) => inActiveHours(r.minutes, hours)) : reminders
+  const next = activeReminders ? nextReminder(activeReminders, now, tz) : null
   const View = VIEWS[profile?.home_style ?? 'bottle'] ?? BottleView
 
   function onDrink(input?: DrinkInput) {
@@ -120,7 +147,8 @@ export function HomePage() {
   const units = profile.units
   const parts = localParts(now, tz)
   const todayMinutes = (reminders ?? []).filter((r) => r.weekdays.includes(weekdayOf(today))).map((r) => r.minutes)
-  const expected = expectedByNow(todayMinutes, goalMl, parts.minutes)
+  const expected = split ? null : expectedByNow(todayMinutes, goalMl, parts.minutes)
+  const pace = split ? describePace(activePace({ goalMl, drunkMl: totalMl, nowMinutes: parts.minutes, hours }), hours, units) : null
   const behind = expected !== null && totalMl < goalMl ? expected - totalMl : 0
 
   return (
@@ -131,6 +159,13 @@ export function HomePage() {
           {totalMl >= goalMl ? `Obiettivo raggiunto: su ${formatVolume(goalMl, units)}` : `su ${formatVolume(goalMl, units)}`}
           {expected !== null && totalMl < goalMl && (behind > 0 ? ` · ${formatVolume(behind, units)} per essere in pari` : ' · sei in pari')}
         </p>
+        {pace && (
+          <div className="home-pace" aria-live="polite">
+            <p>{pace.status}</p>
+            {pace.next && <p>{pace.next}</p>}
+            {pace.capped && <p className="hint">Non serve recuperare tutto: più di {formatAmount(MAX_HOURLY_ML, units)} all'ora non conviene.</p>}
+          </div>
+        )}
         {totalMl >= HIGH_INTAKE_ML && (
           <p className="error">Oggi hai bevuto molto: bere troppo in poco tempo può far male. Se non stai bene, chiedi a un medico.</p>
         )}

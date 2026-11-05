@@ -67,6 +67,64 @@ function deps(rows: ReminderRow[], push: Deps['push'] = async () => 201) {
   return { value, log, removed, healthy, sent }
 }
 
+describe('fascia attiva', () => {
+  // Lunedì 2 novembre 2026, ora di Roma = UTC + 1
+  const romeAt = (h: number, m = 0) => new Date(Date.UTC(2026, 10, 2, h - 1, m))
+  const active = (over: Partial<ReminderRow> = {}) =>
+    row({ active_split: true, active_start_min: 480, active_end_min: 1080, goal_ml: 3000, drunk_ml: 0, ...over })
+  const body = (d: ReturnType<typeof deps>) => (d.sent[0]?.payload as { body: string } | undefined)?.body
+
+  it('fuori fascia non invia e non segna mancato', async () => {
+    for (const [minutes, now] of [[420, romeAt(7)], [1080, romeAt(18)], [1260, romeAt(21)], [1260, romeAt(21, 30)]] as const) {
+      const d = deps([active({ minutes })])
+      expect(await runSendReminders(d.value, now)).toEqual({ sent: 0, missed: 0, failed: 0, errors: 0 })
+      expect(d.log).toEqual([])
+    }
+  })
+
+  it('dentro la fascia invia la quantità ricalcolata', async () => {
+    // alle 14 con 1 L bevuto: 2 L su 4 ore, promemoria ogni ora
+    const d = deps([active({ minutes: 840, drunk_ml: 1000 }), active({ schedule_time_id: 't2', minutes: 900, drunk_ml: 1000 })])
+    expect((await runSendReminders(d.value, romeAt(14))).sent).toBe(1)
+    expect(body(d)).toBe('Circa 500 ml adesso · ti mancano 2 L')
+  })
+
+  it("con promemoria ogni mezz'ora chiede metà", async () => {
+    const d = deps([active({ minutes: 840, drunk_ml: 1000 }), active({ schedule_time_id: 't2', minutes: 870, drunk_ml: 1000 })])
+    await runSendReminders(d.value, romeAt(14))
+    expect(body(d)).toBe('Circa 250 ml adesso · ti mancano 2 L')
+  })
+
+  it('i promemoria di un altro utente o di un altro giorno non contano come prossimo', async () => {
+    const d = deps([
+      active({ minutes: 840, drunk_ml: 1000 }),
+      active({ schedule_time_id: 't2', user_id: 'u2', minutes: 870, drunk_ml: 1000, subscriptions: [] }),
+      active({ schedule_time_id: 't3', minutes: 870, weekdays: [2], drunk_ml: 1000 }),
+    ])
+    await runSendReminders(d.value, romeAt(14))
+    // nessun prossimo promemoria oggi: comunque al massimo un'ora di ritmo
+    expect(body(d)).toBe('Circa 500 ml adesso · ti mancano 2 L')
+  })
+
+  it('a obiettivo raggiunto non chiede più niente', async () => {
+    const d = deps([active({ minutes: 840, drunk_ml: 3000 })])
+    expect(await runSendReminders(d.value, romeAt(14))).toEqual({ sent: 0, missed: 0, failed: 0, errors: 0 })
+    expect(d.log).toEqual([])
+  })
+
+  it('con la fascia spenta tutto resta come prima', async () => {
+    const d = deps([row({ minutes: 1260, active_split: false, goal_ml: 3000, drunk_ml: 3000 })])
+    expect((await runSendReminders(d.value, romeAt(21))).sent).toBe(1)
+    expect(body(d)).toBe('200 ml')
+  })
+
+  it('senza i dati nuovi (funzione del database non ancora aggiornata) resta come prima', async () => {
+    const d = deps([row()])
+    await runSendReminders(d.value, AT_8)
+    expect(body(d)).toBe('200 ml')
+  })
+})
+
 describe('planSends', () => {
   it('include un promemoria dovuto con il suo orario previsto', () => {
     const [plan] = planSends([row()], new Date('2026-11-02T07:03:00Z'))

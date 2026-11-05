@@ -1,5 +1,6 @@
+import { activePace, amountForNow, inActiveHours, type ActiveHours } from '../_shared/activeHours.ts'
 import { dueLateness } from '../_shared/reminders.ts'
-import { localParts } from '../_shared/time.ts'
+import { localParts, weekdayOf } from '../_shared/time.ts'
 
 /** Entro questa finestra un promemoria in ritardo parte ancora; dopo viene registrato come mancato. */
 export const SEND_WINDOW_MIN = 5
@@ -24,6 +25,41 @@ export interface ReminderRow {
   created_at?: string
   subscriptions: Subscription[]
   goal_reached?: boolean
+  /** Fascia attiva: l'obiettivo si divide sulle ore tra inizio e fine, fuori non partono promemoria. */
+  active_split?: boolean
+  active_start_min?: number
+  active_end_min?: number
+  /** Bevuto e obiettivo di oggi, per la quantità ricalcolata. */
+  drunk_ml?: number
+  goal_ml?: number
+}
+
+const hoursOf = (row: ReminderRow): ActiveHours => ({ start: row.active_start_min ?? 480, end: row.active_end_min ?? 1080 })
+
+/** Con la fascia attiva parte solo ciò che cade dentro la fascia e solo finché manca qualcosa all'obiettivo. */
+export function wantedWithActiveHours(row: ReminderRow): boolean {
+  if (!row.active_split) return true
+  if ((row.drunk_ml ?? 0) >= (row.goal_ml ?? Infinity)) return false
+  return inActiveHours(row.minutes, hoursOf(row))
+}
+
+function formatMl(ml: number): string {
+  if (ml < 1000) return `${ml} ml`
+  return `${String(Math.round(ml / 10) / 100).replace('.', ',')} L`
+}
+
+/** Testo del promemoria: con la fascia attiva dice quanto bere adesso, ricalcolato su quello che manca. */
+export function reminderBody(row: ReminderRow, date: string, rows: ReminderRow[]): string {
+  if (!row.active_split || row.goal_ml === undefined) return `${row.drink_ml} ml`
+  const hours = hoursOf(row)
+  const weekday = weekdayOf(date)
+  const later = rows
+    .filter((r) => r.user_id === row.user_id && r.weekdays.includes(weekday) && r.minutes > row.minutes && inActiveHours(r.minutes, hours))
+    .map((r) => r.minutes)
+  const next = later.length > 0 ? Math.min(...later) : null
+  const pace = activePace({ goalMl: row.goal_ml, drunkMl: row.drunk_ml ?? 0, nowMinutes: row.minutes, hours })
+  if (pace.phase !== 'active') return `${row.drink_ml} ml`
+  return `Circa ${formatMl(amountForNow(pace, row.minutes, next, hours))} adesso · ti mancano ${formatMl(pace.remainingMl)}`
 }
 
 export interface PushPayload {
@@ -146,7 +182,8 @@ export async function runSendReminders(deps: Deps, now: Date): Promise<Summary> 
   const summary: Summary = { sent: 0, missed: 0, failed: 0, errors: 0 }
   await deps.heartbeat().catch((error) => console.error('segno di vita non registrato', error))
   // Chi ha raggiunto l'obiettivo e ha chiesto di fermarsi non deve risultare neppure come promemoria mancato.
-  const rows = (await deps.load()).filter((row) => !row.goal_reached)
+  // Fuori dalla fascia attiva il promemoria non esiste: non risulta neppure mancato.
+  const rows = (await deps.load()).filter((row) => !row.goal_reached && wantedWithActiveHours(row))
   const plans = planSends(rows, now, (error) => {
     summary.errors++
     console.error('riga non valida', error)
@@ -165,7 +202,7 @@ export async function runSendReminders(deps: Deps, now: Date): Promise<Summary> 
         }
         const status = await sendToDevices(deps, row.subscriptions, {
           title: 'È ora di bere',
-          body: `${row.drink_ml} ml`,
+          body: reminderBody(row, date, rows),
           url: '#/home',
           logId,
         })

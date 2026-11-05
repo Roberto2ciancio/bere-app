@@ -22,12 +22,17 @@ export interface Profile {
   units?: Units
   stop_at_goal?: boolean
   allow_pokes?: boolean
+  active_split?: boolean
+  active_start_min?: number
+  active_end_min?: number
 }
 
 interface ProfileValue {
   profile: Profile | null
   loading: boolean
   updateProfile(patch: Partial<Profile>): Promise<void>
+  /** Salva prima sul server e aggiorna l'app solo se il salvataggio riesce. */
+  saveProfile(patch: Partial<Profile>): Promise<boolean>
 }
 
 const ProfileContext = createContext<ProfileValue | null>(null)
@@ -82,7 +87,23 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     [userId],
   )
 
-  return <ProfileContext.Provider value={{ profile, loading, updateProfile }}>{children}</ProfileContext.Provider>
+  const saveProfile = useCallback(
+    async (patch: Partial<Profile>): Promise<boolean> => {
+      if (!userId) return false
+      const { error } = await supabase.from('profiles').update(patch).eq('id', userId)
+      if (error) return false
+      setProfile((current) => {
+        if (!current) return current
+        const next = { ...current, ...patch }
+        writeCache(cacheKey(userId), next)
+        return next
+      })
+      return true
+    },
+    [userId],
+  )
+
+  return <ProfileContext.Provider value={{ profile, loading, updateProfile, saveProfile }}>{children}</ProfileContext.Provider>
 }
 
 export function useProfile(): ProfileValue {
