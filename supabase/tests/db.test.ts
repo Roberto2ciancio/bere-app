@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql', '0012_remove_energy_drinks.sql']
+const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql', '0012_remove_energy_drinks.sql', '0013_poke_cooldown.sql']
 const A = '00000000-0000-0000-0000-00000000000a'
 const B = '00000000-0000-0000-0000-00000000000b'
 const WEEK = '2026-11-02'
@@ -255,9 +255,19 @@ describe('promemoria fermati all\'obiettivo', () => {
 
 describe('spronare un amico', () => {
   const poke = async (from = A, to = B) => (await db.query<{ r: string }>(`select claim_poke($1, $2) r`, [from, to])).rows[0].r
+  const backdatedPoke = (hoursAgo: number, from = A, to = B) =>
+    db.query(`insert into pokes (from_user, to_user, created_at) values ($1, $2, now() - ($3 || ' hours')::interval)`, [from, to, hoursAgo])
 
-  it('al massimo tre volte in un giorno per persona', async () => {
-    expect([await poke(), await poke(), await poke(), await poke()]).toEqual(['ok', 'ok', 'ok', 'limit'])
+  it('bisogna aspettare un\'ora prima di spronare di nuovo la stessa persona', async () => {
+    expect(await poke()).toBe('ok')
+    expect(await poke()).toBe('cooldown')
+    expect(await poke(B, A)).toBe('ok')
+  })
+  it('al massimo tre volte in un giorno per persona, passata l\'attesa', async () => {
+    await backdatedPoke(5)
+    await backdatedPoke(3)
+    await backdatedPoke(1.5)
+    expect(await poke()).toBe('limit')
     expect(await poke(B, A)).toBe('ok')
   })
   it('non a se stessi', async () => {

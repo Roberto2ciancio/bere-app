@@ -25,7 +25,7 @@ describe('runPoke', () => {
     expect(d.push.mock.calls[0]).toMatchObject([sub, { title: 'Anna ti sprona' }])
   })
 
-  it.each(['limit', 'blocked', 'self'])('con esito %s non manda nulla', async (result) => {
+  it.each(['limit', 'cooldown', 'blocked', 'self'])('con esito %s non manda nulla', async (result) => {
     const d = deps({ claim: vi.fn(async () => result) })
     expect(await runPoke(d, 'a', 'b')).toBe(result)
     expect(d.push).not.toHaveBeenCalled()

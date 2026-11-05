@@ -44,6 +44,7 @@ export function LeaderboardPage() {
     const messages: Record<string, string> = {
       sent: `Notifica inviata a ${name}.`,
       limit: `Hai già spronato ${name} 3 volte nelle ultime 24 ore.`,
+      cooldown: `Aspetta un'ora prima di spronare di nuovo ${name}.`,
       blocked: `${name} preferisce non ricevere sproni.`,
       'no-device': `${name} non ha le notifiche attive.`,
     }

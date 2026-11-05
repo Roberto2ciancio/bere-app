@@ -6,7 +6,7 @@ export interface PokeDeps extends Pick<Deps, 'push' | 'removeSubscription' | 'to
   subscriptions(id: string): Promise<Subscription[]>
 }
 
-export type PokeResult = 'sent' | 'no-device' | 'failed' | 'limit' | 'blocked' | 'self'
+export type PokeResult = 'sent' | 'no-device' | 'failed' | 'limit' | 'cooldown' | 'blocked' | 'self'
 
 export async function runPoke(deps: PokeDeps, from: string, to: string): Promise<PokeResult> {
   const claim = await deps.claim(from, to)

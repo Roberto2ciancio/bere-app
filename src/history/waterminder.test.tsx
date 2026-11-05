@@ -353,6 +353,7 @@ describe('spronare dalla classifica', () => {
   it.each([
     ['sent', /notifica inviata a bruno/i],
     ['limit', /già spronato bruno 3 volte/i],
+    ['cooldown', /aspetta un'ora prima di spronare di nuovo bruno/i],
     ['blocked', /bruno preferisce non/i],
     ['no-device', /bruno non ha le notifiche attive/i],
     ['failed', /non è stato possibile/i],
