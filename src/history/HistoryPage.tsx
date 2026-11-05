@@ -4,7 +4,8 @@ import { useProfile } from '../auth/ProfileProvider'
 import { DrinkTypeSelect, hydrationOf, parseAmount, useDrinkOptions } from '../drinks/drinkOptions'
 import { type GoalChange } from '../domain/goals'
 import { drinkLabel, formatAmount, formatVolume } from '../domain/hydration'
-import { localParts } from '../domain/time'
+import { formatTime } from '../domain/format'
+import { localParts, weekdayOf } from '../domain/time'
 import { weekStart } from '../leaderboard/weekStart'
 import { supabase } from '../lib/supabase'
 import { achievements, challenges, computeStats, dayResults, type DayTotal } from './stats'
@@ -17,6 +18,11 @@ interface Entry {
 }
 
 const shortDay = (day: string) => `${day.slice(8, 10)}/${day.slice(5, 7)}`
+const LETTERS = ['L', 'M', 'M', 'G', 'V', 'S', 'D']
+const weekdayLetter = (day: string) => LETTERS[weekdayOf(day) - 1]
+const longDay = (day: string) =>
+  new Date(`${day}T12:00:00Z`).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
+const timeOf = (iso: string, tz: string) => formatTime(localParts(new Date(iso), tz).minutes)
 
 export function HistoryPage() {
   const { user } = useAuth()
@@ -106,18 +112,30 @@ export function HistoryPage() {
   const goalNow = days.at(-1)?.goalMl ?? 0
   const pick = days.find((d) => d.day === selected)
 
+  const badges = achievements(stats)
+  const earned = badges.filter((a) => a.earned)
+  const locked = badges.filter((a) => !a.earned)
+  const metDays = days.filter((d) => d.met).length
+  const avgMl = Math.round(days.reduce((sum, d) => sum + d.totalMl, 0) / days.length)
+  const pickPct = pick && pick.goalMl > 0 ? Math.min(100, Math.round((pick.totalMl / pick.goalMl) * 100)) : 0
+
   return (
-    <main className="page">
-      <h1>Storico</h1>
+    <main className="page history">
+      <header className="page-head">
+        <h1>Storico</h1>
+        <div className="segmented" role="group" aria-label="Periodo">
+          {[7, 30].map((n) => (
+            <button key={n} aria-pressed={range === n} onClick={() => setRange(n)}>{n} giorni</button>
+          ))}
+        </div>
+      </header>
 
-      <div className="choices" role="group" aria-label="Periodo">
-        {[7, 30].map((n) => (
-          <button key={n} className="choice" aria-pressed={range === n} onClick={() => setRange(n)}>{n} giorni</button>
-        ))}
-      </div>
-
-      <section className="section">
-        <div className="chart" style={{ gap: range > 7 ? 2 : 6 }} role="group" aria-label="Litri per giorno">
+      <section className="card">
+        <div className="history-summary">
+          <div><span className="hint">Media</span><strong>{formatVolume(avgMl, units)}</strong></div>
+          <div><span className="hint">A obiettivo</span><strong>{metDays}/{days.length} giorni</strong></div>
+        </div>
+        <div className="chart" style={{ gap: range > 7 ? 2 : 8 }} role="group" aria-label="Litri per giorno">
           <span className="chart-goal" style={{ bottom: `${(goalNow / scale) * 100}%` }}>
             <span>Obiettivo {formatVolume(goalNow, units)}</span>
           </span>
@@ -125,7 +143,7 @@ export function HistoryPage() {
             <button
               key={d.day}
               data-day={d.day}
-              className="chart-col"
+              className={d.met ? 'chart-col met' : 'chart-col'}
               aria-pressed={d.day === selected}
               aria-label={`${shortDay(d.day)}: ${formatVolume(d.totalMl, units)} su ${formatVolume(d.goalMl, units)}`}
               title={`${shortDay(d.day)}: ${formatVolume(d.totalMl, units)}`}
@@ -135,58 +153,82 @@ export function HistoryPage() {
             </button>
           ))}
         </div>
-        <div className="chart-axis">
-          <span>{shortDay(days[0].day)}</span>
-          <span>Oggi</span>
-        </div>
-        <details>
+        {range === 7 ? (
+          <div className="chart-days" aria-hidden="true">
+            {days.map((d) => <span key={d.day} className={d.day === selected ? 'on' : undefined}>{d.day === today ? 'Oggi' : weekdayLetter(d.day)}</span>)}
+          </div>
+        ) : (
+          <div className="chart-axis">
+            <span>{shortDay(days[0].day)}</span>
+            <span>Oggi</span>
+          </div>
+        )}
+        <p className="hint">Tocca una barra per vedere quel giorno.</p>
+        <details className="fold">
           <summary>Vedi come tabella</summary>
-          <table className="data-table">
-            <thead>
-              <tr><th>Giorno</th><th>Bevuto</th><th>Obiettivo</th></tr>
-            </thead>
-            <tbody>
-              {days.map((d) => (
-                <tr key={d.day}>
-                  <td>{shortDay(d.day)}</td>
-                  <td>{formatVolume(d.totalMl, units)}</td>
-                  <td>{d.met ? 'Raggiunto' : formatVolume(d.goalMl, units)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="fold-body">
+            <table className="data-table">
+              <thead>
+                <tr><th>Giorno</th><th>Bevuto</th><th>Obiettivo</th></tr>
+              </thead>
+              <tbody>
+                {days.map((d) => (
+                  <tr key={d.day}>
+                    <td>{shortDay(d.day)}</td>
+                    <td>{formatVolume(d.totalMl, units)}</td>
+                    <td>{d.met ? 'Raggiunto' : formatVolume(d.goalMl, units)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </details>
       </section>
 
-      <section className="section">
-        <h2>{selected === today ? 'Oggi' : shortDay(selected)}{pick && `: ${formatVolume(pick.totalMl, units)}`}</h2>
+      <section className="card">
+        <div className="day-head">
+          <h2>{selected === today ? 'Oggi' : longDay(selected)}</h2>
+          {pick && <strong className="num">{formatVolume(pick.totalMl, units)} <span className="hint">su {formatVolume(pick.goalMl, units)}</span></strong>}
+        </div>
+        {pick && (
+          <div className="progress" role="progressbar" aria-label="Obiettivo del giorno" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pickPct}>
+            <span style={{ width: `${pickPct}%` }} />
+          </div>
+        )}
         {entries.length === 0 && <p className="hint">Nessuna bevuta segnata in questo giorno.</p>}
-        <ul className="list">
-          {entries.map((entry) => (
-            <li key={entry.client_id}>
-              <span className="grow">{drinkLabel(entry.drink_type ?? 'water')} · {formatAmount(entry.amount_ml, units)}</span>
-              <button
-                className="ghost"
-                aria-label={`Togli ${drinkLabel(entry.drink_type ?? 'water')}, ${entry.amount_ml} ml`}
-                onClick={() => void remove(entry.client_id)}
-              >
-                Togli
-              </button>
-            </li>
-          ))}
-        </ul>
-        <form className="stack" onSubmit={add} noValidate>
-          <DrinkTypeSelect value={type} onChange={setType} custom={custom} />
-          <label>
-            Quantità (ml)
-            <input inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} />
-          </label>
-          {formError && <p role="alert" className="error">{formError}</p>}
-          <button className="secondary">Aggiungi a questo giorno</button>
-        </form>
+        {entries.length > 0 && (
+          <ul className="entry-list">
+            {entries.map((entry) => (
+              <li key={entry.client_id}>
+                <span className="entry-time num">{timeOf(entry.drunk_at, tz)}</span>
+                <span className="grow">{drinkLabel(entry.drink_type ?? 'water')}</span>
+                <span className="num">{formatAmount(entry.amount_ml, units)}</span>
+                <button
+                  className="entry-remove"
+                  aria-label={`Togli ${drinkLabel(entry.drink_type ?? 'water')}, ${entry.amount_ml} ml`}
+                  onClick={() => void remove(entry.client_id)}
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <details className="fold">
+          <summary>Aggiungi una bevuta a questo giorno</summary>
+          <form className="stack fold-body" onSubmit={add} noValidate>
+            <DrinkTypeSelect value={type} onChange={setType} custom={custom} />
+            <label>
+              Quantità (ml)
+              <input inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            </label>
+            {formError && <p role="alert" className="error">{formError}</p>}
+            <button className="secondary">Aggiungi a questo giorno</button>
+          </form>
+        </details>
       </section>
 
-      <section className="section">
+      <section className="card">
         <h2>Statistiche</h2>
         <dl className="stat-grid">
           <div><dt>Obiettivo raggiunto</dt><dd>{stats.completionRate}%</dd></div>
@@ -198,31 +240,58 @@ export function HistoryPage() {
         </dl>
       </section>
 
-      <section className="section">
+      <section className="card">
         <h2>Sfide della settimana</h2>
-        <ul className="list">
+        <ul className="challenge-list">
           {challenges(totals, goals, weekStart(new Date(), tz), today).map((c) => (
-            <li key={c.id}>
-              <span className="grow">{c.label}</span>
-              <span className="num">{c.done ? 'Fatta ✓' : `${c.progress}/${c.target}`}</span>
+            <li key={c.id} className={c.done ? 'done' : undefined}>
+              <div className="board-line">
+                <span>{c.label}</span>
+                <span className="num">{c.done ? 'Fatta ✓' : `${c.progress}/${c.target}`}</span>
+              </div>
+              <div className="progress" aria-hidden="true">
+                <span style={{ width: `${Math.min(100, Math.round((c.progress / c.target) * 100))}%` }} />
+              </div>
             </li>
           ))}
         </ul>
       </section>
 
-      <section className="section">
-        <h2>Traguardi</h2>
-        <ul className="list">
-          {achievements(stats).map((a) => (
-            <li key={a.id} className={a.earned ? undefined : 'locked'}>
-              <span aria-hidden="true">{a.earned ? '✓' : '○'}</span>
-              <span className="grow">
-                <strong>{a.label}</strong>
-                <span className="hint schedule-summary">{a.earned ? a.description : `Da raggiungere: ${a.description.toLowerCase()}`}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
+      <section className="card">
+        <div className="day-head">
+          <h2>Traguardi</h2>
+          <span className="hint num">{earned.length} di {badges.length}</span>
+        </div>
+        {earned.length === 0 && <p className="hint">Nessun traguardo ancora: il primo arriva con la prima bevuta.</p>}
+        {earned.length > 0 && (
+          <ul className="badge-list">
+            {earned.map((a) => (
+              <li key={a.id} className="earned">
+                <span className="badge-icon" aria-hidden="true">✓</span>
+                <span className="grow">
+                  <strong>{a.label}</strong>
+                  <span className="hint schedule-summary">{a.description}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {locked.length > 0 && (
+          <details className="fold">
+            <summary>Da raggiungere ({locked.length})</summary>
+            <ul className="badge-list fold-body">
+              {locked.map((a) => (
+                <li key={a.id} className="locked">
+                  <span className="badge-icon" aria-hidden="true">🔒</span>
+                  <span className="grow">
+                    <strong>{a.label}</strong>
+                    <span className="hint schedule-summary">{a.description}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
       </section>
     </main>
   )

@@ -150,11 +150,15 @@ export function HomePage() {
   const expected = split ? null : expectedByNow(todayMinutes, goalMl, parts.minutes)
   const pace = split ? describePace(activePace({ goalMl, drunkMl: totalMl, nowMinutes: parts.minutes, hours }), hours, units) : null
   const behind = expected !== null && totalMl < goalMl ? expected - totalMl : 0
+  const percent = goalMl > 0 ? Math.min(100, Math.round((totalMl / goalMl) * 100)) : 0
 
   return (
     <main className="home">
       <header className="home-head">
         <p className="home-total" aria-live="polite">{formatVolume(totalMl, units)}</p>
+        <div className="home-progress" aria-hidden="true">
+          <span style={{ width: `${percent}%` }} />
+        </div>
         <p className="home-goal">
           {totalMl >= goalMl ? `Obiettivo raggiunto: su ${formatVolume(goalMl, units)}` : `su ${formatVolume(goalMl, units)}`}
           {expected !== null && totalMl < goalMl && (behind > 0 ? ` · ${formatVolume(behind, units)} per essere in pari` : ' · sei in pari')}
@@ -177,21 +181,22 @@ export function HomePage() {
 
       <footer className="home-actions">
         {(pending || caffeine.pending) && <p className="hint" role="status">Salvata sul telefono: la invio appena torna la rete.</p>}
-        {next && <p className="home-next">Prossimo promemoria {describeNext(next, today)}</p>}
-        {reminders && !next && <Link className="home-next" to="/promemoria">Imposta i promemoria</Link>}
-        {pushSupportState() !== 'granted' && <Link className="home-next" to="/notifiche">Attiva le notifiche</Link>}
+        <div className="home-info">
+          {next && <p className="home-next home-bell">Prossimo promemoria {describeNext(next, today)}</p>}
+          {reminders && !next && <Link className="home-next" to="/promemoria">Imposta i promemoria</Link>}
+          {pushSupportState() !== 'granted' && <Link className="home-next" to="/notifiche">Attiva le notifiche</Link>}
+        </div>
         <div className="drink-row">
           <button className="primary drink" onClick={() => onDrink()}>Ho bevuto · {formatAmount(drinkMl, units)}</button>
           <button className="secondary drink-more" aria-label="Altra bevanda" onClick={() => setSheetOpen(true)}>+</button>
         </div>
 
         <section className="caffeine" aria-label="Caffeina">
-          <div className="caffeine-tiles">
-            <button className="caffeine-tile" aria-label={`Caffè, ${caffeine.coffees} oggi. Aggiungi`} onClick={() => caffeine.add()}>
-              <span key={caffeine.coffees} className="caffeine-count">{caffeine.coffees}</span>
-              <span>Caffè</span>
-            </button>
-          </div>
+          <button className="caffeine-tile" aria-label={`Caffè, ${caffeine.coffees} oggi. Aggiungi`} onClick={() => caffeine.add()}>
+            <span aria-hidden="true">☕</span>
+            <span>Caffè</span>
+            <span key={caffeine.coffees} className="caffeine-count">{caffeine.coffees}</span>
+          </button>
           <p className={caffeine.overLimit ? 'caffeine-total error' : 'caffeine-total'}>
             {caffeine.overLimit
               ? `${caffeine.totalMg} mg di caffeina: oltre i ${CAFFEINE_LIMIT_MG} di riferimento`
