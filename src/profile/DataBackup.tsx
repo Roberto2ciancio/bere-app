@@ -49,35 +49,37 @@ export function DataBackup() {
   }
 
   return (
-    <section className="section">
-      <h2>I tuoi dati</h2>
-      <button
-        className="secondary"
-        disabled={busy}
-        onClick={() => void run(async () => {
-          download(`bere-copia-${today}.json`, JSON.stringify(await exportData(userId ?? ''), null, 2), 'application/json')
-          return 'Copia scaricata.'
-        })}
-      >
-        Scarica copia (JSON)
-      </button>
-      <button
-        className="secondary"
-        disabled={busy}
-        onClick={() => void run(async () => {
-          download(`bere-bevute-${today}.csv`, toCsv((await exportData(userId ?? '')).drinks), 'text/csv')
-          return 'File scaricato.'
-        })}
-      >
-        Scarica bevute (CSV)
-      </button>
-      <label className="interval-field">
-        Ripristina da una copia
-        <input type="file" accept="application/json,.json" disabled={busy} onChange={(e) => void restore(e)} />
-      </label>
-      <p className="hint">Il ripristino aggiunge bevute, caffeina, tazze e bevande che mancano, senza duplicarle. Non cambia programmi e obiettivi.</p>
-      {error && <p role="alert" className="error">{error}</p>}
-      {message && <p role="status" className="hint">{message}</p>}
-    </section>
+    <details className="fold">
+      <summary>Copia e ripristino dei dati</summary>
+      <div className="fold-body">
+        <button
+          className="secondary"
+          disabled={busy}
+          onClick={() => void run(async () => {
+            download(`bere-copia-${today}.json`, JSON.stringify(await exportData(userId ?? ''), null, 2), 'application/json')
+            return 'Copia scaricata.'
+          })}
+        >
+          Scarica copia (JSON)
+        </button>
+        <button
+          className="secondary"
+          disabled={busy}
+          onClick={() => void run(async () => {
+            download(`bere-bevute-${today}.csv`, toCsv((await exportData(userId ?? '')).drinks), 'text/csv')
+            return 'File scaricato.'
+          })}
+        >
+          Scarica bevute (CSV)
+        </button>
+        <label className="interval-field">
+          Ripristina da una copia
+          <input type="file" accept="application/json,.json" disabled={busy} onChange={(e) => void restore(e)} />
+        </label>
+        <p className="hint">Il ripristino aggiunge bevute, caffeina, tazze e bevande che mancano, senza duplicarle. Non cambia programmi e obiettivi.</p>
+        {error && <p role="alert" className="error">{error}</p>}
+        {message && <p role="status" className="hint">{message}</p>}
+      </div>
+    </details>
   )
 }

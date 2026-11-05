@@ -1,4 +1,5 @@
-import { useState, type ChangeEvent } from 'react'
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile, type HomeStyle } from '../auth/ProfileProvider'
 import type { Units } from '../domain/hydration'
@@ -28,12 +29,12 @@ const UNITS: { id: Units; label: string }[] = [
 ]
 const AMOUNTS = [150, 200, 250, 300, 500]
 
-export function AppearanceForm() {
+/** Carica la nuova immagine e cancella la precedente solo a caricamento riuscito. */
+function useImageReplace() {
   const { user } = useAuth()
   const { profile, updateProfile } = useProfile()
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  if (!profile || !user) return null
 
   async function replaceImage(event: ChangeEvent<HTMLInputElement>, bucket: ImageBucket) {
     const file = event.target.files?.[0]
@@ -54,41 +55,85 @@ export function AppearanceForm() {
     setBusy(false)
   }
 
-  async function removeBackground() {
-    if (!profile?.background_path) return
-    const previous = profile.background_path
-    await updateProfile({ background_path: null })
-    await removeImage('backgrounds', previous)
+  return { error, busy, replaceImage }
+}
+
+/** Foto e nome: come ti vedono gli altri in classifica. */
+export function ProfileHeader() {
+  const { profile, updateProfile } = useProfile()
+  const { error: imageError, busy, replaceImage } = useImageReplace()
+  const [name, setName] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+
+  const currentName = profile?.display_name ?? ''
+  useEffect(() => {
+    setName(currentName)
+  }, [currentName])
+
+  if (!profile) return null
+
+  function saveName(event: FormEvent) {
+    event.preventDefault()
+    setSaved(false)
+    if (!name.trim()) return setError('Inserisci il tuo nome')
+    setError(null)
+    void updateProfile({ display_name: name.trim() }).then(() => setSaved(true))
   }
 
   return (
-    <>
-      <section className="section">
-        <h2>Foto del profilo</h2>
-        <div className="row">
-          {profile.avatar_path ? (
-            <img className="avatar" src={avatarUrl(profile.avatar_path)} alt="" />
-          ) : (
-            <span className="avatar" aria-hidden="true">{profile.display_name.slice(0, 1).toUpperCase()}</span>
-          )}
+    <section className="card profile-head" aria-label="Il tuo profilo">
+      <div className="profile-id">
+        {profile.avatar_path ? (
+          <img className="avatar avatar-lg" src={avatarUrl(profile.avatar_path)} alt="" />
+        ) : (
+          <span className="avatar avatar-lg" aria-hidden="true">{profile.display_name.slice(0, 1).toUpperCase()}</span>
+        )}
+        <label className="file-button">
+          {busy ? 'Caricamento…' : 'Cambia foto'}
           <input aria-label="Foto del profilo" type="file" accept="image/*" disabled={busy} onChange={(e) => void replaceImage(e, 'avatars')} />
-        </div>
-      </section>
+        </label>
+      </div>
+      {imageError && <p role="alert" className="error">{imageError}</p>}
+      <form className="stack" onSubmit={saveName} noValidate>
+        <label>
+          Nome
+          <input maxLength={40} value={name} onChange={(e) => setName(e.target.value)} />
+        </label>
+        {error && <p role="alert" className="error">{error}</p>}
+        {saved && <p role="status" className="hint">Nome salvato.</p>}
+        <button className="secondary">Salva nome</button>
+      </form>
+      <p className="hint">Nome e foto sono visibili agli altri utenti nella classifica.</p>
+    </section>
+  )
+}
 
-      <section className="section">
-        <h2>Aspetto</h2>
-        <div className="choices" role="group" aria-label="Stile della home">
-          {STYLES.map((style) => (
+/** Cosa succede quando segni una bevuta. */
+export function DrinkPrefs() {
+  const { profile, updateProfile } = useProfile()
+  if (!profile) return null
+
+  return (
+    <section className="card">
+      <h2>Bevute</h2>
+      <div className="field">
+        <h3>Quantità per bevuta</h3>
+        <div className="choices" role="group" aria-label="Quantità per bevuta">
+          {AMOUNTS.map((amount) => (
             <button
-              key={style.id}
-              className="choice"
-              aria-pressed={profile.home_style === style.id}
-              onClick={() => void updateProfile({ home_style: style.id })}
+              key={amount}
+              className="choice num"
+              aria-pressed={profile.drink_ml === amount}
+              onClick={() => void updateProfile({ drink_ml: amount })}
             >
-              {style.label}
+              {amount} ml
             </button>
           ))}
         </div>
+      </div>
+      <div className="field">
+        <h3>Unità di misura</h3>
         <div className="choices" role="group" aria-label="Unità di misura">
           {UNITS.map((unit) => (
             <button
@@ -101,21 +146,9 @@ export function AppearanceForm() {
             </button>
           ))}
         </div>
-        <div className="stack">
-          <label>
-            Sfondo dell'app
-            <input type="file" accept="image/*" disabled={busy} onChange={(e) => void replaceImage(e, 'backgrounds')} />
-          </label>
-        </div>
-        {profile.background_path && (
-          <button className="ghost" style={{ alignSelf: 'flex-start' }} onClick={() => void removeBackground()}>Rimuovi sfondo</button>
-        )}
-        {error && <p role="alert" className="error">{error}</p>}
-      </section>
-
-      <section className="section">
-        <h2>Quando segni una bevuta</h2>
-        <p className="hint">Il suono si sente solo con l'app aperta. Le notifiche usano sempre il suono scelto nelle impostazioni dell'iPhone.</p>
+      </div>
+      <div className="field">
+        <h3>Suono</h3>
         <div className="choices" role="group" aria-label="Suono">
           {SOUNDS.map((sound) => (
             <button
@@ -131,19 +164,57 @@ export function AppearanceForm() {
             </button>
           ))}
         </div>
-        <div className="choices" role="group" aria-label="Quantità per bevuta">
-          {AMOUNTS.map((amount) => (
+        <p className="hint">Il suono si sente solo con l'app aperta. Le notifiche usano sempre il suono scelto nelle impostazioni dell'iPhone.</p>
+      </div>
+      <Link className="link-row" to="/tazze">Tazze e bevande</Link>
+    </section>
+  )
+}
+
+/** Stile della home e sfondo dell'app. */
+export function AppearanceForm() {
+  const { profile, updateProfile } = useProfile()
+  const { error, busy, replaceImage } = useImageReplace()
+  if (!profile) return null
+
+  async function removeBackground() {
+    if (!profile?.background_path) return
+    const previous = profile.background_path
+    await updateProfile({ background_path: null })
+    await removeImage('backgrounds', previous)
+  }
+
+  return (
+    <section className="card">
+      <h2>Aspetto</h2>
+      <div className="field">
+        <h3>Stile della home</h3>
+        <div className="choices" role="group" aria-label="Stile della home">
+          {STYLES.map((style) => (
             <button
-              key={amount}
-              className="choice num"
-              aria-pressed={profile.drink_ml === amount}
-              onClick={() => void updateProfile({ drink_ml: amount })}
+              key={style.id}
+              className="choice"
+              aria-pressed={profile.home_style === style.id}
+              onClick={() => void updateProfile({ home_style: style.id })}
             >
-              {amount} ml
+              {style.label}
             </button>
           ))}
         </div>
-      </section>
-    </>
+      </div>
+      <div className="field">
+        <h3>Sfondo dell'app</h3>
+        <div className="choices">
+          <label className="file-button">
+            {busy ? 'Caricamento…' : profile.background_path ? 'Cambia sfondo' : 'Scegli uno sfondo'}
+            <input aria-label="Sfondo dell'app" type="file" accept="image/*" disabled={busy} onChange={(e) => void replaceImage(e, 'backgrounds')} />
+          </label>
+          {profile.background_path && (
+            <button className="ghost" onClick={() => void removeBackground()}>Rimuovi sfondo</button>
+          )}
+        </div>
+      </div>
+      {error && <p role="alert" className="error">{error}</p>}
+    </section>
   )
 }

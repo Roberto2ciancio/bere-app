@@ -44,12 +44,13 @@ export function ActiveHoursForm() {
 
   return (
     <form className="stack" onSubmit={submit} noValidate aria-label="Fascia attiva">
+      <h3>Fascia attiva</h3>
       <label className="row">
         Dividi l'obiettivo sulle ore attive
         <input type="checkbox" checked={enabled} onChange={(e) => void toggle(e.target.checked)} />
       </label>
       <p className="hint">L'app conta e manda promemoria solo dentro questa fascia, e ricalcola quanto bere ogni ora in base a quello che manca.</p>
-      <div className="row">
+      <div className="hours-pair">
         <label>
           Dalle
           <select value={start} onChange={(e) => setStart(Number(e.target.value))}>

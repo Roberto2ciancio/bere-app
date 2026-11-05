@@ -44,22 +44,24 @@ export function PasswordForm() {
   }
 
   return (
-    <section className="section">
-      <h2>Password</h2>
-      <form className="stack" onSubmit={submit} noValidate>
-        <label>
-          Password attuale
-          <input type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} />
-        </label>
-        <label>
-          Nuova password
-          <input type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} />
-        </label>
-        {error && <p role="alert" className="error">{error}</p>}
-        {message && <p role="status" className="hint">{message}</p>}
-        <button className="secondary" disabled={busy}>Cambia password</button>
-      </form>
-      <button className="ghost" disabled={busy} onClick={() => void sendLink()}>Non la ricordo: inviami un link</button>
-    </section>
+    <details className="fold">
+      <summary>Password</summary>
+      <div className="fold-body">
+        <form className="stack" onSubmit={submit} noValidate>
+          <label>
+            Password attuale
+            <input type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} />
+          </label>
+          <label>
+            Nuova password
+            <input type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} />
+          </label>
+          {error && <p role="alert" className="error">{error}</p>}
+          {message && <p role="status" className="hint">{message}</p>}
+          <button className="secondary" disabled={busy}>Cambia password</button>
+        </form>
+        <button className="ghost" disabled={busy} onClick={() => void sendLink()}>Non la ricordo: inviami un link</button>
+      </div>
+    </details>
   )
 }
