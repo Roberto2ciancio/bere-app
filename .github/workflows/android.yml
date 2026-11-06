@@ -27,7 +27,9 @@ jobs:
           node-version: 22
       - run: npm install -g @bubblewrap/cli@1.27.0
       # Senza questo file Bubblewrap chiederebbe dove sono JDK e Android SDK.
+      # Bubblewrap cerca sdkmanager in <sdk>/bin, sul runner sta in cmdline-tools/latest/bin.
       - run: |
+          [ -e "$ANDROID_HOME/bin" ] || sudo ln -s "$ANDROID_HOME/cmdline-tools/latest/bin" "$ANDROID_HOME/bin"
           mkdir -p ~/.bubblewrap
           echo "{\"jdkPath\":\"$JAVA_HOME\",\"androidSdkPath\":\"$ANDROID_HOME\"}" > ~/.bubblewrap/config.json
       - run: echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > bere.keystore
