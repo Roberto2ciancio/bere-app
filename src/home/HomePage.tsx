@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
 import { activePace, DEFAULT_ACTIVE_END, DEFAULT_ACTIVE_START, inActiveHours, MAX_HOURLY_ML, type ActiveHours, type Pace } from '../domain/activeHours'
@@ -144,6 +144,35 @@ export function HomePage() {
     playSound(profile?.sound ?? 'goccia')
   }
 
+  // Scorciatoie dall'icona (pressione lunga): #/home?azione=bevi oppure ?azione=caffe.
+  // Si esegue una volta sola, appena c'è il profilo, poi l'indirizzo torna pulito.
+  const [params] = useSearchParams()
+  const action = params.get('azione')
+  const handled = useRef(false)
+  const [shortcutNote, setShortcutNote] = useState<string | null>(null)
+  useEffect(() => {
+    // Una scorciatoia usata di nuovo con l'app già aperta riporta l'azione: va eseguita anche lei.
+    if (!action) {
+      handled.current = false
+      return
+    }
+    if (!profile || !userId || handled.current) return
+    handled.current = true
+    if (action === 'bevi') {
+      onDrink()
+      setShortcutNote(`Segnati ${formatAmount(drinkMl, profile.units)} ✓`)
+    } else if (action === 'caffe') {
+      caffeine.add()
+      setShortcutNote('Caffè segnato ✓')
+    }
+    navigate('/home', { replace: true })
+  })
+  useEffect(() => {
+    if (!shortcutNote) return
+    const timer = setTimeout(() => setShortcutNote(null), 4000)
+    return () => clearTimeout(timer)
+  }, [shortcutNote])
+
   // La quantità viene dal profilo: non si segna nulla finché non è disponibile.
   if (!profile) {
     return <p className="center-note">{loading ? 'Caricamento…' : 'Profilo non disponibile. Controlla la connessione e riapri l\'app.'}</p>
@@ -196,6 +225,7 @@ export function HomePage() {
       </div>
 
       <footer className="home-actions">
+        {shortcutNote && <p role="status" className="board-toast shortcut-note">{shortcutNote}</p>}
         {(pending || caffeine.pending) && <p className="hint" role="status">Salvata sul telefono: la invio appena torna la rete.</p>}
         <div className="home-info">
           {next && <p className="home-next home-bell">Prossimo promemoria {describeNext(next, today)}</p>}

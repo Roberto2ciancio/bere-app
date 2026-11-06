@@ -16,15 +16,33 @@
   "iconUrl": "https://roberto2ciancio.github.io/bere-app/icon-512.png",
   "maskableIconUrl": "https://roberto2ciancio.github.io/bere-app/icon-512.png",
   "splashScreenFadeOutDuration": 300,
-  "signingKey": { "path": "./bere.keystore", "alias": "bere" },
-  "appVersionCode": 1,
-  "appVersionName": "1.0.0",
-  "shortcuts": [],
+  "signingKey": {
+    "path": "./bere.keystore",
+    "alias": "bere"
+  },
+  "appVersionCode": 2,
+  "appVersionName": "1.6.0",
+  "shortcuts": [
+    {
+      "name": "Segna una bevuta",
+      "shortName": "Ho bevuto",
+      "url": "https://roberto2ciancio.github.io/bere-app/#/home?azione=bevi",
+      "chosenIconUrl": "https://roberto2ciancio.github.io/bere-app/shortcut-drink.png"
+    },
+    {
+      "name": "Segna un caffè",
+      "shortName": "Caffè",
+      "url": "https://roberto2ciancio.github.io/bere-app/#/home?azione=caffe",
+      "chosenIconUrl": "https://roberto2ciancio.github.io/bere-app/shortcut-coffee.png"
+    }
+  ],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://roberto2ciancio.github.io/bere-app/manifest.webmanifest",
   "fallbackType": "customtabs",
   "features": {},
-  "alphaDependencies": { "enabled": false },
+  "alphaDependencies": {
+    "enabled": false
+  },
   "enableSiteSettingsShortcut": true,
   "isChromeOSOnly": false,
   "isMetaQuest": false,

@@ -50,6 +50,21 @@ export default defineConfig(({ mode }) => {
             { src: `${iconPrefix}icon-512.png`, sizes: '512x512', type: 'image/png' },
             { src: `${iconPrefix}icon-512.png`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
           ],
+          // Pressione lunga sull'icona: la schermata Oggi esegue l'azione e torna normale.
+          shortcuts: [
+            {
+              name: 'Segna una bevuta',
+              short_name: 'Ho bevuto',
+              url: './#/home?azione=bevi',
+              icons: [{ src: `${iconPrefix}shortcut-drink.png`, sizes: '192x192', type: 'image/png' }],
+            },
+            {
+              name: 'Segna un caffè',
+              short_name: 'Caffè',
+              url: './#/home?azione=caffe',
+              icons: [{ src: `${iconPrefix}shortcut-coffee.png`, sizes: '192x192', type: 'image/png' }],
+            },
+          ],
         },
       }),
     ],

@@ -12,6 +12,16 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '1.6.0',
+    date: '2026-11-06',
+    title: "Scorciatoie dall'icona",
+    notes: [
+      "Tieni premuta l'icona di Bere: con «Ho bevuto» segni una bevuta, con «Caffè» un caffè, senza passare dall'app.",
+      "Sull'app Android serve la nuova versione dell'APK; da Chrome su Android funziona da sola. Su iPhone le scorciatoie non sono disponibili.",
+      'Sui telefoni più bassi la bottiglia non copre più il prossimo promemoria.',
+    ],
+  },
+  {
     version: '1.5.0',
     date: '2026-11-06',
     title: 'Più motivazione',
