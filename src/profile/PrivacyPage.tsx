@@ -11,7 +11,7 @@ export function PrivacyPage() {
 
       <section className="section">
         <h2>Cosa salviamo</h2>
-        <p>Email e password per l'accesso, nome, foto e sfondo che scegli, obiettivi, orari dei promemoria, bevute e caffeina segnate, tazze e bevande personalizzate, peso e attività se usi il calcolo dell'obiettivo, la città se attivi i giorni caldi, allenamenti segnati, suggerimenti inviati e i dati tecnici necessari per recapitare le notifiche al tuo telefono.</p>
+        <p>Email e password per l'accesso, nome, foto e sfondo che scegli, obiettivi, orari dei promemoria, bevute e caffeina segnate, tazze e bevande personalizzate, peso e attività se usi il calcolo dell'obiettivo, la città se attivi i giorni caldi, allenamenti segnati, suggerimenti inviati, i dati tecnici necessari per recapitare le notifiche al tuo telefono e, se l'app va in errore, una segnalazione tecnica (messaggio d'errore, pagina, versione e tipo di browser) conservata per 30 giorni.</p>
       </section>
 
       <section className="section">

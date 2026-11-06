@@ -10,3 +10,6 @@ docs/superpowers/
 android/*
 !android/twa-manifest.json
 !android/README.md
+# Risultati dei test su telefono simulato
+test-results/
+playwright-report/

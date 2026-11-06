@@ -312,10 +312,23 @@ select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid va
 @keyframes ripple { from { opacity: 0.9; transform: scale(0.85); } to { opacity: 0; transform: scale(1.35); } }
 
 /* Gocce */
-.drops { display: grid; grid-template-columns: repeat(5, 34px); gap: 16px 12px; }
+/* Le gocce si rimpiccioliscono per stare nello spazio disponibile (cqh): fino a 6 file con obiettivi alti. */
+.drops {
+  --row-gap: 16px;
+  --cell: min(34px, calc((100cqh - (var(--rows, 3) - 1) * var(--row-gap)) / var(--rows, 3)));
+  display: grid;
+  grid-template-columns: repeat(5, 34px);
+  grid-template-columns: repeat(5, var(--cell));
+  gap: var(--row-gap) 12px;
+}
+@media (max-height: 700px) {
+  .drops { --row-gap: 10px; }
+}
 .drop {
   width: 28px;
   height: 28px;
+  width: calc(var(--cell, 34px) - 6px);
+  height: calc(var(--cell, 34px) - 6px);
   margin: 3px;
   border-radius: 0 50% 50% 50%;
   transform: rotate(45deg);
@@ -661,3 +674,6 @@ input[type='file']::file-selector-button {
   .workout-tile { min-height: 32px; font-size: 0.8rem; }
   .home-boost { font-size: 0.8rem; }
 }
+
+/* Errore imprevisto: al posto dello schermo bianco */
+.error-page { display: grid; gap: 12px; align-content: center; min-height: 100%; text-align: center; }

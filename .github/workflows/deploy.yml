@@ -38,8 +38,32 @@ jobs:
         with:
           path: dist
 
+  # Test su telefono simulato (iPhone con il motore di Safari, Android con quello di Chrome):
+  # se qualcosa si sovrappone o esce dallo schermo, il sito non viene pubblicato.
+  phones:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps webkit chromium
+      - run: npm run test:e2e
+        env:
+          VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-telefoni
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
   deploy:
-    needs: build
+    needs: [build, phones]
     runs-on: ubuntu-latest
     environment:
       name: github-pages

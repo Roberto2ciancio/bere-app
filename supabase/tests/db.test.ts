@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql', '0012_remove_energy_drinks.sql', '0013_poke_cooldown.sql', '0014_active_hours.sql', '0015_drink_from_push.sql', '0016_social_notifications.sql', '0017_motivation.sql']
+const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql', '0012_remove_energy_drinks.sql', '0013_poke_cooldown.sql', '0014_active_hours.sql', '0015_drink_from_push.sql', '0016_social_notifications.sql', '0017_motivation.sql', '0018_client_errors.sql']
 const A = '00000000-0000-0000-0000-00000000000a'
 const B = '00000000-0000-0000-0000-00000000000b'
 const WEEK = '2026-11-02'
@@ -688,6 +688,62 @@ describe('motivazione', () => {
       await db.query(`update profiles set weekly_report = true, last_seen_at = '2026-10-20T12:00:00Z' where id = $1`, [A])
       expect(await take()).toEqual([])
     })
+  })
+})
+
+describe('errori dai telefoni', () => {
+  const report = (message = 'TypeError: boom') =>
+    db.query<{ r: boolean }>(`select report_client_error('error', $1, 'stack', '#/home', '1.7.0', 'Safari') r`, [message]).then((x) => x.rows[0].r)
+
+  // Gli errori sopravvivono alla cancellazione degli utenti (user_id diventa null): si svuota a mano.
+  beforeEach(async () => {
+    await db.exec(`delete from client_errors`)
+  })
+
+  it("un utente segnala un errore, legato al suo profilo; non può leggerli", async () => {
+    expect(await asUser(A, () => report())).toBe(true)
+    const rows = (await db.query(`select user_id, kind, message, route, app_version from client_errors`)).rows
+    expect(rows).toEqual([{ user_id: A, kind: 'error', message: 'TypeError: boom', route: '#/home', app_version: '1.7.0' }])
+    expect(await asUser(A, () => count(`select count(*) n from client_errors`))).toBe(0)
+    await expect(asUser(A, () => db.exec(`select * from client_errors_recent`))).rejects.toThrow(/permission/)
+  })
+
+  it('anche senza accesso, ma senza utente', async () => {
+    await db.exec(`set role anon`)
+    try {
+      expect(await report()).toBe(true)
+    } finally {
+      await db.exec(`reset role`)
+    }
+    expect((await db.query(`select user_id from client_errors`)).rows).toEqual([{ user_id: null }])
+  })
+
+  it('rifiuta tipi sconosciuti e messaggi vuoti, e taglia i testi lunghi', async () => {
+    expect((await db.query<{ r: boolean }>(`select report_client_error('boh', 'x', null, null, null, null) r`)).rows[0].r).toBe(false)
+    expect(await report('   ')).toBe(false)
+    expect(await report('x'.repeat(2000))).toBe(true)
+    expect((await db.query<{ n: number }>(`select char_length(message) n from client_errors`)).rows[0].n).toBe(500)
+  })
+
+  it('al massimo 30 all\'ora per utente', async () => {
+    for (let i = 0; i < 30; i++) expect(await asUser(A, () => report(`errore ${i}`))).toBe(true)
+    expect(await asUser(A, () => report('uno di troppo'))).toBe(false)
+    expect(await asUser(B, () => report('altro utente'))).toBe(true)
+  })
+
+  it('il riassunto conta volte e persone per messaggio', async () => {
+    await asUser(A, () => report())
+    await asUser(A, () => report())
+    await asUser(B, () => report())
+    const rows = (await db.query(`select message, times, people, last_route from client_errors_recent`)).rows
+    expect(rows).toEqual([{ message: 'TypeError: boom', times: 3, people: 2, last_route: '#/home' }])
+  })
+
+  it('cancella gli errori più vecchi di 30 giorni', async () => {
+    await report('vecchio')
+    await db.exec(`update client_errors set created_at = now() - interval '31 days'`)
+    await report('nuovo')
+    expect((await db.query(`select message from client_errors`)).rows).toEqual([{ message: 'nuovo' }])
   })
 })
 

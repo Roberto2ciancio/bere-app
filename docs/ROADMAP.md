@@ -1,6 +1,6 @@
 # Bere: idee per le prossime versioni
 
-Ultimo aggiornamento: 6 novembre 2026 (app alla versione 1.6.0).
+Ultimo aggiornamento: 6 novembre 2026 (app alla versione 1.6.1).
 
 Legenda: 🟢 piccolo · 🟡 medio · 🔴 grande · 🗄️ tocca il server (database o funzioni) · 📦 serve un nuovo APK
 
@@ -30,8 +30,8 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 
 ## Qualità e affidabilità (consigliate prima del Play Store)
 
-- [ ] 🟢 **Monitoraggio errori** (per esempio Sentry gratuito): sapere subito se l'app si rompe sul telefono di qualcuno.
-- [ ] 🟡 **Test automatici su telefono simulato** (Playwright con le misure di un iPhone): avrebbero preso il bug
+- [x] 🟢 **Monitoraggio errori** (fatto in 1.6.1, con una tabella su Supabase invece di Sentry) (per esempio Sentry gratuito): sapere subito se l'app si rompe sul telefono di qualcuno.
+- [x] 🟡 **Test automatici su telefono simulato** (fatto in 1.6.1: `npm run test:e2e`, bloccano la pubblicazione se falliscono) (Playwright con le misure di un iPhone): avrebbero preso il bug
       della bottiglia sopra «Prossimo promemoria» prima della pubblicazione.
 - [ ] 🟢 🗄️ **Avviso se il job delle notifiche si ferma**: un'email se `send-reminders` non gira per 10 minuti.
 - [ ] 🟢 📦 **Tema scuro** automatico, che segue il telefono (anche i colori della barra di stato nell'APK).

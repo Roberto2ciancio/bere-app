@@ -54,14 +54,20 @@ function load(): Db {
   }
 }
 
-let db = load()
-
 function persist() {
   try {
     localStorage.setItem(DB_KEY, JSON.stringify(db))
   } catch {
     // Memoria piena, per esempio per le foto: i dati restano validi finché l'app è aperta.
   }
+}
+
+let db = load()
+// Salvato subito, non alla prima modifica: i test su telefono simulato lo preparano prima di aprire la pagina.
+try {
+  if (localStorage.getItem(DB_KEY) === null) persist()
+} catch {
+  // Senza spazio salvato l'app di prova funziona lo stesso, in memoria.
 }
 
 export function resetDevData() {

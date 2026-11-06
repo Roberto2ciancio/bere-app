@@ -125,7 +125,7 @@ export function HomePage() {
   }, [userId, navigate])
 
   const today = localParts(now, tz).date
-  const boosts = useGoalBoosts(userId, today, { enabled: profile?.heat_boost ?? false, lat: profile?.city_lat, lon: profile?.city_lon })
+  const boosts = useGoalBoosts(userId, today, { enabled: profile?.heat_boost, lat: profile?.city_lat, lon: profile?.city_lon })
   const baseGoalMl = goalForDate(goals, today)
   const goalMl = baseGoalMl + (boosts.byDay.get(today) ?? 0)
   const { totalMl, pending, canUndo, drink, undoLast } = useDrinks(userId, today, tz, drinkMl)

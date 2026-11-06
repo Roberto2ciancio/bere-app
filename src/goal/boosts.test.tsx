@@ -101,6 +101,25 @@ describe('home: obiettivo che si adatta', () => {
     expect(fetcher).toHaveBeenCalledTimes(1)
   })
 
+  it("l'aumento per il caldo resta se il profilo non dice nulla (ancora da caricare o di una versione vecchia)", async () => {
+    fake.tables.goal_boosts = [{ user_id: 'u1', local_date: today(), kind: 'heat', extra_ml: 500, note: '31 °C' }]
+    const fetcher = vi.fn()
+    vi.stubGlobal('fetch', fetcher)
+    wrap(<HomePage />)
+    expect(await screen.findByText('su 2,5 L')).toBeInTheDocument()
+    await new Promise((r) => setTimeout(r, 50))
+    expect(fake.tables.goal_boosts).toHaveLength(1)
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it('spento il caldo, l’aumento di oggi si toglie', async () => {
+    fake.tables.profiles[0] = { ...fake.tables.profiles[0], heat_boost: false }
+    fake.tables.goal_boosts = [{ user_id: 'u1', local_date: today(), kind: 'heat', extra_ml: 500, note: '31 °C' }]
+    wrap(<HomePage />)
+    await waitFor(() => expect(fake.tables.goal_boosts).toEqual([]))
+    expect(await screen.findByText('su 2 L')).toBeInTheDocument()
+  })
+
   it('con il caldo spento non legge il meteo', async () => {
     const fetcher = vi.fn()
     vi.stubGlobal('fetch', fetcher)

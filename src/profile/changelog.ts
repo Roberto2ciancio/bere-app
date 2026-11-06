@@ -12,6 +12,16 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '1.6.1',
+    date: '2026-11-06',
+    title: 'Più solida',
+    notes: [
+      "Se qualcosa va storto, al posto dello schermo bianco compare «Ricarica l'app», e l'errore ci arriva in automatico per correggerlo.",
+      'Con lo stile «gocce», sui telefoni piccoli le gocce si rimpiccioliscono invece di finire sopra il prossimo promemoria.',
+      "L'aumento per il caldo non sparisce più se apri l'app mentre il profilo sta ancora caricando.",
+    ],
+  },
+  {
     version: '1.6.0',
     date: '2026-11-06',
     title: "Scorciatoie dall'icona",

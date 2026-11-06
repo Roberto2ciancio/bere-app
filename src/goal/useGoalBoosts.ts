@@ -4,7 +4,8 @@ import { supabase } from '../lib/supabase'
 import { boostsByDay, heatBoostMl, maxTemperature, WORKOUT_BOOST_ML, type GoalBoost } from './boosts'
 
 interface HeatPlace {
-  enabled: boolean
+  /** undefined finché il profilo non è caricato: in quel momento non si accende né si spegne nulla. */
+  enabled: boolean | undefined
   lat: number | null | undefined
   lon: number | null | undefined
 }
@@ -65,7 +66,7 @@ export function useGoalBoosts(userId: string | null, today: string, heat?: HeatP
   )
 
   // Il meteo si legge una volta al giorno per posto: riaprire l'app non lo richiede di nuovo.
-  const heatOn = heat?.enabled ?? false
+  const heatOn = heat?.enabled === true
   const lat = heat?.lat ?? null
   const lon = heat?.lon ?? null
   useEffect(() => {
@@ -93,7 +94,8 @@ export function useGoalBoosts(userId: string | null, today: string, heat?: HeatP
     }
   }, [userId, heatOn, lat, lon, today, save, remove])
 
-  // Spento il caldo, l'aumento di oggi non vale più.
+  // Spento il caldo, l'aumento di oggi non vale più. Solo se è davvero spento: con il profilo ancora da
+  // caricare (o salvato da una versione precedente) il valore manca e l'aumento va lasciato com'è.
   const heatToday = boosts.some((b) => b.local_date === today && b.kind === 'heat')
   const heatDisabled = heat?.enabled === false
   useEffect(() => {
