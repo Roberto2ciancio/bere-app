@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql', '0012_remove_energy_drinks.sql', '0013_poke_cooldown.sql', '0014_active_hours.sql']
+const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql', '0012_remove_energy_drinks.sql', '0013_poke_cooldown.sql', '0014_active_hours.sql', '0015_drink_from_push.sql']
 const A = '00000000-0000-0000-0000-00000000000a'
 const B = '00000000-0000-0000-0000-00000000000b'
 const WEEK = '2026-11-02'
@@ -373,6 +373,46 @@ describe('notifiche', () => {
     const insert = `insert into push_log (user_id, schedule_time_id, scheduled_date, scheduled_at, status) values ('${A}', '${t}', '${WEEK}', '2026-11-02T07:00:00Z', 'pending') on conflict (user_id, schedule_time_id, scheduled_at) do nothing returning id`
     expect((await db.query(insert)).rows).toHaveLength(1)
     expect((await db.query(insert)).rows).toHaveLength(0)
+  })
+})
+
+describe('bevuto dalla notifica', () => {
+  const today = `(now() at time zone 'Europe/Rome')::date`
+  const sentLog = async (age = '0 minutes') =>
+    (await db.query<{ id: string }>(`insert into push_log (user_id, scheduled_date, scheduled_at, status) values ($1, ${today}, now() - interval '${age}', 'sent') returning id`, [A])).rows[0].id
+  const tap = async (id: string) => {
+    await db.exec('set role anon')
+    try {
+      return (await db.query<{ r: Record<string, unknown> }>(`select drink_from_push($1) r`, [id])).rows[0].r
+    } finally {
+      await db.exec('reset role')
+    }
+  }
+
+  beforeEach(async () => {
+    await db.query(`update profiles set tz = 'Europe/Rome', drink_ml = 250, units = 'ml' where id = $1`, [A])
+    await db.query(`insert into goal_changes (user_id, effective_from, goal_ml) values ($1, '2026-02-01', 2500)`, [A])
+  })
+
+  it('segna una bevuta della quantità del profilo e restituisce il totale di oggi', async () => {
+    await db.exec(`insert into drinks (user_id, client_id, amount_ml, drunk_at, local_date) values ('${A}', gen_random_uuid(), 500, now(), ${today})`)
+    const id = await sentLog()
+    expect(await tap(id)).toEqual({ ok: true, added: true, amount_ml: 250, drunk_ml: 750, goal_ml: 2500, units: 'ml' })
+    const rows = (await db.query(`select user_id, amount_ml, drink_type, hydration_pct from drinks where client_id = $1`, [id])).rows
+    expect(rows).toEqual([{ user_id: A, amount_ml: 250, drink_type: 'water', hydration_pct: 100 }])
+  })
+
+  it('toccare due volte non segna due bevute', async () => {
+    const id = await sentLog()
+    await tap(id)
+    expect(await tap(id)).toMatchObject({ ok: true, added: false, drunk_ml: 250 })
+    expect(await count(`select count(*) n from drinks where user_id = '${A}'`)).toBe(1)
+  })
+
+  it('un promemoria di più di 24 ore fa o inesistente non segna nulla', async () => {
+    expect(await tap(await sentLog('25 hours'))).toEqual({ ok: false })
+    expect(await tap('00000000-0000-0000-0000-0000000000ff')).toEqual({ ok: false })
+    expect(await count(`select count(*) n from drinks`)).toBe(0)
   })
 })
 

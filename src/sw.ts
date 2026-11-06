@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching'
 import { NavigationRoute, registerRoute } from 'workbox-routing'
-import { notificationOptions, type NotificationPayload } from './push/notification'
+import { DRINK_ACTION, drinkConfirmation, notificationOptions, type DrinkFromPushResult, type NotificationPayload } from './push/notification'
 
 declare const self: ServiceWorkerGlobalScope
 
@@ -15,17 +15,35 @@ registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denyl
 self.addEventListener('install', () => void self.skipWaiting())
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()))
 
+// Il service worker non ha la sessione dell'utente: queste funzioni accettano la chiave pubblica e l'id del promemoria.
+function rpc(name: string, logId: string) {
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+  return fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/${name}`, {
+    method: 'POST',
+    headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_log_id: logId }),
+  })
+}
+
 async function markReceived(logId: string) {
   try {
-    const key = import.meta.env.VITE_SUPABASE_ANON_KEY
-    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/mark_push_received`, {
-      method: 'POST',
-      headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ p_log_id: logId }),
-    })
+    await rpc('mark_push_received', logId)
   } catch {
     // Solo statistica: non deve mai impedire la notifica.
   }
+}
+
+/** «Bevuto ✓»: segna la bevuta senza aprire l'app e risponde con il totale di oggi. */
+async function drinkFromNotification(logId: string) {
+  let result: DrinkFromPushResult | null = null
+  try {
+    const response = await rpc('drink_from_push', logId)
+    if (response.ok) result = (await response.json()) as DrinkFromPushResult
+  } catch {
+    // Senza rete: la conferma invita ad aprire l'app.
+  }
+  const { title, options } = drinkConfirmation(result)
+  await self.registration.showNotification(title, options)
 }
 
 self.addEventListener('push', (event) => {
@@ -45,7 +63,12 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const url = new URL((event.notification.data as { url?: string } | null)?.url ?? '#/home', self.registration.scope).href
+  const data = event.notification.data as { url?: string; logId?: string } | null
+  if (event.action === DRINK_ACTION && data?.logId) {
+    event.waitUntil(drinkFromNotification(data.logId))
+    return
+  }
+  const url = new URL(data?.url ?? '#/home', self.registration.scope).href
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (clients) => {
       const client = clients[0]

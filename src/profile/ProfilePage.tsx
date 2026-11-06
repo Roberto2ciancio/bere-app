@@ -4,6 +4,7 @@ import { NotificationPrefs } from '../push/NotificationPrefs'
 import { PushToggle } from '../push/PushToggle'
 import { ActiveHoursForm } from './ActiveHoursForm'
 import { AppearanceForm, DrinkPrefs, ProfileHeader } from './AppearanceForm'
+import { CHANGELOG } from './changelog'
 import { DataBackup } from './DataBackup'
 import { GoalForm } from './GoalForm'
 import { PasswordForm } from './PasswordForm'
@@ -49,6 +50,23 @@ export function ProfilePage() {
         </div>
         <button className="secondary" onClick={() => void signOut()}>Esci</button>
       </section>
+
+      <footer className="app-version">
+        <p className="hint">Bere {__APP_VERSION__}</p>
+        <details className="fold">
+          <summary>Novità</summary>
+          <div className="fold-body">
+            {CHANGELOG.map((release) => (
+              <section key={release.version}>
+                <h3>Versione {release.version}</h3>
+                <ul className="changelog">
+                  {release.notes.map((note) => <li key={note}>{note}</li>)}
+                </ul>
+              </section>
+            ))}
+          </div>
+        </details>
+      </footer>
     </main>
   )
 }

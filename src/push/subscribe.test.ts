@@ -8,7 +8,7 @@ vi.mock('../lib/supabase', () => ({
   },
 }))
 
-import { notificationOptions } from './notification'
+import { drinkConfirmation, notificationOptions } from './notification'
 import { subscribePush } from './subscribe'
 
 function stubBrowser(existing: { endpoint: string } | null) {
@@ -58,5 +58,34 @@ describe('notificationOptions', () => {
     expect(options.tag).toBeUndefined()
     expect(options.body).toBe('200 ml')
     expect(options.data).toEqual({ url: '#/home' })
+    expect(options.actions).toBeUndefined()
+  })
+  it("solo i promemoria hanno «Bevuto ✓», con l'id del promemoria nei dati", () => {
+    const options = notificationOptions({ title: 'x', body: '200 ml', url: '#/home', logId: 'log1' })
+    expect(options.actions).toEqual([{ action: 'drink', title: 'Bevuto ✓' }])
+    expect(options.data).toEqual({ url: '#/home', logId: 'log1' })
+  })
+})
+
+describe('drinkConfirmation', () => {
+  const base = { ok: true, added: true, amount_ml: 250, drunk_ml: 1250, goal_ml: 3000, units: 'ml' as const }
+  it('conferma la quantità e il totale di oggi, senza suono', () => {
+    const { title, options } = drinkConfirmation(base)
+    expect(title).toBe('Segnati 250 ml')
+    expect(options.body).toBe('1,25 L su 3 L oggi')
+    expect(options).toMatchObject({ tag: 'bere-bevuto', silent: true })
+  })
+  it('un secondo tocco non segna di nuovo', () => {
+    expect(drinkConfirmation({ ...base, added: false }).title).toBe('Già segnata')
+  })
+  it("festeggia l'obiettivo raggiunto", () => {
+    expect(drinkConfirmation({ ...base, drunk_ml: 3000 }).title).toBe('Obiettivo raggiunto 🎉')
+  })
+  it("senza rete o con un promemoria scaduto invita ad aprire l'app", () => {
+    for (const r of [null, { ok: false }]) {
+      const { title, options } = drinkConfirmation(r)
+      expect(title).toBe('Bevuta non segnata')
+      expect(options.data).toEqual({ url: '#/home' })
+    }
   })
 })

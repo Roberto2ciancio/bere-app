@@ -11,6 +11,7 @@ vi.mock('../lib/supabase', () => ({
 }))
 
 import App from '../App'
+import { CHANGELOG } from './changelog'
 import { MAX_UPLOAD_BYTES, prepareImage, type ImageTools } from './imageUpload'
 
 const image = (size: number, type = 'image/jpeg') => new File([new Uint8Array(size)], 'foto.jpg', { type })
@@ -126,5 +127,14 @@ describe('ProfilePage', () => {
     render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: 'Esci' }))
     expect(await screen.findByRole('heading', { name: 'Accedi' })).toBeInTheDocument()
+  })
+  it('mostra la versione e le novità', async () => {
+    render(<App />)
+    expect(await screen.findByText(`Bere ${__APP_VERSION__}`)).toBeInTheDocument()
+    await userEvent.click(screen.getByText('Novità'))
+    expect(screen.getByRole('heading', { name: `Versione ${__APP_VERSION__}` })).toBeVisible()
+  })
+  it('le novità partono dalla versione in package.json', () => {
+    expect(CHANGELOG[0].version).toBe(__APP_VERSION__)
   })
 })

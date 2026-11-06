@@ -1,7 +1,10 @@
+import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }
 
 export default defineConfig(({ mode }) => {
   // L'app di prova usa lo stesso codice, ma il finto backend prende il posto di Supabase.
@@ -11,6 +14,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: dev ? '/bere-app/dev/' : '/bere-app/',
+    define: { __APP_VERSION__: JSON.stringify(version) },
     build: dev ? { outDir: 'dist/dev' } : {},
     resolve: dev
       ? { alias: [{ find: /^.*\/lib\/supabase$/, replacement: fileURLToPath(new URL('./src/dev/devBackend.ts', import.meta.url)) }] }
