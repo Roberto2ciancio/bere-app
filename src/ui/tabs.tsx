@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useProfile } from '../auth/ProfileProvider'
 import { backgroundUrl } from '../profile/imageUpload'
+import { WhatsNew } from '../profile/WhatsNewDialog'
 import { syncPushSubscription } from '../push/subscribe'
 
 export function TabsLayout() {
@@ -44,6 +45,7 @@ export function TabsLayout() {
         <NavLink to="/classifica">Classifica</NavLink>
         <NavLink to="/profilo">Profilo</NavLink>
       </nav>
+      <WhatsNew />
     </div>
   )
 }
