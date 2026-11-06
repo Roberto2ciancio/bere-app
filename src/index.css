@@ -683,3 +683,6 @@ input[type='file']::file-selector-button {
 @media (max-width: 360px) {
   .poke { padding: 0 10px; font-size: 0.8rem; }
 }
+/* Su schermi da 320 px i campi orario affiancati devono potersi restringere (in Chrome con AM/PM sono larghi). */
+.interval-window, .hours-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.interval-field input[type='time'], .hours-pair input, .hours-pair select { min-width: 0; }

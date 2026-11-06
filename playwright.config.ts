@@ -24,6 +24,8 @@ export default defineConfig({
     { name: 'iPhone 16e', use: { ...devices['iPhone 16e'] } },
     { name: 'Pixel 7', use: { ...devices['Pixel 7'] } },
     { name: 'Android piccolo', use: { ...devices['Galaxy S5'] } },
+    // 320 px con i caratteri di Chrome: ha trovato gli orari «Dalle/Alle» fuori schermo.
+    { name: 'Android 320', use: { ...devices['Galaxy S9+'] } },
   ],
   webServer: {
     command: 'npx vite --mode devapp --port 5199 --strictPort',

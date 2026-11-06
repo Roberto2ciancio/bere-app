@@ -90,7 +90,13 @@ async function expectNoHorizontalScroll(page: Page) {
     return [...document.querySelectorAll('.shell-body *')]
       .filter((el) => {
         const r = el.getBoundingClientRect()
-        return r.width > 0 && r.height > 0 && r.right > width + 1 && getComputedStyle(el).visibility !== 'hidden'
+        if (r.width === 0 || r.height === 0 || r.right <= width + 1 || getComputedStyle(el).visibility === 'hidden') return false
+        // Tagliato da un contenitore (per esempio l'onda dell'acqua dentro la bottiglia): a schermo non esce.
+        for (let parent = el.parentElement; parent && !parent.classList.contains('shell-body'); parent = parent.parentElement) {
+          const style = getComputedStyle(parent)
+          if (/hidden|clip/.test(style.overflowX) && parent.getBoundingClientRect().right <= width + 1) return false
+        }
+        return true
       })
       .slice(0, 3)
       .map((el) => `${el.tagName.toLowerCase()}.${el.className} «${(el.textContent ?? '').trim().slice(0, 30)}»`)
