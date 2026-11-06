@@ -651,7 +651,7 @@ input[type='file']::file-selector-button {
 /* Con «Complimenti» e «Sprona» insieme la riga va a capo invece di uscire dallo schermo. */
 .board-main > .board-line:last-child { flex-wrap: wrap; row-gap: 6px; }
 .board-actions { margin-left: auto; flex-wrap: nowrap; }
-.board-done { white-space: nowrap; }
+.board-done { overflow-wrap: anywhere; }
 
 /* Obiettivo che si adatta: caldo e allenamento */
 .home-boost { margin-top: 4px; color: var(--water-deep); font-size: 0.85rem; font-weight: 600; }
@@ -686,3 +686,6 @@ input[type='file']::file-selector-button {
 /* Su schermi da 320 px i campi orario affiancati devono potersi restringere (in Chrome con AM/PM sono larghi). */
 .interval-window, .hours-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .interval-field input[type='time'], .hours-pair input, .hours-pair select { min-width: 0; }
+/* Intestazioni «Titolo · Profilo»: con il testo grande di Android vanno a capo invece di uscire dallo schermo. */
+.page > div.row { flex-wrap: wrap; row-gap: 4px; }
+.page h1 { min-width: 0; overflow-wrap: anywhere; }

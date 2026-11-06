@@ -1,4 +1,23 @@
-import { expect, test, type Page } from '@playwright/test'
+import { test as base, expect, type Page } from '@playwright/test'
+
+/**
+ * textScale simula «Dimensione carattere» di Android (1 = normale, 1.3 = 130%): ingrandisce il testo,
+ * non la pagina. Si imposta per progetto nella configurazione: use: { textScale: 1.3 }.
+ */
+const test = base.extend<{ textScale: number }>({
+  textScale: [1, { option: true }],
+  page: async ({ page, textScale }, provide) => {
+    if (textScale !== 1) {
+      await page.addInitScript((scale) => {
+        const css = `html{font-size:${scale * 100}% !important}body,input,select,textarea{font-size:${16 * scale}px !important}`
+        const add = () => document.head.append(Object.assign(document.createElement('style'), { textContent: css }))
+        if (document.head) add()
+        else document.addEventListener('DOMContentLoaded', add)
+      }, textScale)
+    }
+    await provide(page)
+  },
+})
 import { readFileSync } from 'node:fs'
 
 const VERSION = (JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string }).version
@@ -170,6 +189,10 @@ const PAGES = [
   ['Profilo', '/profilo', 'Profilo'],
   ['Newsletter', '/novita', 'Newsletter'],
   ['Promemoria', '/promemoria', null],
+  ['Tazze e bevande', '/tazze', null],
+  ['Suggerimenti', '/feedback', null],
+  ['Privacy', '/privacy', null],
+  ['Stato notifiche', '/notifiche', null],
 ] as const
 
 for (const [name, path, heading] of PAGES) {
