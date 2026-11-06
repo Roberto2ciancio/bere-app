@@ -1,4 +1,5 @@
-import { goalForDate, type GoalChange } from '../domain/goals'
+import { type GoalChange } from '../domain/goals'
+import { goalWithBoosts } from '../goal/boosts'
 import { addDays } from '../domain/time'
 
 export interface DayTotal {
@@ -23,23 +24,26 @@ export interface Stats {
   currentStreak: number
   averageMl: number
   lowDays: number
+  /** Giorni consecutivi più lunghi senza scendere sotto metà obiettivo (un giorno senza bevute conta come sotto). */
+  bestHalfRun: number
 }
 
 const isMet = (total: number, goal: number) => total >= goal
 
-export function dayResults(totals: DayTotal[], goals: GoalChange[], today: string, count: number): DayResult[] {
+/** boosts: aumenti per giorno (caldo, allenamento) da sommare all'obiettivo scelto. */
+export function dayResults(totals: DayTotal[], goals: GoalChange[], today: string, count: number, boosts?: Map<string, number>): DayResult[] {
   const byDay = new Map(totals.map((t) => [t.day, t.total_ml]))
   return Array.from({ length: count }, (_, i) => {
     const day = addDays(today, i - count + 1)
     const totalMl = byDay.get(day) ?? 0
-    const goalMl = goalForDate(goals, day)
+    const goalMl = goalWithBoosts(goals, day, boosts)
     return { day, totalMl, goalMl, met: isMet(totalMl, goalMl) }
   })
 }
 
-export function computeStats(totals: DayTotal[], goals: GoalChange[], today: string): Stats {
+export function computeStats(totals: DayTotal[], goals: GoalChange[], today: string, boosts?: Map<string, number>): Stats {
   const sorted = [...totals].sort((a, b) => a.day.localeCompare(b.day))
-  const metDays = new Set(sorted.filter((t) => isMet(t.total_ml, goalForDate(goals, t.day))).map((t) => t.day))
+  const metDays = new Set(sorted.filter((t) => isMet(t.total_ml, goalWithBoosts(goals, t.day, boosts))).map((t) => t.day))
 
   let bestStreak = 0
   let run = 0
@@ -58,6 +62,20 @@ export function computeStats(totals: DayTotal[], goals: GoalChange[], today: str
     cursor = addDays(cursor, -1)
   }
 
+  let bestHalfRun = 0
+  let halfRun = 0
+  let lastHalf: string | null = null
+  for (const t of sorted) {
+    if (t.total_ml < goalWithBoosts(goals, t.day, boosts) / 2) {
+      halfRun = 0
+      lastHalf = null
+      continue
+    }
+    halfRun = lastHalf && addDays(lastHalf, 1) === t.day ? halfRun + 1 : 1
+    bestHalfRun = Math.max(bestHalfRun, halfRun)
+    lastHalf = t.day
+  }
+
   const totalMl = sorted.reduce((sum, t) => sum + t.total_ml, 0)
   const daysTracked = sorted.length
   return {
@@ -68,7 +86,8 @@ export function computeStats(totals: DayTotal[], goals: GoalChange[], today: str
     bestStreak,
     currentStreak,
     averageMl: daysTracked ? Math.round(totalMl / daysTracked) : 0,
-    lowDays: sorted.filter((t) => t.total_ml < goalForDate(goals, t.day) / 2).length,
+    lowDays: sorted.filter((t) => t.total_ml < goalWithBoosts(goals, t.day, boosts) / 2).length,
+    bestHalfRun,
   }
 }
 
@@ -90,6 +109,7 @@ export function achievements(stats: Stats): Achievement[] {
     ['liters-100', '100 litri', 'Hai bevuto 100 litri in tutto', stats.totalMl >= 100_000],
     ['liters-500', '500 litri', 'Hai bevuto 500 litri in tutto', stats.totalMl >= 500_000],
     ['drinks-100', '100 bevute', 'Hai segnato 100 bevute', stats.drinks >= 100],
+    ['half-30', 'Mai sotto metà', '30 giorni di fila sempre sopra metà obiettivo', stats.bestHalfRun >= 30],
   ]
   return list.map(([id, label, description, earned]) => ({ id, label, description, earned }))
 }
@@ -102,10 +122,15 @@ export interface Challenge {
   done: boolean
 }
 
-export function challenges(totals: DayTotal[], goals: GoalChange[], weekStart: string, today: string): Challenge[] {
+/** Caffeina per giorno della settimana, in mg: serve alla sfida «sotto i 200 mg». */
+export type CaffeineByDay = Map<string, number>
+
+export const CAFFEINE_CHALLENGE_MG = 200
+
+export function challenges(totals: DayTotal[], goals: GoalChange[], weekStart: string, today: string, caffeine?: CaffeineByDay, boosts?: Map<string, number>): Challenge[] {
   const week = totals.filter((t) => t.day >= weekStart && t.day <= today)
-  const stats = computeStats(week, goals, today)
-  const metDays = week.filter((t) => isMet(t.total_ml, goalForDate(goals, t.day))).length
+  const stats = computeStats(week, goals, today, boosts)
+  const metDays = week.filter((t) => isMet(t.total_ml, goalWithBoosts(goals, t.day, boosts))).length
   const make = (id: string, label: string, value: number, target: number): Challenge => ({
     id,
     label,
@@ -113,9 +138,17 @@ export function challenges(totals: DayTotal[], goals: GoalChange[], weekStart: s
     target,
     done: value >= target,
   })
-  return [
+  const list = [
     make('five-days', 'Raggiungi il tuo obiettivo 5 giorni', metDays, 5),
     make('three-row', 'Raggiungilo 3 giorni di fila', stats.bestStreak, 3),
+    make('seven-days', 'Tutti i 7 giorni senza saltare', metDays, 7),
     make('liters', 'Bevi 15 litri', Math.floor(stats.totalMl / 1000), 15),
   ]
+  if (caffeine) {
+    // Conta i giorni già passati (oggi compreso) restati sotto il limite: un giorno senza caffè vale.
+    const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)).filter((d) => d <= today)
+    const under = days.filter((d) => (caffeine.get(d) ?? 0) < CAFFEINE_CHALLENGE_MG).length
+    list.push(make('caffeine-week', `Caffeina sotto i ${CAFFEINE_CHALLENGE_MG} mg ogni giorno della settimana`, under, 7))
+  }
+  return list
 }

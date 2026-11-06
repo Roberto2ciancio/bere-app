@@ -67,6 +67,8 @@ export interface PushPayload {
   body: string
   url: string
   logId: string
+  /** Avviso «obiettivo raggiunto»: il biglietto per mandare i complimenti dalla notifica. */
+  cheerToken?: string
 }
 
 export type LogStatus = 'pending' | 'sent' | 'failed' | 'missed' | 'no-device'
@@ -219,7 +221,7 @@ export async function runSendReminders(deps: Deps, now: Date): Promise<Summary> 
   return summary
 }
 
-export async function handleRequest(request: Request, secret: string, run: () => Promise<Summary>): Promise<Response> {
+export async function handleRequest(request: Request, secret: string, run: () => Promise<object>): Promise<Response> {
   if (!secret || request.headers.get('x-cron-secret') !== secret) {
     return new Response('unauthorized', { status: 401 })
   }

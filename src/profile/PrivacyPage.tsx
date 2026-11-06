@@ -11,7 +11,7 @@ export function PrivacyPage() {
 
       <section className="section">
         <h2>Cosa salviamo</h2>
-        <p>Email e password per l'accesso, nome, foto e sfondo che scegli, obiettivi, orari dei promemoria, bevute e caffeina segnate, tazze e bevande personalizzate, peso e attività se usi il calcolo dell'obiettivo, suggerimenti inviati e i dati tecnici necessari per recapitare le notifiche al tuo telefono.</p>
+        <p>Email e password per l'accesso, nome, foto e sfondo che scegli, obiettivi, orari dei promemoria, bevute e caffeina segnate, tazze e bevande personalizzate, peso e attività se usi il calcolo dell'obiettivo, la città se attivi i giorni caldi, allenamenti segnati, suggerimenti inviati e i dati tecnici necessari per recapitare le notifiche al tuo telefono.</p>
       </section>
 
       <section className="section">
@@ -21,7 +21,7 @@ export function PrivacyPage() {
 
       <section className="section">
         <h2>Dove sono conservati</h2>
-        <p>I dati sono conservati su Supabase. Le notifiche passano dal servizio push del produttore del telefono, come Apple. Se chiedi il meteo, la tua posizione approssimata va a Open-Meteo. I dati servono solo a far funzionare l'app e non vengono venduti né usati per pubblicità.</p>
+        <p>I dati sono conservati su Supabase. Le notifiche passano dal servizio push del produttore del telefono, come Apple. Se chiedi il meteo o attivi «Più acqua nei giorni caldi», la città che scegli o la tua posizione approssimata (circa 10 km) vanno a Open-Meteo. I dati servono solo a far funzionare l'app e non vengono venduti né usati per pubblicità.</p>
       </section>
 
       <section className="section">

@@ -11,7 +11,10 @@ import { CAFFEINE_LIMIT_MG } from '../caffeine/caffeine'
 import { useCaffeine } from '../caffeine/useCaffeine'
 import { DrinkSheet } from '../drinks/DrinkSheet'
 import { useDrinks, type DrinkInput } from '../drinks/useDrinks'
+import { WORKOUT_BOOST_ML } from '../goal/boosts'
+import { useGoalBoosts } from '../goal/useGoalBoosts'
 import { expectedByNow, formatAmount, formatVolume, HIGH_INTAKE_ML, type Units } from '../domain/hydration'
+import { NewsIcon } from '../news/NewsIcon'
 import { pendingOnboardingStep } from '../onboarding/onboardingFlag'
 import { pushSupportState } from '../push/subscribe'
 import { readCache, writeCache } from '../lib/cache'
@@ -122,7 +125,9 @@ export function HomePage() {
   }, [userId, navigate])
 
   const today = localParts(now, tz).date
-  const goalMl = goalForDate(goals, today)
+  const boosts = useGoalBoosts(userId, today, { enabled: profile?.heat_boost ?? false, lat: profile?.city_lat, lon: profile?.city_lon })
+  const baseGoalMl = goalForDate(goals, today)
+  const goalMl = baseGoalMl + (boosts.byDay.get(today) ?? 0)
   const { totalMl, pending, canUndo, drink, undoLast } = useDrinks(userId, today, tz, drinkMl)
   const caffeine = useCaffeine(userId, today, tz)
   const split = profile?.active_split ?? false
@@ -154,6 +159,7 @@ export function HomePage() {
 
   return (
     <main className="home">
+      <NewsIcon />
       <header className="home-head">
         <p className="home-total" aria-live="polite">{formatVolume(totalMl, units)}</p>
         <div className="home-progress" aria-hidden="true">
@@ -163,6 +169,16 @@ export function HomePage() {
           {totalMl >= goalMl ? `Obiettivo raggiunto: su ${formatVolume(goalMl, units)}` : `su ${formatVolume(goalMl, units)}`}
           {expected !== null && totalMl < goalMl && (behind > 0 ? ` · ${formatVolume(behind, units)} per essere in pari` : ' · sei in pari')}
         </p>
+        {(boosts.heat || boosts.workout) && (
+          <p className="home-boost">
+            {[
+              boosts.heat && `+${formatAmount(boosts.heat.extra_ml, units)} per il caldo${boosts.heat.note ? ` (${boosts.heat.note})` : ''}`,
+              boosts.workout && `+${formatAmount(boosts.workout.extra_ml, units)} per l'allenamento`,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+        )}
         {pace && (
           <div className="home-pace" aria-live="polite">
             <p>{pace.status}</p>
@@ -203,6 +219,15 @@ export function HomePage() {
               : `${caffeine.totalMg} mg di caffeina su ${CAFFEINE_LIMIT_MG}`}
           </p>
         </section>
+
+        <button
+          className={boosts.workout ? 'workout-tile on' : 'workout-tile'}
+          aria-pressed={!!boosts.workout}
+          onClick={() => void boosts.setWorkout(today, !boosts.workout)}
+        >
+          <span aria-hidden="true">🏃</span>
+          {boosts.workout ? `Allenamento segnato: +${formatAmount(boosts.workout.extra_ml, units)} oggi` : `Ho fatto allenamento: +${formatAmount(WORKOUT_BOOST_ML, units)} all'obiettivo`}
+        </button>
 
         {(canUndo || caffeine.canUndo) && (
           <div className="home-undos">

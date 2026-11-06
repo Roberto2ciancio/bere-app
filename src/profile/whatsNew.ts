@@ -55,3 +55,23 @@ export function writeSeen(version: string) {
   }
 }
 
+
+export const NEWS_READ_KEY = 'bere.newsRead'
+
+/** Il pallino sull'icona della Newsletter: c'è una versione che non hai ancora aperto lì. */
+export function hasUnreadNews(current: string = __APP_VERSION__): boolean {
+  try {
+    const read = localStorage.getItem(NEWS_READ_KEY)
+    return read === null || compareVersions(current, read) > 0
+  } catch {
+    return false
+  }
+}
+
+export function markNewsRead(current: string = __APP_VERSION__) {
+  try {
+    localStorage.setItem(NEWS_READ_KEY, current)
+  } catch {
+    // Il pallino resterà acceso: meglio che bloccare la pagina.
+  }
+}

@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql', '0012_remove_energy_drinks.sql', '0013_poke_cooldown.sql', '0014_active_hours.sql', '0015_drink_from_push.sql']
+const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql', '0012_remove_energy_drinks.sql', '0013_poke_cooldown.sql', '0014_active_hours.sql', '0015_drink_from_push.sql', '0016_social_notifications.sql', '0017_motivation.sql']
 const A = '00000000-0000-0000-0000-00000000000a'
 const B = '00000000-0000-0000-0000-00000000000b'
 const WEEK = '2026-11-02'
@@ -413,6 +413,281 @@ describe('bevuto dalla notifica', () => {
     expect(await tap(await sentLog('25 hours'))).toEqual({ ok: false })
     expect(await tap('00000000-0000-0000-0000-0000000000ff')).toEqual({ ok: false })
     expect(await count(`select count(*) n from drinks`)).toBe(0)
+  })
+})
+
+describe('notifiche sociali', () => {
+  const C = '00000000-0000-0000-0000-00000000000c'
+  const todayOf = (tz: string) => `(now() at time zone '${tz}')::date`
+  const drinkToday = (id: string, ml: number) =>
+    db.query(`insert into drinks (user_id, client_id, amount_ml, drunk_at, local_date) values ($1, gen_random_uuid(), $2, now(), ${todayOf('Europe/Rome')})`, [id, ml])
+  const device = (id: string, n: number) =>
+    db.query(`insert into push_subscriptions (user_id, endpoint, p256dh, auth) values ($1, $2, 'k', 'a')`, [id, `https://push/${n}`])
+  const events = () => db.query<{ user_id: string }>(`select user_id from goal_events`).then((r) => r.rows)
+  // Mezzogiorno UTC: in UTC e a Roma è giorno.
+  const noon = `date_trunc('day', now()) + interval '12 hours'`
+
+  beforeEach(async () => {
+    await db.query(`update profiles set tz = 'Europe/Rome'`)
+    await db.query(`insert into goal_changes (user_id, effective_from, goal_ml) values ($1, '2026-02-01', 2000), ($2, '2026-02-01', 2000)`, [A, B])
+  })
+
+  it("superare l'obiettivo di oggi crea un evento, una volta sola", async () => {
+    await drinkToday(A, 1500)
+    expect(await events()).toEqual([])
+    await drinkToday(A, 600)
+    await drinkToday(A, 300)
+    expect(await events()).toEqual([{ user_id: A }])
+  })
+
+  it('niente evento per obiettivi sotto 1,5 L, per giorni passati o per chi non vuole condividerlo', async () => {
+    await db.query(`insert into goal_changes (user_id, effective_from, goal_ml) values ($1, '2026-03-01', 1000)`, [A])
+    await drinkToday(A, 1200)
+    await db.query(`insert into drinks (user_id, client_id, amount_ml, drunk_at, local_date) values ($1, gen_random_uuid(), 2000, now(), ${todayOf('Europe/Rome')} - 1)`, [B])
+    await db.query(`update profiles set share_goal = false where id = $1`, [B])
+    await drinkToday(B, 2000)
+    expect(await events()).toEqual([])
+  })
+
+  it('una bevuta segna la persona come attiva', async () => {
+    await db.query(`update profiles set last_seen_at = now() - interval '3 days' where id = $1`, [A])
+    await drinkToday(A, 200)
+    const seen = (await db.query<{ recent: boolean }>(`select last_seen_at > now() - interval '1 minute' as recent from profiles where id = $1`, [A])).rows[0]
+    expect(seen.recent).toBe(true)
+  })
+
+  it('avvisa una volta gli amici svegli, con un dispositivo e che lo vogliono', async () => {
+    await addUser(C, 'Carla')
+    await db.query(`update profiles set tz = 'UTC' where id in ($1, $2)`, [B, C])
+    await device(B, 1)
+    await device(C, 2)
+    await db.query(`update profiles set friend_goal_alerts = false where id = $1`, [C])
+    await device(A, 3)
+    await drinkToday(A, 2000)
+    await db.exec(`update goal_events set created_at = ${noon} - interval '5 minutes'`)
+    const rows = (await db.query<Record<string, unknown>>(`select achiever, to_user, token, subscriptions from take_goal_alerts(${noon})`)).rows
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ achiever: 'Anna', to_user: B, subscriptions: [{ endpoint: 'https://push/1', p256dh: 'k', auth: 'a' }] })
+    expect((await db.query(`select * from take_goal_alerts(${noon})`)).rows).toEqual([])
+  })
+
+  it('di notte non avvisa', async () => {
+    await db.query(`update profiles set tz = 'UTC' where id = $1`, [B])
+    await device(B, 1)
+    await drinkToday(A, 2000)
+    const night = `date_trunc('day', now()) + interval '3 hours'`
+    await db.exec(`update goal_events set created_at = ${night} - interval '5 minutes'`)
+    expect((await db.query(`select * from take_goal_alerts(${night})`)).rows).toEqual([])
+  })
+
+  it('il biglietto della notifica vale una volta e dice a chi mandare i complimenti', async () => {
+    await db.query(`update profiles set tz = 'UTC' where id = $1`, [B])
+    await device(B, 1)
+    await drinkToday(A, 2000)
+    await db.exec(`update goal_events set created_at = ${noon} - interval '5 minutes'`)
+    const token = (await db.query<{ token: string }>(`select token from take_goal_alerts(${noon})`)).rows[0].token
+    await db.exec(`update goal_events set created_at = now()`)
+    expect((await db.query(`select * from claim_cheer_token($1)`, [token])).rows).toEqual([{ to_user: A, from_name: 'Bruno' }])
+    expect((await db.query(`select * from claim_cheer_token($1)`, [token])).rows).toEqual([])
+  })
+
+  it('dalla classifica: complimenti solo a chi ha raggiunto oggi, una volta', async () => {
+    const claim = async (from: string, to: string) => (await db.query<{ r: string }>(`select claim_cheer($1, $2) r`, [from, to])).rows[0].r
+    const cheerable = (id: string) => asUser(id, async () => (await db.query(`select * from cheerable_today()`)).rows)
+    expect(await claim(B, A)).toBe('no-goal')
+    await drinkToday(A, 2000)
+    expect(await claim(A, A)).toBe('self')
+    expect(await cheerable(B)).toEqual([{ user_id: A, cheered: false }])
+    expect(await claim(B, A)).toBe('ok')
+    expect(await claim(B, A)).toBe('already')
+    expect(await cheerable(B)).toEqual([{ user_id: A, cheered: true }])
+    expect(await cheerable(A)).toEqual([])
+  })
+
+  it('le tabelle non si leggono direttamente', async () => {
+    await drinkToday(A, 2000)
+    expect(await asUser(A, () => count(`select count(*) n from goal_events`))).toBe(0)
+  })
+
+  it("touch_last_seen aggiorna solo l'utente che apre l'app", async () => {
+    await asUser(A, () => db.exec(`select touch_last_seen()`))
+    const rows = (await db.query(`select id from profiles where last_seen_at is not null`)).rows
+    expect(rows).toEqual([{ id: A }])
+  })
+
+  describe("promemoria a chi non apre l'app", () => {
+    const take = async (at = noon) =>
+      (await db.query<Record<string, unknown>>(`select user_id, display_name, days_away, stage, goal_ml from take_inactivity_nudges(${at})`)).rows
+    const away = (days: number) =>
+      db.query(`update profiles set tz = 'UTC', last_seen_at = ${noon} - interval '${days} days 1 hour' where id = $1`, [A])
+
+    beforeEach(async () => {
+      await device(A, 1)
+    })
+
+    it('dopo un giorno, con nome e obiettivo; non due volte di fila', async () => {
+      await away(1)
+      expect(await take()).toEqual([{ user_id: A, display_name: 'Anna', days_away: 1, stage: 0, goal_ml: 2000 }])
+      expect(await take(`${noon} + interval '2 hours'`)).toEqual([])
+    })
+
+    it('poi dopo 3 e 7 giorni, e basta', async () => {
+      await away(7)
+      await db.query(`insert into nudges (user_id, sent_at) values ($1, ${noon} - interval '6 days'), ($1, ${noon} - interval '4 days')`, [A])
+      expect(await take()).toMatchObject([{ days_away: 7, stage: 2 }])
+      await away(9)
+      expect(await take(`${noon} + interval '1 day'`)).toEqual([])
+    })
+
+    it('a 2 giorni aspetta il terzo', async () => {
+      await away(2)
+      await db.query(`insert into nudges (user_id, sent_at) values ($1, ${noon} - interval '1 day')`, [A])
+      expect(await take()).toEqual([])
+    })
+
+    it("niente di notte, senza promemoria attivi o a chi non ha mai aperto la nuova versione", async () => {
+      await away(1)
+      expect(await take(`date_trunc('day', now()) + interval '22 hours'`)).toEqual([])
+      await db.query(`update profiles set nudge_inactive = false where id = $1`, [A])
+      expect(await take()).toEqual([])
+      await db.query(`update profiles set nudge_inactive = true, last_seen_at = null where id = $1`, [A])
+      expect(await take()).toEqual([])
+    })
+
+    it('rispetta la fascia attiva', async () => {
+      await away(1)
+      await db.query(`update profiles set active_split = true, active_start_min = 840, active_end_min = 1080 where id = $1`, [A])
+      expect(await take()).toEqual([])
+      expect(await take(`${noon} + interval '3 hours'`)).toHaveLength(1)
+    })
+  })
+})
+
+describe('motivazione', () => {
+  const utcToday = `(now() at time zone 'UTC')::date`
+  const drinkOn = (id: string, day: string, ml: number) =>
+    db.query(`insert into drinks (user_id, client_id, amount_ml, drunk_at, local_date) values ($1, gen_random_uuid(), $2, now(), ${day})`, [id, ml])
+  const device = (id: string) => db.query(`insert into push_subscriptions (user_id, endpoint, p256dh, auth) values ($1, $2, 'k', 'a')`, [id, `https://push/${id}`])
+  const boost = (id: string, day: string, kind: string, ml: number) =>
+    db.query(`insert into goal_boosts (user_id, local_date, kind, extra_ml) values ($1, ${day}, $2, $3)`, [id, kind, ml])
+
+  beforeEach(async () => {
+    await db.query(`update profiles set tz = 'UTC'`)
+    await db.query(`insert into goal_changes (user_id, effective_from, goal_ml) values ($1, '2026-02-01', 2000), ($2, '2026-02-01', 2000)`, [A, B])
+  })
+
+  describe('obiettivo che si adatta', () => {
+    const goalFor = async (id: string, day: string) => (await db.query<{ g: number }>(`select goal_for($1, ${day}) g`, [id])).rows[0].g
+
+    it('somma caldo e allenamento all\'obiettivo di quel giorno', async () => {
+      expect(await goalFor(A, utcToday)).toBe(2000)
+      await boost(A, utcToday, 'heat', 500)
+      await boost(A, utcToday, 'workout', 500)
+      expect(await goalFor(A, utcToday)).toBe(3000)
+      expect(await goalFor(A, `${utcToday} - 1`)).toBe(2000)
+    })
+
+    it('ognuno vede e cambia solo i propri aumenti, uno per tipo al giorno', async () => {
+      await asUser(A, () => db.exec(`insert into goal_boosts (user_id, local_date, kind, extra_ml) values ('${A}', '2026-11-02', 'workout', 500)`))
+      await expect(asUser(A, () => db.exec(`insert into goal_boosts (user_id, local_date, kind, extra_ml) values ('${B}', '2026-11-02', 'workout', 500)`))).rejects.toThrow()
+      await expect(boost(A, `'2026-11-02'`, 'workout', 300)).rejects.toThrow(/duplicate|unique/)
+      await expect(boost(A, `'2026-11-03'`, 'meteo', 300)).rejects.toThrow(/check/)
+      expect(await asUser(B, () => count(`select count(*) n from goal_boosts`))).toBe(0)
+    })
+
+    it("l'evento «obiettivo raggiunto» aspetta anche gli aumenti", async () => {
+      await boost(A, utcToday, 'workout', 500)
+      await drinkOn(A, utcToday, 2000)
+      expect(await count(`select count(*) n from goal_events`)).toBe(0)
+      await drinkOn(A, utcToday, 500)
+      expect(await count(`select count(*) n from goal_events`)).toBe(1)
+    })
+
+    it('in classifica conta l\'obiettivo aumentato', async () => {
+      await drinkOn(A, `'2026-11-02'`, 2000)
+      await drinkOn(B, `'2026-11-02'`, 2000)
+      await boost(B, `'2026-11-02'`, 'heat', 500)
+      const rows = await board()
+      expect(rows.find((r) => r.user_id === A)).toMatchObject({ days_met: 1 })
+      expect(rows.find((r) => r.user_id === B)).toMatchObject({ days_met: 0 })
+    })
+
+    it('i promemoria ricevono l\'obiettivo aumentato', async () => {
+      const s = (await db.query<{ id: string }>(`insert into schedules (user_id, name, weekdays) values ($1, 'a', '{1,2,3,4,5,6,7}') returning id`, [A])).rows[0].id
+      await db.query(`insert into schedule_times (schedule_id, minutes) values ($1, 600)`, [s])
+      await boost(A, utcToday, 'heat', 750)
+      expect((await db.query<{ goal_ml: number }>(`select goal_ml from reminder_rows()`)).rows[0].goal_ml).toBe(2750)
+    })
+  })
+
+  describe('riepilogo serale', () => {
+    const at = (hhmm: string) => `date_trunc('day', now()) + interval '${hhmm}'`
+    const take = async (when = at('21:05')) =>
+      (await db.query<Record<string, unknown>>(`select user_id, display_name, drunk_ml, goal_ml from take_evening_summaries(${when})`)).rows
+
+    beforeEach(async () => {
+      await device(A)
+    })
+
+    it('alle 21, se mancano almeno 500 ml e un quinto, una volta sola', async () => {
+      await drinkOn(A, utcToday, 1200)
+      expect(await take(at('20:50'))).toEqual([])
+      expect(await take()).toEqual([{ user_id: A, display_name: 'Anna', drunk_ml: 1200, goal_ml: 2000 }])
+      expect(await take(at('21:15'))).toEqual([])
+    })
+
+    it('non disturba chi ci è andato vicino', async () => {
+      await drinkOn(A, utcToday, 1650)
+      expect(await take()).toEqual([])
+    })
+
+    it('con la fascia attiva arriva a fine fascia', async () => {
+      await drinkOn(A, utcToday, 500)
+      await db.query(`update profiles set active_split = true, active_start_min = 480, active_end_min = 1080 where id = $1`, [A])
+      expect(await take()).toEqual([])
+      expect(await take(at('18:10'))).toHaveLength(1)
+    })
+
+    it('non a chi lo ha spento o non apre l\'app da un giorno', async () => {
+      await drinkOn(A, utcToday, 500)
+      await db.query(`update profiles set evening_summary = false where id = $1`, [A])
+      expect(await take()).toEqual([])
+      await db.query(`update profiles set evening_summary = true, last_seen_at = now() - interval '3 days' where id = $1`, [A])
+      expect(await take()).toEqual([])
+    })
+  })
+
+  describe('resoconto del lunedì', () => {
+    // Lunedì 9 novembre 2026, 10:00 UTC: la settimana appena finita parte lunedì 2.
+    const MONDAY = `'2026-11-09T10:00:00Z'::timestamptz`
+    const take = async (when = MONDAY) =>
+      (await db.query<Record<string, unknown>>(`select user_id, week_start, days_met, average_ml, rank, players from take_weekly_reports(${when})`)).rows
+
+    beforeEach(async () => {
+      await device(A)
+      await db.query(`update profiles set last_seen_at = '2026-11-08T12:00:00Z'`)
+    })
+
+    it('media, giorni a obiettivo e posto in classifica, una volta sola', async () => {
+      for (const day of ['2026-11-02', '2026-11-03', '2026-11-04']) await drinkOn(A, `'${day}'`, 2000)
+      for (const day of ['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05']) await drinkOn(B, `'${day}'`, 2000)
+      await db.query(`update profiles set last_seen_at = '2026-11-08T12:00:00Z'`)
+      expect(await take()).toEqual([{ user_id: A, week_start: new Date('2026-11-02T00:00:00Z'), days_met: 3, average_ml: 857, rank: 2, players: 2 }])
+      expect(await take(`'2026-11-09T11:00:00Z'::timestamptz`)).toEqual([])
+    })
+
+    it('solo il lunedì mattina', async () => {
+      expect(await take(`'2026-11-09T08:30:00Z'::timestamptz`)).toEqual([])
+      expect(await take(`'2026-11-09T12:30:00Z'::timestamptz`)).toEqual([])
+      expect(await take(`'2026-11-10T10:00:00Z'::timestamptz`)).toEqual([])
+    })
+
+    it('non a chi lo ha spento o è sparito da due settimane', async () => {
+      await db.query(`update profiles set weekly_report = false where id = $1`, [A])
+      expect(await take()).toEqual([])
+      await db.query(`update profiles set weekly_report = true, last_seen_at = '2026-10-20T12:00:00Z' where id = $1`, [A])
+      expect(await take()).toEqual([])
+    })
   })
 })
 

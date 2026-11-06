@@ -71,7 +71,7 @@ const day = (date: string, total: number, drinks = 5): DayTotal => ({ day: date,
 
 describe('computeStats', () => {
   it('senza dati è tutto a zero', () => {
-    expect(computeStats([], goals, '2026-11-10')).toEqual({ totalMl: 0, drinks: 0, daysTracked: 0, completionRate: 0, bestStreak: 0, currentStreak: 0, averageMl: 0, lowDays: 0 })
+    expect(computeStats([], goals, '2026-11-10')).toEqual({ totalMl: 0, drinks: 0, daysTracked: 0, completionRate: 0, bestStreak: 0, currentStreak: 0, averageMl: 0, lowDays: 0, bestHalfRun: 0 })
   })
 
   it('calcola totale, media, percentuale e giorni scarsi', () => {
@@ -136,5 +136,38 @@ describe('challenges', () => {
   it('non conta le settimane precedenti', () => {
     const list = challenges([day('2026-10-30', 2000)], goals, '2026-11-02', '2026-11-08')
     expect(list[0]).toMatchObject({ progress: 0, done: false })
+  })
+  it('7 giorni senza saltare: tutti i giorni della settimana a obiettivo', () => {
+    const six = Array.from({ length: 6 }, (_, i) => day(`2026-11-0${i + 2}`, 2000))
+    const seven = (totals: DayTotal[]) => challenges(totals, goals, '2026-11-02', '2026-11-08').find((c) => c.id === 'seven-days')
+    expect(seven(six)).toMatchObject({ progress: 6, target: 7, done: false })
+    expect(seven([...six, day('2026-11-08', 2000)])).toMatchObject({ progress: 7, done: true })
+  })
+  it('caffeina sotto i 200 mg: conta i giorni passati restati sotto, un giorno senza caffè vale', () => {
+    const caffeine = new Map([['2026-11-02', 40], ['2026-11-03', 220], ['2026-11-04', 199]])
+    const sfida = challenges([], goals, '2026-11-02', '2026-11-05', caffeine).find((c) => c.id === 'caffeine-week')
+    expect(sfida).toMatchObject({ progress: 3, target: 7, done: false })
+    const settimana = challenges([], goals, '2026-11-02', '2026-11-08', new Map([['2026-11-05', 120]])).find((c) => c.id === 'caffeine-week')
+    expect(settimana).toMatchObject({ progress: 7, done: true })
+    expect(challenges([], goals, '2026-11-02', '2026-11-08').find((c) => c.id === 'caffeine-week')).toBeUndefined()
+  })
+})
+
+describe('mai sotto metà', () => {
+  const days = (n: number, ml: number, from = '2026-10-01') => Array.from({ length: n }, (_, i) => {
+    const d = new Date(`${from}T12:00:00Z`)
+    d.setUTCDate(d.getUTCDate() + i)
+    return day(d.toISOString().slice(0, 10), ml)
+  })
+  const earned = (totals: DayTotal[]) => achievements(computeStats(totals, goals, '2026-11-10')).find((a) => a.id === 'half-30')!.earned
+  it('30 giorni di fila sopra metà obiettivo', () => {
+    expect(computeStats(days(30, 1000), goals, '2026-11-10').bestHalfRun).toBe(30)
+    expect(earned(days(30, 1000))).toBe(true)
+  })
+  it('un giorno sotto metà o un giorno saltato fa ripartire il conto', () => {
+    const totals = days(30, 1000)
+    totals[14] = { ...totals[14], total_ml: 500 }
+    expect(earned(totals)).toBe(false)
+    expect(earned(days(30, 1000).filter((_, i) => i !== 10))).toBe(false)
   })
 })

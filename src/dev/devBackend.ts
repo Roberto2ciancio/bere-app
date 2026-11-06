@@ -95,6 +95,10 @@ class Query implements PromiseLike<Result> {
     this.filters.push((row) => values.includes(row[column]))
     return this
   }
+  gte(column: string, value: string) {
+    this.filters.push((row) => String(row[column]) >= value)
+    return this
+  }
   order(column: string, options?: { ascending?: boolean }) {
     this.sort = { column, ascending: options?.ascending ?? true }
     return this
@@ -298,15 +302,25 @@ if (import.meta.env.MODE === 'devapp') {
   setInterval(() => void checkDueReminders(new Date()), 20_000)
 }
 
+const cheeredToday = new Set<string>()
+
 export const supabase = {
   from: (table: string) => new Query(table),
   async rpc(name: string, args?: { week_start?: string }): Promise<Result> {
     if (name === 'daily_totals') return { data: dailyTotals(), error: null }
+    // Marta (finta) ha già raggiunto l'obiettivo oggi: così si vedono i complimenti in classifica.
+    if (name === 'cheerable_today') return { data: [{ user_id: 'finto-1', cheered: cheeredToday.has('finto-1') }], error: null }
     return { data: name === 'get_leaderboard' ? leaderboard(args?.week_start ?? '') : null, error: null }
   },
   functions: {
     async invoke(name: string, _options?: unknown): Promise<Result> {
       if (name === 'poke') return { data: { status: 'sent' }, error: null }
+      if (name === 'cheer') {
+        const to = (_options as { body?: { to?: string } } | undefined)?.body?.to ?? ''
+        if (cheeredToday.has(to)) return { data: { status: 'already' }, error: null }
+        cheeredToday.add(to)
+        return { data: { status: 'sent' }, error: null }
+      }
       if (name === 'delete-account') {
         resetDevData()
         return { data: {}, error: null }

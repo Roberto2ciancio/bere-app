@@ -22,6 +22,15 @@ export interface Profile {
   units?: Units
   stop_at_goal?: boolean
   allow_pokes?: boolean
+  share_goal?: boolean
+  friend_goal_alerts?: boolean
+  nudge_inactive?: boolean
+  evening_summary?: boolean
+  weekly_report?: boolean
+  heat_boost?: boolean
+  city_name?: string | null
+  city_lat?: number | null
+  city_lon?: number | null
   active_split?: boolean
   active_start_min?: number
   active_end_min?: number

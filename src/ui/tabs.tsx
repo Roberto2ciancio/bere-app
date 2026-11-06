@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useProfile } from '../auth/ProfileProvider'
+import { touchLastSeen } from '../lib/lastSeen'
 import { backgroundUrl } from '../profile/imageUpload'
 import { WhatsNew } from '../profile/WhatsNewDialog'
 import { syncPushSubscription } from '../push/subscribe'
@@ -17,6 +18,13 @@ export function TabsLayout() {
 
   useEffect(() => {
     void syncPushSubscription().catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    touchLastSeen()
+    const onVisible = () => document.visibilityState === 'visible' && touchLastSeen()
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
 
   useEffect(() => {

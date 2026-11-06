@@ -55,6 +55,8 @@ export function LeaderboardPage() {
   const [failed, setFailed] = useState(false)
   const [pokeMessage, setPokeMessage] = useState<string | null>(null)
   const [poking, setPoking] = useState(false)
+  // Chi ha raggiunto l'obiettivo oggi, e se gli ho già fatto i complimenti.
+  const [cheerable, setCheerable] = useState<Map<string, boolean>>(new Map())
 
   useEffect(() => {
     let active = true
@@ -67,6 +69,32 @@ export function LeaderboardPage() {
       active = false
     }
   }, [week])
+
+  useEffect(() => {
+    let active = true
+    Promise.resolve(supabase.rpc('cheerable_today')).then(({ data }) => {
+      if (active && Array.isArray(data)) setCheerable(new Map((data as { user_id: string; cheered: boolean }[]).map((r) => [r.user_id, r.cheered])))
+    })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  async function cheer(entry: Entry) {
+    setPoking(true)
+    const { data, error } = await supabase.functions.invoke('cheer', { body: { to: entry.user_id } })
+    const status = (data as { status?: string } | null)?.status
+    const name = entry.display_name
+    const messages: Record<string, string> = {
+      sent: `Complimenti inviati a ${name} 👏`,
+      'no-device': `Complimenti inviati: ${name} li vedrà in classifica.`,
+      already: `Hai già fatto i complimenti a ${name} oggi.`,
+      'no-goal': `${name} non ha ancora raggiunto l'obiettivo di oggi.`,
+    }
+    setPokeMessage((!error && status && messages[status]) || `Non è stato possibile mandare i complimenti a ${name}. Riprova.`)
+    if (!error && (status === 'sent' || status === 'no-device' || status === 'already')) setCheerable((m) => new Map(m).set(entry.user_id, true))
+    setPoking(false)
+  }
 
   async function poke(entry: Entry) {
     setPoking(true)
@@ -135,11 +163,26 @@ export function LeaderboardPage() {
                   </div>
                   <WeekBar met={entry.days_met} />
                   <div className="board-line">
-                    <span className="hint">serie {days(entry.streak)}</span>
+                    <span className="hint">
+                      serie {days(entry.streak)}
+                      {cheerable.has(entry.user_id) && <span className="board-done"> · 🎉 obiettivo di oggi</span>}
+                    </span>
                     {!isMe && (
-                      <button className="poke" disabled={poking} aria-label={`Sprona ${entry.display_name}`} onClick={() => void poke(entry)}>
-                        👋 Sprona
-                      </button>
+                      <span className="board-actions">
+                        {cheerable.has(entry.user_id) && (
+                          <button
+                            className="poke cheer"
+                            disabled={poking || cheerable.get(entry.user_id)}
+                            aria-label={cheerable.get(entry.user_id) ? `Complimenti già inviati a ${entry.display_name}` : `Complimenti a ${entry.display_name}`}
+                            onClick={() => void cheer(entry)}
+                          >
+                            {cheerable.get(entry.user_id) ? '👏 Inviati' : '👏 Complimenti'}
+                          </button>
+                        )}
+                        <button className="poke" disabled={poking} aria-label={`Sprona ${entry.display_name}`} onClick={() => void poke(entry)}>
+                          👋 Sprona
+                        </button>
+                      </span>
                     )}
                   </div>
                 </div>
@@ -154,6 +197,7 @@ export function LeaderboardPage() {
         <div className="fold-body">
           <p className="hint">Vince chi raggiunge il proprio obiettivo in più giorni, da lunedì a domenica. A parità, conta la serie più lunga di giorni consecutivi. Valgono solo obiettivi da 1,5 L in su.</p>
           <p className="hint">Con «Sprona» mandi a un amico una notifica per ricordargli di bere. Al massimo 3 volte al giorno, e una volta all'ora per la stessa persona.</p>
+          <p className="hint">Quando qualcuno raggiunge l'obiettivo del giorno, gli altri ricevono un avviso e possono mandargli i complimenti 👏, dalla notifica o da qui. Puoi spegnere questi avvisi nel Profilo.</p>
           <p className="hint">Nome e foto sono visibili a tutti gli utenti dell'app, insieme ai giorni in cui hai raggiunto l'obiettivo. Le quantità bevute restano private.</p>
         </div>
       </details>

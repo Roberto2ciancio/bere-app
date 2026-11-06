@@ -11,7 +11,6 @@ vi.mock('../lib/supabase', () => ({
 }))
 
 import App from '../App'
-import { CHANGELOG } from './changelog'
 import { MAX_UPLOAD_BYTES, prepareImage, type ImageTools } from './imageUpload'
 
 const image = (size: number, type = 'image/jpeg') => new File([new Uint8Array(size)], 'foto.jpg', { type })
@@ -69,6 +68,23 @@ describe('prepareImage', () => {
 })
 
 describe('ProfilePage', () => {
+  it('gli avvisi sociali sono accesi di default e si spengono uno per uno', async () => {
+    render(<App />)
+    const labels = [
+      ["Avvisa gli amici quando raggiungo l'obiettivo", 'share_goal'],
+      ["Avvisami quando un amico raggiunge l'obiettivo", 'friend_goal_alerts'],
+      ["Ricordami di bere se non apro l'app da un giorno", 'nudge_inactive'],
+      ['Riepilogo serale se oggi mi è mancato parecchio', 'evening_summary'],
+      ['Resoconto della settimana il lunedì', 'weekly_report'],
+    ] as const
+    for (const [label, column] of labels) {
+      const box = await screen.findByRole('checkbox', { name: label })
+      expect(box).toBeChecked()
+      await userEvent.click(box)
+      await waitFor(() => expect(fake.tables.profiles[0][column]).toBe(false))
+    }
+  })
+
   it('cambiare stile aggiorna subito app e profilo', async () => {
     render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: 'Anello' }))
@@ -128,13 +144,9 @@ describe('ProfilePage', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Esci' }))
     expect(await screen.findByRole('heading', { name: 'Accedi' })).toBeInTheDocument()
   })
-  it('mostra la versione e le novità', async () => {
+  it('mostra la versione, ma non più le novità', async () => {
     render(<App />)
     expect(await screen.findByText(`Bere ${__APP_VERSION__}`)).toBeInTheDocument()
-    await userEvent.click(screen.getByText('Novità'))
-    expect(screen.getByRole('heading', { name: `Versione ${__APP_VERSION__}` })).toBeVisible()
-  })
-  it('le novità partono dalla versione in package.json', () => {
-    expect(CHANGELOG[0].version).toBe(__APP_VERSION__)
+    expect(screen.queryByText('Novità')).toBeNull()
   })
 })

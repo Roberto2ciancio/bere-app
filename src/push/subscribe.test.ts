@@ -8,7 +8,7 @@ vi.mock('../lib/supabase', () => ({
   },
 }))
 
-import { drinkConfirmation, notificationOptions } from './notification'
+import { cheerConfirmation, drinkConfirmation, notificationOptions } from './notification'
 import { subscribePush } from './subscribe'
 
 function stubBrowser(existing: { endpoint: string } | null) {
@@ -87,5 +87,18 @@ describe('drinkConfirmation', () => {
       expect(title).toBe('Bevuta non segnata')
       expect(options.data).toEqual({ url: '#/home' })
     }
+  })
+})
+
+describe('complimenti dalla notifica', () => {
+  it("l'avviso di un amico ha «Complimenti» con il biglietto, non «Bevuto ✓»", () => {
+    const options = notificationOptions({ title: 'x', body: 'y', url: '#/classifica', logId: '', cheerToken: 't1' })
+    expect(options.actions).toEqual([{ action: 'cheer', title: '👏 Complimenti' }])
+    expect(options.data).toEqual({ url: '#/classifica', cheerToken: 't1' })
+  })
+  it('conferma senza suono, o invita a riprovare dalla classifica', () => {
+    expect(cheerConfirmation('sent')).toMatchObject({ title: 'Complimenti inviati 👏', options: { silent: true } })
+    expect(cheerConfirmation('already').title).toBe('Complimenti già inviati')
+    expect(cheerConfirmation(null)).toMatchObject({ title: 'Complimenti non inviati', options: { data: { url: '#/classifica' } } })
   })
 })

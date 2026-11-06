@@ -13,6 +13,26 @@ export function NotificationPrefs() {
         Gli amici possono spronarmi
         <input type="checkbox" checked={profile.allow_pokes ?? true} onChange={(e) => void updateProfile({ allow_pokes: e.target.checked })} />
       </label>
+      <label className="row">
+        Avvisa gli amici quando raggiungo l'obiettivo
+        <input type="checkbox" checked={profile.share_goal ?? true} onChange={(e) => void updateProfile({ share_goal: e.target.checked })} />
+      </label>
+      <label className="row">
+        Avvisami quando un amico raggiunge l'obiettivo
+        <input type="checkbox" checked={profile.friend_goal_alerts ?? true} onChange={(e) => void updateProfile({ friend_goal_alerts: e.target.checked })} />
+      </label>
+      <label className="row">
+        Ricordami di bere se non apro l'app da un giorno
+        <input type="checkbox" checked={profile.nudge_inactive ?? true} onChange={(e) => void updateProfile({ nudge_inactive: e.target.checked })} />
+      </label>
+      <label className="row">
+        Riepilogo serale se oggi mi è mancato parecchio
+        <input type="checkbox" checked={profile.evening_summary ?? true} onChange={(e) => void updateProfile({ evening_summary: e.target.checked })} />
+      </label>
+      <label className="row">
+        Resoconto della settimana il lunedì
+        <input type="checkbox" checked={profile.weekly_report ?? true} onChange={(e) => void updateProfile({ weekly_report: e.target.checked })} />
+      </label>
     </>
   )
 }

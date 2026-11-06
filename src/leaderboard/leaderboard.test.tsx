@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createFakeSupabase, type FakeSupabase } from '../test/fakeSupabase'
 
@@ -107,5 +108,26 @@ describe('LeaderboardPage', () => {
     fake.rpcResults.get_leaderboard = []
     renderPage()
     expect(await screen.findByText(/nome e foto sono visibili/i)).toBeInTheDocument()
+  })
+
+  it("a chi ha raggiunto l'obiettivo oggi si possono mandare i complimenti, una volta", async () => {
+    fake.rpcResults.get_leaderboard = [entry('u2', 'Bruno', 3, 2), entry('u3', 'Carla', 1, 1), entry('u1', 'Anna', 2, 1)]
+    fake.rpcResults.cheerable_today = [{ user_id: 'u2', cheered: false }]
+    fake.setInvokeResult({ status: 'sent' })
+    renderPage()
+    const bruno = (await screen.findByText('Bruno')).closest('li')!
+    expect(within(bruno).getByText(/obiettivo di oggi/)).toBeInTheDocument()
+    expect(within(screen.getByText('Carla').closest('li')!).queryByRole('button', { name: /Complimenti/ })).toBeNull()
+    await userEvent.click(within(bruno).getByRole('button', { name: 'Complimenti a Bruno' }))
+    expect(fake.invocations).toContainEqual({ name: 'cheer', body: { to: 'u2' } })
+    expect(await screen.findByRole('status')).toHaveTextContent('Complimenti inviati a Bruno 👏')
+    expect(within(bruno).getByRole('button', { name: 'Complimenti già inviati a Bruno' })).toBeDisabled()
+  })
+
+  it('i complimenti già inviati restano segnati', async () => {
+    fake.rpcResults.get_leaderboard = [entry('u2', 'Bruno', 3, 2)]
+    fake.rpcResults.cheerable_today = [{ user_id: 'u2', cheered: true }]
+    renderPage()
+    expect(await screen.findByRole('button', { name: 'Complimenti già inviati a Bruno' })).toBeDisabled()
   })
 })

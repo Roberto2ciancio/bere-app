@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching'
 import { NavigationRoute, registerRoute } from 'workbox-routing'
-import { DRINK_ACTION, drinkConfirmation, notificationOptions, type DrinkFromPushResult, type NotificationPayload } from './push/notification'
+import { CHEER_ACTION, cheerConfirmation, DRINK_ACTION, drinkConfirmation, notificationOptions, type DrinkFromPushResult, type NotificationPayload } from './push/notification'
 
 declare const self: ServiceWorkerGlobalScope
 
@@ -46,6 +46,24 @@ async function drinkFromNotification(logId: string) {
   await self.registration.showNotification(title, options)
 }
 
+/** «Complimenti» dall'avviso di un amico: il biglietto basta, la sessione non serve. */
+async function cheerFromNotification(token: string) {
+  let status: string | null = null
+  try {
+    const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cheer`, {
+      method: 'POST',
+      headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    })
+    if (response.ok) status = ((await response.json()) as { status?: string }).status ?? null
+  } catch {
+    // Senza rete: la conferma invita ad aprire la classifica.
+  }
+  const { title, options } = cheerConfirmation(status)
+  await self.registration.showNotification(title, options)
+}
+
 self.addEventListener('push', (event) => {
   let payload: NotificationPayload = { title: 'È ora di bere', body: '', url: '#/home' }
   try {
@@ -63,9 +81,13 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const data = event.notification.data as { url?: string; logId?: string } | null
+  const data = event.notification.data as { url?: string; logId?: string; cheerToken?: string } | null
   if (event.action === DRINK_ACTION && data?.logId) {
     event.waitUntil(drinkFromNotification(data.logId))
+    return
+  }
+  if (event.action === CHEER_ACTION && data?.cheerToken) {
+    event.waitUntil(cheerFromNotification(data.cheerToken))
     return
   }
   const url = new URL(data?.url ?? '#/home', self.registration.scope).href

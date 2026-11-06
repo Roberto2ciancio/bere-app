@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { readSeen, releasesToShow, startedWithData, writeSeen } from './whatsNew'
 
 /** Al primo avvio dopo un aggiornamento: la versione e cosa è cambiato. */
@@ -33,6 +34,7 @@ export function WhatsNew() {
           </section>
         ))}
         <button ref={button} className="primary" onClick={close}>Ho capito</button>
+        <Link className="whats-new-all" to="/novita" onClick={close}>Tutte le novità nella Newsletter</Link>
       </div>
     </div>
   )

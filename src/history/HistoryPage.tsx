@@ -6,9 +6,10 @@ import { type GoalChange } from '../domain/goals'
 import { drinkLabel, formatAmount, formatVolume } from '../domain/hydration'
 import { formatTime } from '../domain/format'
 import { localParts, weekdayOf } from '../domain/time'
+import { useGoalBoosts } from '../goal/useGoalBoosts'
 import { weekStart } from '../leaderboard/weekStart'
 import { supabase } from '../lib/supabase'
-import { achievements, challenges, computeStats, dayResults, type DayTotal } from './stats'
+import { achievements, challenges, computeStats, dayResults, type CaffeineByDay, type DayTotal } from './stats'
 
 interface Entry {
   client_id: string
@@ -32,6 +33,8 @@ export function HistoryPage() {
   const tz = profile?.tz ?? new Intl.DateTimeFormat().resolvedOptions().timeZone
   const today = localParts(new Date(), tz).date
   const { custom } = useDrinkOptions(userId)
+  // Senza meteo: lo legge la schermata Oggi. Qui servono solo gli aumenti già salvati.
+  const { byDay: boosts } = useGoalBoosts(userId, today)
 
   const [totals, setTotals] = useState<DayTotal[] | null>(null)
   const [goals, setGoals] = useState<GoalChange[]>([])
@@ -63,6 +66,19 @@ export function HistoryPage() {
   useEffect(() => {
     void loadEntries()
   }, [loadEntries])
+
+  // Caffeina di questa settimana, per la sfida «sotto i 200 mg».
+  const thisWeek = weekStart(new Date(), tz)
+  const [caffeine, setCaffeine] = useState<CaffeineByDay | undefined>(undefined)
+  useEffect(() => {
+    if (!userId) return
+    Promise.resolve(supabase.from('caffeine_intakes').select('local_date, mg').eq('user_id', userId).gte('local_date', thisWeek)).then(({ data, error }) => {
+      if (error || !data) return
+      const byDay: CaffeineByDay = new Map()
+      for (const row of data as { local_date: string; mg: number }[]) byDay.set(row.local_date, (byDay.get(row.local_date) ?? 0) + row.mg)
+      setCaffeine(byDay)
+    })
+  }, [userId, thisWeek])
 
   useEffect(() => {
     if (!userId) return
@@ -106,8 +122,8 @@ export function HistoryPage() {
   }
   if (!totals) return <p className="center-note">Caricamento…</p>
 
-  const days = dayResults(totals, goals, today, range)
-  const stats = computeStats(totals, goals, today)
+  const days = dayResults(totals, goals, today, range, boosts)
+  const stats = computeStats(totals, goals, today, boosts)
   const scale = Math.max(...days.map((d) => Math.max(d.totalMl, d.goalMl)), 1)
   const goalNow = days.at(-1)?.goalMl ?? 0
   const pick = days.find((d) => d.day === selected)
@@ -243,7 +259,7 @@ export function HistoryPage() {
       <section className="card">
         <h2>Sfide della settimana</h2>
         <ul className="challenge-list">
-          {challenges(totals, goals, weekStart(new Date(), tz), today).map((c) => (
+          {challenges(totals, goals, thisWeek, today, caffeine, boosts).map((c) => (
             <li key={c.id} className={c.done ? 'done' : undefined}>
               <div className="board-line">
                 <span>{c.label}</span>

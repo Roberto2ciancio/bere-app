@@ -10,6 +10,7 @@ import { FeedbackForm } from './feedback/FeedbackForm'
 import { HistoryPage } from './history/HistoryPage'
 import { HomePage } from './home/HomePage'
 import { LeaderboardPage } from './leaderboard/LeaderboardPage'
+import { NewsPage } from './news/NewsPage'
 import { OnboardingPage } from './onboarding/OnboardingPage'
 import { PrivacyPage } from './profile/PrivacyPage'
 import { NotificationStatusPage } from './push/NotificationStatusPage'
@@ -56,6 +57,7 @@ export default function App() {
                 <Route path="/notifiche" element={<NotificationStatusPage />} />
                 <Route path="/feedback" element={<FeedbackForm />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="/novita" element={<NewsPage />} />
               </Route>
             </Route>
             <Route path="*" element={<CatchAllRoute />} />

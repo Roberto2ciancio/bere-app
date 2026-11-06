@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { pushMessage } from '../_shared/webpush.ts'
 import { handleRequest, runSendReminders, type Deps, type ReminderRow } from './core.ts'
+import { runSocial, type EveningRow, type GoalAlertRow, type NudgeRow, type WeeklyRow } from './social.ts'
 
 const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
@@ -45,4 +46,32 @@ const deps: Deps = {
   },
 }
 
-Deno.serve((request) => handleRequest(request, Deno.env.get('CRON_SECRET') ?? '', () => runSendReminders(deps, new Date())))
+// In parallelo: se i promemoria falliscono, gli avvisi sociali partono lo stesso (e viceversa).
+async function run() {
+  const [reminders, social] = await Promise.all([runSendReminders(deps, new Date()), runSocial({
+    ...deps,
+    async takeGoalAlerts() {
+      const { data, error } = await db.rpc('take_goal_alerts')
+      fail(error)
+      return (data ?? []) as GoalAlertRow[]
+    },
+    async takeNudges() {
+      const { data, error } = await db.rpc('take_inactivity_nudges')
+      fail(error)
+      return (data ?? []) as NudgeRow[]
+    },
+    async takeEveningSummaries() {
+      const { data, error } = await db.rpc('take_evening_summaries')
+      fail(error)
+      return (data ?? []) as EveningRow[]
+    },
+    async takeWeeklyReports() {
+      const { data, error } = await db.rpc('take_weekly_reports')
+      fail(error)
+      return (data ?? []) as WeeklyRow[]
+    },
+  })])
+  return { ...reminders, ...social }
+}
+
+Deno.serve((request) => handleRequest(request, Deno.env.get('CRON_SECRET') ?? '', run))
