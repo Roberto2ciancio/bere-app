@@ -677,3 +677,9 @@ input[type='file']::file-selector-button {
 
 /* Errore imprevisto: al posto dello schermo bianco */
 .error-page { display: grid; gap: 12px; align-content: center; min-height: 100%; text-align: center; }
+/* Schermi stretti (iPhone SE): la riga sotto il nome va a capo invece di uscire dalla card. */
+.board-main > .board-line:last-child .hint { white-space: normal; min-width: 0; }
+.board-actions { flex-wrap: wrap; }
+@media (max-width: 360px) {
+  .poke { padding: 0 10px; font-size: 0.8rem; }
+}

@@ -84,6 +84,18 @@ async function expectNoHorizontalScroll(page: Page) {
   })
   expect(overflow.page, 'la pagina scorre di lato').toBeLessThanOrEqual(1)
   expect(overflow.body, 'il contenuto esce di lato').toBeLessThanOrEqual(1)
+  // Anche dentro le card: nessun elemento visibile oltre il bordo destro dello schermo.
+  const outside = await page.evaluate(() => {
+    const width = document.documentElement.clientWidth
+    return [...document.querySelectorAll('.shell-body *')]
+      .filter((el) => {
+        const r = el.getBoundingClientRect()
+        return r.width > 0 && r.height > 0 && r.right > width + 1 && getComputedStyle(el).visibility !== 'hidden'
+      })
+      .slice(0, 3)
+      .map((el) => `${el.tagName.toLowerCase()}.${el.className} «${(el.textContent ?? '').trim().slice(0, 30)}»`)
+  })
+  expect(outside, 'elementi oltre il bordo destro').toEqual([])
 }
 
 /** I blocchi della schermata Oggi, dall'alto in basso, non si sovrappongono e l'illustrazione resta nel suo spazio. */
