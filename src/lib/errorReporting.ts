@@ -9,6 +9,14 @@ const seen = new Set<string>()
 // Rumore che non dice nulla dell'app: rete assente, estensioni del browser, script di altri siti.
 const IGNORED = [/failed to fetch/i, /load failed/i, /networkerror/i, /resizeobserver loop/i, /^script error\.?$/i, /aborterror/i]
 
+// Robot che aprono il sito (Google, Bing, Lighthouse…): i loro errori non riguardano gli utenti.
+const BOTS = /bot\b|crawler|spider|google-|googleother|lighthouse|headlesschrome|bingpreview|facebookexternalhit|slurp/i
+
+/** Il service worker rifiutato (robot, navigazione privata, spazio pieno): l'app funziona lo stesso, senza notifiche. */
+const serviceWorkerRefused = (stack: string | null) => !!stack && /serviceWorker\.register|registerSW\.js/.test(stack)
+
+export const isBot = (userAgent: string) => BOTS.test(userAgent)
+
 function describe(error: unknown): { message: string; stack: string | null } {
   if (error instanceof Error) return { message: `${error.name}: ${error.message}`, stack: error.stack ?? null }
   if (typeof error === 'string') return { message: error, stack: null }
@@ -31,6 +39,7 @@ function currentRoute(): string {
 export function reportError(kind: ErrorKind, error: unknown, extraStack?: string) {
   const { message, stack } = describe(error)
   if (!message.trim() || IGNORED.some((pattern) => pattern.test(message))) return
+  if (isBot(navigator.userAgent) || serviceWorkerRefused(stack)) return
   const key = `${kind}:${message}`
   if (seen.has(key) || seen.size >= MAX_PER_SESSION) return
   seen.add(key)

@@ -10,7 +10,7 @@ vi.mock('./supabase', () => ({
 }))
 
 import { ErrorBoundary } from '../ui/ErrorBoundary'
-import { installErrorReporting, reportError, resetErrorReporting } from './errorReporting'
+import { installErrorReporting, isBot, reportError, resetErrorReporting } from './errorReporting'
 
 const reports = () => fake.rpcCalls.filter((c) => c.name === 'report_client_error').map((c) => c.args as Record<string, unknown>)
 
@@ -39,6 +39,29 @@ describe('segnalazione errori', () => {
   it('ignora il rumore: rete assente, script esterni, ResizeObserver', () => {
     for (const noise of [new TypeError('Failed to fetch'), 'Load failed', 'Script error.', 'ResizeObserver loop limit exceeded']) reportError('error', noise)
     expect(reports()).toEqual([])
+  })
+
+  it('non segnala il service worker rifiutato (robot, navigazione privata)', () => {
+    const refused = new Error('Rejected')
+    refused.stack = ['Error: Rejected', '    at navigator.serviceWorker.register (<anonymous>:12:648)', '    at https://x/bere-app/registerSW.js:1:98'].join('\n')
+    reportError('rejection', refused)
+    expect(reports()).toEqual([])
+  })
+
+  it('riconosce i robot, non i telefoni veri', () => {
+    const read = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36 (compatible; Google-Read-Aloud; +https://support.google.com/webmasters/answer/1061943)'
+    for (const ua of [read, 'Mozilla/5.0 (compatible; Googlebot/2.1)', 'Mozilla/5.0 (compatible; bingbot/2.0)', 'Mozilla/5.0 Chrome-Lighthouse', 'HeadlessChrome/120']) expect(isBot(ua)).toBe(true)
+    for (const ua of [
+      'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+    ]) expect(isBot(ua)).toBe(false)
+  })
+
+  it('dai robot non segnala nulla', () => {
+    const spy = vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (compatible; Googlebot/2.1)')
+    reportError('error', new Error('qualsiasi'))
+    expect(reports()).toEqual([])
+    spy.mockRestore()
   })
 
   it('raccoglie errori e promesse rifiutate non gestiti', () => {
