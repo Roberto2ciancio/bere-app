@@ -88,3 +88,16 @@ describe('resoconto del lunedì', () => {
     expect(await runSocial(d)).toEqual({ alerts: 0, nudges: 0, evenings: 0, weeklies: 1 })
   })
 })
+
+describe('pausa', () => {
+  it('chi è in pausa non riceve avvisi sociali', async () => {
+    const d = deps({ paused: async () => new Set(['a', 'b']) })
+    expect(await runSocial(d)).toEqual({ alerts: 0, nudges: 0, evenings: 0, weeklies: 0 })
+    expect(d.push).not.toHaveBeenCalled()
+  })
+
+  it('gli altri li ricevono', async () => {
+    const d = deps({ paused: async () => new Set(['a']) })
+    expect(await runSocial(d)).toEqual({ alerts: 1, nudges: 0, evenings: 0, weeklies: 0 })
+  })
+})

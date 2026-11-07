@@ -1,4 +1,4 @@
-import { sendToDevices, type Deps, type PushPayload, type Subscription } from './core.ts'
+import { pausedUsers, sendToDevices, type Deps, type PushPayload, type Subscription } from './core.ts'
 
 export interface GoalAlertRow {
   event_id: string
@@ -37,7 +37,7 @@ export interface WeeklyRow {
   subscriptions: Subscription[] | null
 }
 
-export interface SocialDeps extends Pick<Deps, 'push' | 'removeSubscription' | 'touchSubscription'> {
+export interface SocialDeps extends Pick<Deps, 'push' | 'removeSubscription' | 'touchSubscription' | 'paused'> {
   /** Prende (una volta sola) gli avvisi da mandare agli amici di chi ha appena raggiunto l'obiettivo. */
   takeGoalAlerts(): Promise<GoalAlertRow[]>
   /** Prende (una volta sola) i promemoria per chi non apre l'app. */
@@ -120,20 +120,23 @@ export async function runSocial(deps: SocialDeps): Promise<SocialSummary> {
       console.error(`${what} non letti`, error)
       return [] as T[]
     })
-  const [alerts, nudges, evenings, weeklies] = await Promise.all([
+  const [paused, alerts, nudges, evenings, weeklies] = await Promise.all([
+    pausedUsers(deps),
     safe('avvisi obiettivo', () => deps.takeGoalAlerts()),
     safe('promemoria di assenza', () => deps.takeNudges()),
     safe('riepiloghi serali', () => deps.takeEveningSummaries()),
     safe('resoconti settimanali', () => deps.takeWeeklyReports()),
   ])
-  const send = async (key: keyof SocialSummary, subscriptions: Subscription[] | null, payload: PushPayload) => {
+  // Chi è in pausa non riceve niente: l'avviso è già stato preso e non tornerà a pausa finita.
+  const send = async (key: keyof SocialSummary, userId: string, subscriptions: Subscription[] | null, payload: PushPayload) => {
+    if (paused.has(userId)) return
     if ((await sendToDevices(deps, subscriptions ?? [], payload)) === 'sent') summary[key]++
   }
   await Promise.all([
-    ...alerts.map((row) => send('alerts', row.subscriptions, goalAlertPayload(row))),
-    ...nudges.map((row) => send('nudges', row.subscriptions, nudgePayload(row))),
-    ...evenings.map((row) => send('evenings', row.subscriptions, eveningPayload(row))),
-    ...weeklies.map((row) => send('weeklies', row.subscriptions, weeklyPayload(row))),
+    ...alerts.map((row) => send('alerts', row.to_user, row.subscriptions, goalAlertPayload(row))),
+    ...nudges.map((row) => send('nudges', row.user_id, row.subscriptions, nudgePayload(row))),
+    ...evenings.map((row) => send('evenings', row.user_id, row.subscriptions, eveningPayload(row))),
+    ...weeklies.map((row) => send('weeklies', row.user_id, row.subscriptions, weeklyPayload(row))),
   ])
   return summary
 }

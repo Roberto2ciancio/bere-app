@@ -41,7 +41,18 @@ export function dayResults(totals: DayTotal[], goals: GoalChange[], today: strin
   })
 }
 
-export function computeStats(totals: DayTotal[], goals: GoalChange[], today: string, boosts?: Map<string, number>): Stats {
+/** Il giorno dopo `day`, saltando i giorni in pausa senza obiettivo raggiunto. */
+function nextCounted(day: string, metDays: Set<string>, paused: Set<string>): string {
+  let next = addDays(day, 1)
+  while (paused.has(next) && !metDays.has(next)) next = addDays(next, 1)
+  return next
+}
+
+/**
+ * paused: giorni in pausa. Non rompono la serie e non la allungano;
+ * se in pausa si raggiunge comunque l'obiettivo, quel giorno conta.
+ */
+export function computeStats(totals: DayTotal[], goals: GoalChange[], today: string, boosts?: Map<string, number>, paused: Set<string> = new Set()): Stats {
   const sorted = [...totals].sort((a, b) => a.day.localeCompare(b.day))
   const metDays = new Set(sorted.filter((t) => isMet(t.total_ml, goalWithBoosts(goals, t.day, boosts))).map((t) => t.day))
 
@@ -49,7 +60,7 @@ export function computeStats(totals: DayTotal[], goals: GoalChange[], today: str
   let run = 0
   let previous: string | null = null
   for (const day of [...metDays]) {
-    run = previous && addDays(previous, 1) === day ? run + 1 : 1
+    run = previous && nextCounted(previous, metDays, paused) === day ? run + 1 : 1
     bestStreak = Math.max(bestStreak, run)
     previous = day
   }
@@ -57,8 +68,9 @@ export function computeStats(totals: DayTotal[], goals: GoalChange[], today: str
   // Oggi può ancora arrivare all'obiettivo: se non è raggiunto, la serie si conta da ieri.
   let currentStreak = 0
   let cursor = metDays.has(today) ? today : addDays(today, -1)
-  while (metDays.has(cursor)) {
-    currentStreak += 1
+  for (;;) {
+    if (metDays.has(cursor)) currentStreak += 1
+    else if (!paused.has(cursor)) break
     cursor = addDays(cursor, -1)
   }
 

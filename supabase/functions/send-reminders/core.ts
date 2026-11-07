@@ -94,6 +94,17 @@ export interface Deps {
   removeSubscription(id: string): Promise<void>
   touchSubscription(id: string): Promise<void>
   markResult(logId: string, status: LogStatus, sentAt?: Date): Promise<void>
+  /** Chi è in pausa adesso: non riceve nessuna notifica. */
+  paused?(): Promise<Set<string>>
+  /** Prende (una volta sola) i promemoria rimandati con «Tra 15 min» da inviare adesso. */
+  takeSnoozes?(): Promise<SnoozeRow[]>
+}
+
+export interface SnoozeRow {
+  log_id: string
+  user_id: string
+  drink_ml: number
+  subscriptions: Subscription[] | null
 }
 
 export interface Send {
@@ -109,6 +120,7 @@ export interface Summary {
   missed: number
   failed: number
   errors: number
+  snoozed: number
 }
 
 function hostOf(endpoint: string): string {
@@ -180,12 +192,49 @@ export async function sendToDevices(
   return outcomes.includes('error') ? 'failed' : 'no-device'
 }
 
+/**
+ * Chi è in pausa. Se non si riesce a saperlo si invia lo stesso: meglio un promemoria in più
+ * durante una pausa che nessun promemoria per tutti.
+ */
+export async function pausedUsers(deps: Pick<Deps, 'paused'>): Promise<Set<string>> {
+  try {
+    return (await deps.paused?.()) ?? new Set()
+  } catch (error) {
+    console.error('pause non lette', error)
+    return new Set()
+  }
+}
+
+/** Il promemoria rimandato: come quello originale, con lo stesso id, così «Bevuto ✓» vale una volta sola. */
+export function snoozePayload(row: SnoozeRow): PushPayload {
+  return { title: 'È ora di bere', body: `${row.drink_ml} ml · te lo avevo rimandato di 15 minuti`, url: '#/home', logId: row.log_id }
+}
+
+async function sendSnoozes(deps: Deps, summary: Summary, paused: Set<string>) {
+  if (!deps.takeSnoozes) return
+  let rows: SnoozeRow[]
+  try {
+    rows = await deps.takeSnoozes()
+  } catch (error) {
+    summary.errors++
+    console.error('promemoria rimandati non letti', error)
+    return
+  }
+  await Promise.all(
+    rows.filter((row) => !paused.has(row.user_id)).map(async (row) => {
+      if ((await sendToDevices(deps, row.subscriptions ?? [], snoozePayload(row))) === 'sent') summary.snoozed++
+    }),
+  )
+}
+
 export async function runSendReminders(deps: Deps, now: Date): Promise<Summary> {
-  const summary: Summary = { sent: 0, missed: 0, failed: 0, errors: 0 }
+  const summary: Summary = { sent: 0, missed: 0, failed: 0, errors: 0, snoozed: 0 }
   await deps.heartbeat().catch((error) => console.error('segno di vita non registrato', error))
+  const paused = await pausedUsers(deps)
+  const snoozes = sendSnoozes(deps, summary, paused)
   // Chi ha raggiunto l'obiettivo e ha chiesto di fermarsi non deve risultare neppure come promemoria mancato.
-  // Fuori dalla fascia attiva il promemoria non esiste: non risulta neppure mancato.
-  const rows = (await deps.load()).filter((row) => !row.goal_reached && wantedWithActiveHours(row))
+  // Fuori dalla fascia attiva il promemoria non esiste: non risulta neppure mancato. Lo stesso durante una pausa.
+  const rows = (await deps.load()).filter((row) => !row.goal_reached && wantedWithActiveHours(row) && !paused.has(row.user_id))
   const plans = planSends(rows, now, (error) => {
     summary.errors++
     console.error('riga non valida', error)
@@ -218,6 +267,7 @@ export async function runSendReminders(deps: Deps, now: Date): Promise<Summary> 
       }
     }),
   )
+  await snoozes
   return summary
 }
 

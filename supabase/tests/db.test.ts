@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql', '0012_remove_energy_drinks.sql', '0013_poke_cooldown.sql', '0014_active_hours.sql', '0015_drink_from_push.sql', '0016_social_notifications.sql', '0017_motivation.sql', '0018_client_errors.sql']
+const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql', '0012_remove_energy_drinks.sql', '0013_poke_cooldown.sql', '0014_active_hours.sql', '0015_drink_from_push.sql', '0016_social_notifications.sql', '0017_motivation.sql', '0018_client_errors.sql', '0019_smarter_notifications.sql']
 const A = '00000000-0000-0000-0000-00000000000a'
 const B = '00000000-0000-0000-0000-00000000000b'
 const WEEK = '2026-11-02'
@@ -875,5 +875,102 @@ describe('classifica', () => {
     await db.exec(`set role anon;`)
     await expect(db.query(`select * from get_leaderboard('${WEEK}')`)).rejects.toThrow(/permission denied/)
     await db.exec(`reset role;`)
+  })
+})
+
+describe('notifiche più furbe', () => {
+  const today = `(now() at time zone 'Europe/Rome')::date`
+  const sentLog = async (user = A, age = '0 minutes') =>
+    (await db.query<{ id: string }>(`insert into push_log (user_id, scheduled_date, scheduled_at, status) values ($1, ${today}, now() - interval '${age}', 'sent') returning id`, [user])).rows[0].id
+  const snooze = async (id: string) => {
+    await db.exec('set role anon')
+    try {
+      return (await db.query<{ r: Record<string, unknown> }>(`select snooze_from_push($1) r`, [id])).rows[0].r
+    } finally {
+      await db.exec('reset role')
+    }
+  }
+  const take = async (at = "now() + interval '16 minutes'") =>
+    (await db.query<{ log_id: string; user_id: string; drink_ml: number; subscriptions: unknown }>(`select * from take_snoozes(${at})`)).rows
+  const pause = (user: string, from: string, to: string) =>
+    db.query(`insert into pause_periods (user_id, start_date, end_date) values ($1, ${from}, ${to})`, [user])
+
+  beforeEach(async () => {
+    await db.query(`update profiles set tz = 'Europe/Rome', drink_ml = 250 where id in ($1, $2)`, [A, B])
+    await db.query(`insert into push_subscriptions (user_id, endpoint, p256dh, auth) values ($1, 'https://push/a', 'k', 'a')`, [A])
+  })
+
+  describe('tra 15 minuti', () => {
+    it('rimanda il promemoria di un quarto d\'ora', async () => {
+      const id = await sentLog()
+      expect(await snooze(id)).toEqual({ ok: true, times: 1 })
+      expect(await take('now()')).toEqual([])
+      const rows = await take()
+      expect(rows).toEqual([{ log_id: id, user_id: A, drink_ml: 250, subscriptions: [{ id: expect.any(String), endpoint: 'https://push/a', p256dh: 'k', auth: 'a' }] }])
+      expect(await take("now() + interval '20 minutes'")).toEqual([])
+    })
+
+    it('si può rimandare al massimo 3 volte', async () => {
+      const id = await sentLog()
+      await snooze(id)
+      await snooze(id)
+      expect(await snooze(id)).toEqual({ ok: true, times: 3 })
+      expect(await snooze(id)).toEqual({ ok: false, reason: 'limit' })
+    })
+
+    it('un promemoria di più di 24 ore fa o inesistente non si rimanda', async () => {
+      expect(await snooze(await sentLog(A, '25 hours'))).toEqual({ ok: false, reason: 'invalid' })
+      expect(await snooze('00000000-0000-0000-0000-0000000000ff')).toEqual({ ok: false, reason: 'invalid' })
+    })
+
+    it('non torna se nel frattempo è stato segnato «Bevuto ✓»', async () => {
+      const id = await sentLog()
+      await snooze(id)
+      await db.exec(`set role anon; select drink_from_push('${id}'); reset role;`)
+      expect(await take()).toEqual([])
+    })
+
+    it("non torna a chi ha raggiunto l'obiettivo e ha chiesto di fermarsi", async () => {
+      await db.query(`update profiles set stop_at_goal = true where id = $1`, [A])
+      await drinkFull(A, (await db.query<{ d: string }>(`select ${today}::text d`)).rows[0].d, 3000)
+      await snooze(await sentLog())
+      expect(await take()).toEqual([])
+    })
+
+    it('non torna se il job è rimasto fermo più di mezz\'ora', async () => {
+      await snooze(await sentLog())
+      expect(await take("now() + interval '50 minutes'")).toEqual([])
+    })
+  })
+
+  describe('pausa', () => {
+    it('chi è in pausa oggi non riceve i promemoria rimandati', async () => {
+      await pause(A, today, `${today} + 2`)
+      await snooze(await sentLog())
+      expect(await take()).toEqual([])
+    })
+
+    it('paused_user_ids elenca solo chi è in pausa oggi', async () => {
+      await pause(A, today, today)
+      await pause(B, `${today} - 5`, `${today} - 1`)
+      expect((await db.query(`select * from paused_user_ids()`)).rows).toEqual([{ paused_user_ids: A }])
+    })
+
+    it('una pausa dura al massimo 30 giorni', async () => {
+      await expect(pause(A, today, `${today} + 30`)).rejects.toThrow()
+      await expect(pause(A, today, `${today} + 29`)).resolves.toBeDefined()
+    })
+
+    it('ognuno vede e modifica solo le sue pause', async () => {
+      await pause(B, today, today)
+      const seen = await asUser(A, async () => (await db.query(`select * from pause_periods`)).rows)
+      expect(seen).toEqual([])
+      await expect(asUser(A, () => db.query(`insert into pause_periods (user_id, start_date, end_date) values ($1, ${today}, ${today})`, [B]))).rejects.toThrow()
+    })
+
+    it('le funzioni del server non sono chiamabili dall\'app', async () => {
+      await expect(asUser(A, () => db.query(`select * from paused_user_ids()`))).rejects.toThrow()
+      await expect(asUser(A, () => db.query(`select * from take_snoozes()`))).rejects.toThrow()
+    })
   })
 })

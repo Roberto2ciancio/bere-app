@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
+import { PauseForm } from '../pause/PauseForm'
 import { NotificationPrefs } from '../push/NotificationPrefs'
 import { PushToggle } from '../push/PushToggle'
 import { ActiveHoursForm } from './ActiveHoursForm'
@@ -34,6 +35,8 @@ export function ProfilePage() {
         <h2>Promemoria e notifiche</h2>
         <PushToggle />
         <NotificationPrefs />
+        <hr />
+        <PauseForm />
         <nav className="link-list" aria-label="Promemoria">
           <Link className="link-row" to="/promemoria">Gestisci i promemoria</Link>
           <Link className="link-row" to="/notifiche">Stato notifiche</Link>

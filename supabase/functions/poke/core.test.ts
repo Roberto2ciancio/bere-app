@@ -39,3 +39,12 @@ describe('runPoke', () => {
     expect(await runPoke(deps({ push: vi.fn(async () => 500) }), 'a', 'b')).toBe('failed')
   })
 })
+
+describe('pausa', () => {
+  it('chi è in pausa non viene spronato e lo sprone non si conta', async () => {
+    const d = deps({ isPaused: vi.fn(async () => true) })
+    expect(await runPoke(d, 'a', 'b')).toBe('paused')
+    expect(d.claim).not.toHaveBeenCalled()
+    expect(d.push).not.toHaveBeenCalled()
+  })
+})

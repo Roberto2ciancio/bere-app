@@ -8,6 +8,8 @@ import { formatTime } from '../domain/format'
 import { localParts, weekdayOf } from '../domain/time'
 import { useGoalBoosts } from '../goal/useGoalBoosts'
 import { weekStart } from '../leaderboard/weekStart'
+import { pausedDays } from '../pause/pauses'
+import { usePauses } from '../pause/usePauses'
 import { supabase } from '../lib/supabase'
 import { achievements, challenges, computeStats, dayResults, type CaffeineByDay, type DayTotal } from './stats'
 
@@ -35,6 +37,7 @@ export function HistoryPage() {
   const { custom } = useDrinkOptions(userId)
   // Senza meteo: lo legge la schermata Oggi. Qui servono solo gli aumenti già salvati.
   const { byDay: boosts } = useGoalBoosts(userId, today)
+  const { periods: pauses } = usePauses(userId, today)
 
   const [totals, setTotals] = useState<DayTotal[] | null>(null)
   const [goals, setGoals] = useState<GoalChange[]>([])
@@ -123,7 +126,7 @@ export function HistoryPage() {
   if (!totals) return <p className="center-note">Caricamento…</p>
 
   const days = dayResults(totals, goals, today, range, boosts)
-  const stats = computeStats(totals, goals, today, boosts)
+  const stats = computeStats(totals, goals, today, boosts, pausedDays(pauses, today))
   const scale = Math.max(...days.map((d) => Math.max(d.totalMl, d.goalMl)), 1)
   const goalNow = days.at(-1)?.goalMl ?? 0
   const pick = days.find((d) => d.day === selected)

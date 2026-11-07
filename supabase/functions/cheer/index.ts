@@ -33,6 +33,9 @@ Deno.serve(async (request) => {
           return (data?.display_name as string | undefined) ?? 'Un amico'
         },
         async subscriptions(id) {
+          // In pausa i complimenti non arrivano: per chi li manda risultano comunque inviati.
+          const { data: paused } = await db.rpc('is_paused', { p_user: id })
+          if (paused === true) return []
           const { data, error } = await db.from('push_subscriptions').select('id, endpoint, p256dh, auth').eq('user_id', id)
           if (error) throw new Error(error.message)
           return (data ?? []) as Subscription[]

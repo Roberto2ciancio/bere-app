@@ -97,6 +97,33 @@ describe('computeStats', () => {
     const changing = [{ effectiveFrom: '2026-01-01', goalMl: 1000 }, { effectiveFrom: '2026-11-10', goalMl: 5000 }]
     expect(computeStats([day('2026-11-09', 1000), day('2026-11-10', 1000)], changing, '2026-11-10').completionRate).toBe(50)
   })
+
+  describe('giorni in pausa', () => {
+    const paused = new Set(['2026-11-04', '2026-11-05', '2026-11-06'])
+    const before = [day('2026-11-02', 2000), day('2026-11-03', 2000)]
+
+    it('non rompono la serie e non la allungano', () => {
+      const stats = computeStats([...before, day('2026-11-07', 2000)], goals, '2026-11-07', undefined, paused)
+      expect(stats.bestStreak).toBe(3)
+      expect(stats.currentStreak).toBe(3)
+    })
+
+    it('la serie in corso attraversa una pausa appena finita', () => {
+      expect(computeStats(before, goals, '2026-11-07', undefined, paused).currentStreak).toBe(2)
+    })
+
+    it('un giorno in pausa con l’obiettivo raggiunto conta lo stesso', () => {
+      const stats = computeStats([...before, day('2026-11-05', 2500)], goals, '2026-11-06', undefined, paused)
+      expect(stats.currentStreak).toBe(3)
+      expect(stats.bestStreak).toBe(3)
+    })
+
+    it('un giorno saltato fuori dalla pausa rompe comunque la serie', () => {
+      const stats = computeStats([...before, day('2026-11-08', 2000)], goals, '2026-11-08', undefined, paused)
+      expect(stats.bestStreak).toBe(2)
+      expect(stats.currentStreak).toBe(1)
+    })
+  })
 })
 
 describe('dayResults', () => {

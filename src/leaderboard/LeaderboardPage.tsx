@@ -107,6 +107,7 @@ export function LeaderboardPage() {
       cooldown: `Aspetta un'ora prima di spronare di nuovo ${name}.`,
       blocked: `${name} preferisce non ricevere sproni.`,
       'no-device': `${name} non ha le notifiche attive.`,
+      paused: `${name} ha messo in pausa le notifiche.`,
     }
     setPokeMessage((!error && status && messages[status]) || `Non è stato possibile spronare ${name}. Riprova.`)
     setPoking(false)

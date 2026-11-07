@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest'
-import { handleRequest, planSends, runSendReminders, type Deps, type ReminderRow, type Subscription } from './core.ts'
+import { handleRequest, planSends, runSendReminders, snoozePayload, type Deps, type ReminderRow, type Subscription } from './core.ts'
 
 const sub = (id: string): Subscription => ({ id, endpoint: `https://push/${id}`, p256dh: 'k', auth: 'a' })
 
@@ -21,7 +21,7 @@ describe('fermarsi all\'obiettivo', () => {
   it('non invia e non registra nulla, nemmeno se in ritardo', async () => {
     for (const now of [AT_8, new Date(AT_8.getTime() + 20 * 60_000)]) {
       const d = deps([row({ goal_reached: true })])
-      expect(await runSendReminders(d.value, now)).toEqual({ sent: 0, missed: 0, failed: 0, errors: 0 })
+      expect(await runSendReminders(d.value, now)).toEqual({ sent: 0, missed: 0, failed: 0, errors: 0, snoozed: 0 })
       expect(d.log).toEqual([])
       expect(d.sent).toEqual([])
     }
@@ -77,7 +77,7 @@ describe('fascia attiva', () => {
   it('fuori fascia non invia e non segna mancato', async () => {
     for (const [minutes, now] of [[420, romeAt(7)], [1080, romeAt(18)], [1260, romeAt(21)], [1260, romeAt(21, 30)]] as const) {
       const d = deps([active({ minutes })])
-      expect(await runSendReminders(d.value, now)).toEqual({ sent: 0, missed: 0, failed: 0, errors: 0 })
+      expect(await runSendReminders(d.value, now)).toEqual({ sent: 0, missed: 0, failed: 0, errors: 0, snoozed: 0 })
       expect(d.log).toEqual([])
     }
   })
@@ -108,7 +108,7 @@ describe('fascia attiva', () => {
 
   it('a obiettivo raggiunto non chiede più niente', async () => {
     const d = deps([active({ minutes: 840, drunk_ml: 3000 })])
-    expect(await runSendReminders(d.value, romeAt(14))).toEqual({ sent: 0, missed: 0, failed: 0, errors: 0 })
+    expect(await runSendReminders(d.value, romeAt(14))).toEqual({ sent: 0, missed: 0, failed: 0, errors: 0, snoozed: 0 })
     expect(d.log).toEqual([])
   })
 
@@ -245,21 +245,69 @@ describe('handleRequest', () => {
     new Request('https://x/functions/v1/send-reminders', { method: 'POST', headers: secret ? { 'x-cron-secret': secret } : {} })
 
   it('senza segreto risponde 401 e non invia', async () => {
-    const run = vi.fn(async () => ({ sent: 0, missed: 0, failed: 0, errors: 0 }))
+    const run = vi.fn(async () => ({ sent: 0, missed: 0, failed: 0, errors: 0, snoozed: 0 }))
     expect((await handleRequest(request(), 'giusto', run)).status).toBe(401)
     expect((await handleRequest(request('sbagliato'), 'giusto', run)).status).toBe(401)
     expect(run).not.toHaveBeenCalled()
   })
 
   it('senza segreto configurato rifiuta tutto', async () => {
-    const run = vi.fn(async () => ({ sent: 0, missed: 0, failed: 0, errors: 0 }))
+    const run = vi.fn(async () => ({ sent: 0, missed: 0, failed: 0, errors: 0, snoozed: 0 }))
     expect((await handleRequest(request(''), '', run)).status).toBe(401)
     expect(run).not.toHaveBeenCalled()
   })
 
   it('con il segreto esegue e riporta il riepilogo', async () => {
-    const response = await handleRequest(request('giusto'), 'giusto', async () => ({ sent: 2, missed: 0, failed: 0, errors: 0 }))
+    const response = await handleRequest(request('giusto'), 'giusto', async () => ({ sent: 2, missed: 0, failed: 0, errors: 0, snoozed: 0 }))
     expect(response.status).toBe(200)
-    expect(await response.json()).toEqual({ sent: 2, missed: 0, failed: 0, errors: 0 })
+    expect(await response.json()).toEqual({ sent: 2, missed: 0, failed: 0, errors: 0, snoozed: 0 })
+  })
+})
+
+describe('pausa', () => {
+  it('chi è in pausa non riceve promemoria e non risulta neppure mancato', async () => {
+    const d = deps([row(), row({ schedule_time_id: 't2', user_id: 'u2' })])
+    d.value.paused = async () => new Set(['u1'])
+    expect(await runSendReminders(d.value, AT_8)).toMatchObject({ sent: 1, missed: 0 })
+    expect(d.log.map((l) => l.userId)).toEqual(['u2'])
+  })
+
+  it('se le pause non si leggono, i promemoria partono lo stesso', async () => {
+    const d = deps([row()])
+    d.value.paused = async () => {
+      throw new Error('giù')
+    }
+    expect((await runSendReminders(d.value, AT_8)).sent).toBe(1)
+  })
+})
+
+describe('promemoria rimandati', () => {
+  const snoozed = { log_id: 'log9', user_id: 'u1', drink_ml: 250, subscriptions: [sub('s1')] }
+
+  it('torna con lo stesso id, così «Bevuto ✓» resta valido', () => {
+    expect(snoozePayload(snoozed)).toEqual({ title: 'È ora di bere', body: '250 ml · te lo avevo rimandato di 15 minuti', url: '#/home', logId: 'log9' })
+  })
+
+  it('viene inviato e contato, anche senza promemoria in orario', async () => {
+    const d = deps([])
+    d.value.takeSnoozes = async () => [snoozed]
+    expect(await runSendReminders(d.value, AT_8)).toMatchObject({ sent: 0, snoozed: 1 })
+    expect(d.sent).toEqual([{ sub: 's1', payload: snoozePayload(snoozed) }])
+  })
+
+  it('non arriva a chi è in pausa', async () => {
+    const d = deps([])
+    d.value.takeSnoozes = async () => [snoozed]
+    d.value.paused = async () => new Set(['u1'])
+    expect((await runSendReminders(d.value, AT_8)).snoozed).toBe(0)
+    expect(d.sent).toEqual([])
+  })
+
+  it('se non si leggono, i promemoria in orario partono lo stesso', async () => {
+    const d = deps([row()])
+    d.value.takeSnoozes = async () => {
+      throw new Error('giù')
+    }
+    expect(await runSendReminders(d.value, AT_8)).toMatchObject({ sent: 1, errors: 1 })
   })
 })

@@ -34,6 +34,11 @@ Deno.serve(async (request) => {
           if (error) throw new Error(error.message)
           return (data ?? []) as Subscription[]
         },
+        async isPaused(id) {
+          const { data, error } = await db.rpc('is_paused', { p_user: id })
+          if (error) throw new Error(error.message)
+          return data === true
+        },
         push: pushMessage,
         removeSubscription: async (id) => {
           await db.from('push_subscriptions').delete().eq('id', id)

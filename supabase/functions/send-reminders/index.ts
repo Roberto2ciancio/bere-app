@@ -1,6 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { pushMessage } from '../_shared/webpush.ts'
-import { handleRequest, runSendReminders, type Deps, type ReminderRow } from './core.ts'
+import { handleRequest, runSendReminders, type Deps, type ReminderRow, type SnoozeRow } from './core.ts'
 import { runSocial, type EveningRow, type GoalAlertRow, type NudgeRow, type WeeklyRow } from './social.ts'
 
 const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
@@ -43,6 +43,16 @@ const deps: Deps = {
   },
   async markResult(logId, status, sentAt) {
     fail((await db.from('push_log').update({ status, sent_at: sentAt?.toISOString() ?? null }).eq('id', logId)).error)
+  },
+  async paused() {
+    const { data, error } = await db.rpc('paused_user_ids')
+    fail(error)
+    return new Set((data ?? []) as string[])
+  },
+  async takeSnoozes() {
+    const { data, error } = await db.rpc('take_snoozes')
+    fail(error)
+    return (data ?? []) as SnoozeRow[]
   },
 }
 

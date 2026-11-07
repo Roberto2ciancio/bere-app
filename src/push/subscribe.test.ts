@@ -8,7 +8,7 @@ vi.mock('../lib/supabase', () => ({
   },
 }))
 
-import { cheerConfirmation, drinkConfirmation, notificationOptions } from './notification'
+import { cheerConfirmation, drinkConfirmation, notificationOptions, snoozeConfirmation } from './notification'
 import { subscribePush } from './subscribe'
 
 function stubBrowser(existing: { endpoint: string } | null) {
@@ -60,9 +60,9 @@ describe('notificationOptions', () => {
     expect(options.data).toEqual({ url: '#/home' })
     expect(options.actions).toBeUndefined()
   })
-  it("solo i promemoria hanno «Bevuto ✓», con l'id del promemoria nei dati", () => {
+  it("solo i promemoria hanno «Bevuto ✓» e «Tra 15 min», con l'id del promemoria nei dati", () => {
     const options = notificationOptions({ title: 'x', body: '200 ml', url: '#/home', logId: 'log1' })
-    expect(options.actions).toEqual([{ action: 'drink', title: 'Bevuto ✓' }])
+    expect(options.actions).toEqual([{ action: 'drink', title: 'Bevuto ✓' }, { action: 'snooze', title: 'Tra 15 min' }])
     expect(options.data).toEqual({ url: '#/home', logId: 'log1' })
   })
 })
@@ -100,5 +100,23 @@ describe('complimenti dalla notifica', () => {
     expect(cheerConfirmation('sent')).toMatchObject({ title: 'Complimenti inviati 👏', options: { silent: true } })
     expect(cheerConfirmation('already').title).toBe('Complimenti già inviati')
     expect(cheerConfirmation(null)).toMatchObject({ title: 'Complimenti non inviati', options: { data: { url: '#/classifica' } } })
+  })
+})
+
+describe('snoozeConfirmation', () => {
+  it('conferma in silenzio, con un tag suo', () => {
+    const { title, options } = snoozeConfirmation({ ok: true, times: 1 })
+    expect(title).toBe('Te lo ricordo tra 15 minuti')
+    expect(options).toMatchObject({ tag: 'bere-rimanda', silent: true })
+  })
+  it('dopo 3 volte invita ad aprire l’app', () => {
+    expect(snoozeConfirmation({ ok: false, reason: 'limit' }).title).toBe('Rimandato già 3 volte')
+  })
+  it('senza rete o con un promemoria scaduto lo dice, con un suono', () => {
+    for (const r of [null, { ok: false, reason: 'invalid' as const }]) {
+      const { title, options } = snoozeConfirmation(r)
+      expect(title).toBe('Promemoria non rimandato')
+      expect(options.silent).toBeUndefined()
+    }
   })
 })

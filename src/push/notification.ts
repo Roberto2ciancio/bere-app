@@ -11,12 +11,13 @@ export interface NotificationPayload {
 
 export const DRINK_ACTION = 'drink'
 export const CHEER_ACTION = 'cheer'
+export const SNOOZE_ACTION = 'snooze'
 
 type Options = NotificationOptions & { actions?: { action: string; title: string }[] }
 
 /**
  * Niente tag: un tag fisso sostituirebbe in silenzio un promemoria ancora non letto.
- * Solo i promemoria (con logId) hanno «Bevuto ✓»: gli sproni non sono legati a un invio registrato.
+ * Solo i promemoria (con logId) hanno «Bevuto ✓» e «Tra 15 min»: gli sproni non sono legati a un invio registrato.
  * Gli avvisi «obiettivo raggiunto» degli amici hanno «Complimenti».
  */
 export function notificationOptions(payload: NotificationPayload): Options {
@@ -25,7 +26,12 @@ export function notificationOptions(payload: NotificationPayload): Options {
     icon: 'icon-192.png',
     data: payload.logId ? { url: payload.url, logId: payload.logId } : { url: payload.url },
   }
-  if (payload.logId) options.actions = [{ action: DRINK_ACTION, title: 'Bevuto ✓' }]
+  if (payload.logId) {
+    options.actions = [
+      { action: DRINK_ACTION, title: 'Bevuto ✓' },
+      { action: SNOOZE_ACTION, title: 'Tra 15 min' },
+    ]
+  }
   if (payload.cheerToken) {
     options.data = { url: payload.url, cheerToken: payload.cheerToken }
     options.actions = [{ action: CHEER_ACTION, title: '👏 Complimenti' }]
@@ -74,5 +80,24 @@ export function cheerConfirmation(status: string | null): { title: string; optio
   return {
     title: 'Complimenti non inviati',
     options: { body: 'Tocca qui per aprire la classifica e riprovare da lì.', icon: 'icon-192.png', data: { url: '#/classifica' } },
+  }
+}
+
+export interface SnoozeFromPushResult {
+  ok: boolean
+  times?: number
+  reason?: 'invalid' | 'limit'
+}
+
+/** Dopo «Tra 15 min»: una conferma silenziosa che sparisce sotto il promemoria rimandato (stesso tag). */
+export function snoozeConfirmation(result: SnoozeFromPushResult | null): { title: string; options: Options } {
+  const quiet = { icon: 'icon-192.png', tag: 'bere-rimanda', silent: true, data: { url: '#/home' } }
+  if (result?.ok) return { title: 'Te lo ricordo tra 15 minuti', options: { ...quiet, body: 'Nel frattempo niente fretta 💧' } }
+  if (result?.reason === 'limit') {
+    return { title: 'Rimandato già 3 volte', options: { ...quiet, body: 'Tocca qui per aprire Bere e segnare la bevuta.' } }
+  }
+  return {
+    title: 'Promemoria non rimandato',
+    options: { body: 'Controlla la connessione: il prossimo promemoria arriverà comunque.', icon: 'icon-192.png', data: { url: '#/home' } },
   }
 }

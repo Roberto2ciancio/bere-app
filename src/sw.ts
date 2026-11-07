@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching'
 import { NavigationRoute, registerRoute } from 'workbox-routing'
-import { CHEER_ACTION, cheerConfirmation, DRINK_ACTION, drinkConfirmation, notificationOptions, type DrinkFromPushResult, type NotificationPayload } from './push/notification'
+import { CHEER_ACTION, cheerConfirmation, DRINK_ACTION, drinkConfirmation, notificationOptions, SNOOZE_ACTION, snoozeConfirmation, type DrinkFromPushResult, type NotificationPayload, type SnoozeFromPushResult } from './push/notification'
 
 declare const self: ServiceWorkerGlobalScope
 
@@ -46,6 +46,19 @@ async function drinkFromNotification(logId: string) {
   await self.registration.showNotification(title, options)
 }
 
+/** «Tra 15 min»: il server rimanda lo stesso promemoria di un quarto d'ora. */
+async function snoozeFromNotification(logId: string) {
+  let result: SnoozeFromPushResult | null = null
+  try {
+    const response = await rpc('snooze_from_push', logId)
+    if (response.ok) result = (await response.json()) as SnoozeFromPushResult
+  } catch {
+    // Senza rete: la conferma lo dice.
+  }
+  const { title, options } = snoozeConfirmation(result)
+  await self.registration.showNotification(title, options)
+}
+
 /** «Complimenti» dall'avviso di un amico: il biglietto basta, la sessione non serve. */
 async function cheerFromNotification(token: string) {
   let status: string | null = null
@@ -84,6 +97,10 @@ self.addEventListener('notificationclick', (event) => {
   const data = event.notification.data as { url?: string; logId?: string; cheerToken?: string } | null
   if (event.action === DRINK_ACTION && data?.logId) {
     event.waitUntil(drinkFromNotification(data.logId))
+    return
+  }
+  if (event.action === SNOOZE_ACTION && data?.logId) {
+    event.waitUntil(snoozeFromNotification(data.logId))
     return
   }
   if (event.action === CHEER_ACTION && data?.cheerToken) {

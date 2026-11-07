@@ -12,6 +12,16 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '1.7.0',
+    date: '2026-11-07',
+    title: 'Notifiche più furbe',
+    notes: [
+      "Nel promemoria c'è «Tra 15 min»: lo stesso promemoria torna un quarto d'ora dopo, fino a 3 volte. Se intanto segni la bevuta, non torna.",
+      'Modalità pausa, dal Profilo: in vacanza o quando non stai bene niente notifiche per 1, 3, 7 o 14 giorni, e la serie non si rompe.',
+      "Durante la pausa non arrivano neppure sproni, complimenti e riepiloghi. Puoi riprendere quando vuoi con «Riprendi adesso».",
+    ],
+  },
+  {
     version: '1.6.1',
     date: '2026-11-06',
     title: 'Più solida',

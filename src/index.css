@@ -369,6 +369,9 @@ select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid va
 }
 .card h3 { margin: 0; font-size: 0.93rem; font-weight: 700; }
 .card hr { width: 100%; margin: 4px 0; border: 0; border-top: 1px solid var(--line); }
+.pause { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.pause .hint, .pause-on { margin: 0; }
+.pause-choices { display: flex; flex-wrap: wrap; gap: 8px; }
 .field { display: flex; flex-direction: column; gap: 8px; }
 .hours-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .profile-id { display: flex; align-items: center; gap: 14px; }
