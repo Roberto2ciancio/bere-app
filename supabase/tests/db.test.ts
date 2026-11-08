@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql', '0012_remove_energy_drinks.sql', '0013_poke_cooldown.sql', '0014_active_hours.sql', '0015_drink_from_push.sql', '0016_social_notifications.sql', '0017_motivation.sql', '0018_client_errors.sql', '0019_smarter_notifications.sql']
+const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql', '0012_remove_energy_drinks.sql', '0013_poke_cooldown.sql', '0014_active_hours.sql', '0015_drink_from_push.sql', '0016_social_notifications.sql', '0017_motivation.sql', '0018_client_errors.sql', '0019_smarter_notifications.sql', '0020_two_amounts.sql']
 const A = '00000000-0000-0000-0000-00000000000a'
 const B = '00000000-0000-0000-0000-00000000000b'
 const WEEK = '2026-11-02'
@@ -824,7 +824,7 @@ describe('reminder_rows', () => {
     await db.query(`insert into push_subscriptions (user_id, endpoint, p256dh, auth) values ($1, 'https://push/2', 'k', 'a')`, [A])
     const rows = (await db.query<{ minutes: number; tz: string; subscriptions: { endpoint: string }[] }>(`select * from reminder_rows()`)).rows
     expect(rows).toHaveLength(1)
-    expect(rows[0]).toMatchObject({ minutes: 480, tz: 'Europe/Rome' })
+    expect(rows[0]).toMatchObject({ minutes: 480, tz: 'Europe/Rome', push_amounts: false, units: 'ml' })
     expect(rows[0].subscriptions[0].endpoint).toBe('https://push/2')
   })
   it('non è accessibile agli utenti', async () => {
@@ -906,7 +906,7 @@ describe('notifiche più furbe', () => {
       expect(await snooze(id)).toEqual({ ok: true, times: 1 })
       expect(await take('now()')).toEqual([])
       const rows = await take()
-      expect(rows).toEqual([{ log_id: id, user_id: A, drink_ml: 250, subscriptions: [{ id: expect.any(String), endpoint: 'https://push/a', p256dh: 'k', auth: 'a' }] }])
+      expect(rows).toEqual([{ log_id: id, user_id: A, drink_ml: 250, subscriptions: [{ id: expect.any(String), endpoint: 'https://push/a', p256dh: 'k', auth: 'a' }], push_amounts: false, units: 'ml' }])
       expect(await take("now() + interval '20 minutes'")).toEqual([])
     })
 
@@ -972,5 +972,53 @@ describe('notifiche più furbe', () => {
       await expect(asUser(A, () => db.query(`select * from paused_user_ids()`))).rejects.toThrow()
       await expect(asUser(A, () => db.query(`select * from take_snoozes()`))).rejects.toThrow()
     })
+  })
+})
+
+describe('due quantità nella notifica', () => {
+  const today = `(now() at time zone 'Europe/Rome')::date`
+  const sentLog = async () =>
+    (await db.query<{ id: string }>(`insert into push_log (user_id, scheduled_date, scheduled_at, status) values ($1, ${today}, now(), 'sent') returning id`, [A])).rows[0].id
+  const tap = async (id: string, amount?: number) => {
+    await db.exec('set role anon')
+    try {
+      const sql = amount === undefined ? `select drink_from_push($1) r` : `select drink_from_push($1, $2) r`
+      return (await db.query<{ r: Record<string, unknown> }>(sql, amount === undefined ? [id] : [id, amount])).rows[0].r
+    } finally {
+      await db.exec('reset role')
+    }
+  }
+
+  beforeEach(async () => {
+    await db.query(`update profiles set tz = 'Europe/Rome', drink_ml = 250 where id = $1`, [A])
+  })
+
+  it('segna la quantità scelta dal pulsante', async () => {
+    const id = await sentLog()
+    expect(await tap(id, 500)).toMatchObject({ ok: true, added: true, amount_ml: 500, drunk_ml: 500 })
+  })
+
+  it('senza quantità vale ancora quella del profilo', async () => {
+    expect(await tap(await sentLog())).toMatchObject({ ok: true, added: true, amount_ml: 250 })
+  })
+
+  it('il secondo pulsante non segna una seconda bevuta e dice quella già segnata', async () => {
+    const id = await sentLog()
+    await tap(id, 200)
+    expect(await tap(id, 500)).toMatchObject({ ok: true, added: false, amount_ml: 200, drunk_ml: 200 })
+    expect(await count(`select count(*) n from drinks where user_id = '${A}'`)).toBe(1)
+  })
+
+  it('una quantità fuori misura non segna nulla', async () => {
+    expect(await tap(await sentLog(), 5000)).toEqual({ ok: false })
+    expect(await tap(await sentLog(), 0)).toEqual({ ok: false })
+    expect(await count(`select count(*) n from drinks`)).toBe(0)
+  })
+
+  it('ognuno può scegliere i pulsanti solo per sé', async () => {
+    await asUser(A, () => db.query(`update profiles set push_amounts = true where id = $1`, [A]))
+    await asUser(A, () => db.query(`update profiles set push_amounts = true where id = $1`, [B]))
+    const rows = (await db.query<{ id: string; push_amounts: boolean }>(`select id, push_amounts from profiles where id in ($1, $2) order by id`, [A, B])).rows
+    expect(rows).toEqual([{ id: A, push_amounts: true }, { id: B, push_amounts: false }])
   })
 })

@@ -8,7 +8,7 @@ vi.mock('../lib/supabase', () => ({
   },
 }))
 
-import { cheerConfirmation, drinkConfirmation, notificationOptions, snoozeConfirmation } from './notification'
+import { cheerConfirmation, drinkAmountOf, drinkConfirmation, notificationOptions, snoozeConfirmation } from './notification'
 import { subscribePush } from './subscribe'
 
 function stubBrowser(existing: { endpoint: string } | null) {
@@ -64,6 +64,32 @@ describe('notificationOptions', () => {
     const options = notificationOptions({ title: 'x', body: '200 ml', url: '#/home', logId: 'log1' })
     expect(options.actions).toEqual([{ action: 'drink', title: 'Bevuto ✓' }, { action: 'snooze', title: 'Tra 15 min' }])
     expect(options.data).toEqual({ url: '#/home', logId: 'log1' })
+  })
+  it('con le due quantità i pulsanti «Bevuto» le mostrano, e «Tra 15 min» resta per ultimo', () => {
+    const options = notificationOptions({ title: 'x', body: '200 ml', url: '#/home', logId: 'log1', amounts: [200, 500], units: 'ml' })
+    expect(options.actions).toEqual([
+      { action: 'drink:200', title: 'Bevuto 200 ml' },
+      { action: 'drink:500', title: 'Bevuto 500 ml' },
+      { action: 'snooze', title: 'Tra 15 min' },
+    ])
+    expect(options.data).toEqual({ url: '#/home', logId: 'log1' })
+  })
+  it('scrive le quantità nelle unità scelte', () => {
+    const options = notificationOptions({ title: 'x', body: '', url: '#/home', logId: 'log1', amounts: [200, 500], units: 'oz' })
+    expect(options.actions?.map((a) => a.title)).toEqual(['Bevuto 6,8 oz', 'Bevuto 16,9 oz', 'Tra 15 min'])
+  })
+  it('senza id del promemoria le quantità non bastano per avere i pulsanti', () => {
+    expect(notificationOptions({ title: 'x', body: '', url: '#/home', amounts: [200, 500] }).actions).toBeUndefined()
+  })
+})
+
+describe('drinkAmountOf', () => {
+  it('riconosce i pulsanti «Bevuto»', () => {
+    expect(drinkAmountOf('drink')).toBeNull()
+    expect(drinkAmountOf('drink:500')).toBe(500)
+    expect(drinkAmountOf('snooze')).toBeUndefined()
+    expect(drinkAmountOf('')).toBeUndefined()
+    expect(drinkAmountOf('drink:abc')).toBeUndefined()
   })
 })
 

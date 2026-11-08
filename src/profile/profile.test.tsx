@@ -85,6 +85,16 @@ describe('ProfilePage', () => {
     }
   })
 
+  it('le due quantità nel promemoria sono spente di default e si accendono', async () => {
+    render(<App />)
+    const box = await screen.findByRole('checkbox', { name: 'Nel promemoria «Bevuto 200 ml» e «Bevuto 500 ml»' })
+    expect(box).not.toBeChecked()
+    expect(screen.queryByText(/prendono il posto di «Bevuto ✓»/)).not.toBeInTheDocument()
+    await userEvent.click(box)
+    await waitFor(() => expect(fake.tables.profiles[0].push_amounts).toBe(true))
+    expect(await screen.findByText(/prendono il posto di «Bevuto ✓»/)).toBeInTheDocument()
+  })
+
   it('cambiare stile aggiorna subito app e profilo', async () => {
     render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: 'Anello' }))

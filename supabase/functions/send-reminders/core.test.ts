@@ -159,6 +159,12 @@ describe('runSendReminders', () => {
     expect(d.sent[0].payload).toEqual({ title: 'È ora di bere', body: '250 ml', url: '#/home', logId: 'log0' })
   })
 
+  it('chi ha scelto le due quantità le riceve nel promemoria, con le sue unità', async () => {
+    const d = deps([row({ push_amounts: true, units: 'oz' })])
+    await runSendReminders(d.value, AT_8)
+    expect(d.sent[0].payload).toMatchObject({ logId: 'log0', amounts: [200, 500], units: 'oz' })
+  })
+
   it('due esecuzioni nello stesso minuto inviano una sola volta', async () => {
     const d = deps([row()])
     await runSendReminders(d.value, AT_8)
@@ -286,6 +292,10 @@ describe('promemoria rimandati', () => {
 
   it('torna con lo stesso id, così «Bevuto ✓» resta valido', () => {
     expect(snoozePayload(snoozed)).toEqual({ title: 'È ora di bere', body: '250 ml · te lo avevo rimandato di 15 minuti', url: '#/home', logId: 'log9' })
+  })
+
+  it('il promemoria rimandato tiene le due quantità', () => {
+    expect(snoozePayload({ ...snoozed, push_amounts: true, units: 'ml' })).toMatchObject({ logId: 'log9', amounts: [200, 500], units: 'ml' })
   })
 
   it('viene inviato e contato, anche senza promemoria in orario', async () => {

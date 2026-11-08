@@ -32,6 +32,17 @@ export interface ReminderRow {
   /** Bevuto e obiettivo di oggi, per la quantità ricalcolata. */
   drunk_ml?: number
   goal_ml?: number
+  /** Ha scelto le due quantità nel promemoria al posto di «Bevuto ✓». */
+  push_amounts?: boolean
+  units?: 'ml' | 'oz'
+}
+
+/** Le quantità dei pulsanti «Bevuto 200 ml» e «Bevuto 500 ml». */
+export const PUSH_AMOUNTS_ML = [200, 500]
+
+/** Cosa aggiungere al promemoria per mostrare le due quantità, se le ha scelte. */
+export function amountButtons(row: Pick<ReminderRow, 'push_amounts' | 'units'>): Pick<PushPayload, 'amounts' | 'units'> {
+  return row.push_amounts ? { amounts: PUSH_AMOUNTS_ML, units: row.units ?? 'ml' } : {}
 }
 
 const hoursOf = (row: ReminderRow): ActiveHours => ({ start: row.active_start_min ?? 480, end: row.active_end_min ?? 1080 })
@@ -69,6 +80,9 @@ export interface PushPayload {
   logId: string
   /** Avviso «obiettivo raggiunto»: il biglietto per mandare i complimenti dalla notifica. */
   cheerToken?: string
+  /** Quantità dei pulsanti «Bevuto …», con le unità per scriverle. */
+  amounts?: number[]
+  units?: 'ml' | 'oz'
 }
 
 export type LogStatus = 'pending' | 'sent' | 'failed' | 'missed' | 'no-device'
@@ -105,6 +119,8 @@ export interface SnoozeRow {
   user_id: string
   drink_ml: number
   subscriptions: Subscription[] | null
+  push_amounts?: boolean
+  units?: 'ml' | 'oz'
 }
 
 export interface Send {
@@ -207,7 +223,7 @@ export async function pausedUsers(deps: Pick<Deps, 'paused'>): Promise<Set<strin
 
 /** Il promemoria rimandato: come quello originale, con lo stesso id, così «Bevuto ✓» vale una volta sola. */
 export function snoozePayload(row: SnoozeRow): PushPayload {
-  return { title: 'È ora di bere', body: `${row.drink_ml} ml · te lo avevo rimandato di 15 minuti`, url: '#/home', logId: row.log_id }
+  return { title: 'È ora di bere', body: `${row.drink_ml} ml · te lo avevo rimandato di 15 minuti`, url: '#/home', logId: row.log_id, ...amountButtons(row) }
 }
 
 async function sendSnoozes(deps: Deps, summary: Summary, paused: Set<string>) {
@@ -256,6 +272,7 @@ export async function runSendReminders(deps: Deps, now: Date): Promise<Summary> 
           body: reminderBody(row, date, rows),
           url: '#/home',
           logId,
+          ...amountButtons(row),
         })
         await deps.markResult(logId, status, status === 'sent' ? now : undefined)
         if (status === 'sent') summary.sent++

@@ -348,3 +348,55 @@ describe('programma a intervalli', () => {
     expect(await screen.findByRole('link', { name: 'Attiva le notifiche' })).toHaveAttribute('href', '/notifiche')
   })
 })
+
+describe('orari che imparano', () => {
+  // Bevute alle 10:30 negli ultimi 10 giorni, nell'ora del dispositivo: l'app usa il suo fuso.
+  function seedHabit(hhmm = '10:30', days = 10) {
+    const [h, m] = hhmm.split(':').map(Number)
+    const now = new Date()
+    fake.tables.drinks = Array.from({ length: days }, (_, i) => {
+      const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i - 1, h, m)
+      const local = `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, '0')}-${String(at.getDate()).padStart(2, '0')}`
+      return { user_id: 'u1', client_id: `d${i}`, amount_ml: 200, local_date: local, drunk_at: at.toISOString() }
+    })
+  }
+
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  it("propone l'orario in cui bevi di solito e lo aggiunge al programma", async () => {
+    seedSchedule([480, 900])
+    seedHabit()
+    renderPage()
+    const card = await screen.findByRole('region', { name: 'Orari che imparano' })
+    expect(card).toHaveTextContent('verso le 10:30')
+    expect(card).toHaveTextContent('Lo aggiungo a «Lavoro»')
+    await userEvent.click(within(card).getByRole('button', { name: 'Aggiungi 10:30' }))
+    await waitFor(() => expect(fake.tables.schedule_times.map((t) => t.minutes).sort()).toEqual([480, 630, 900]))
+    expect(await screen.findByText('Aggiunto il promemoria delle 10:30 a «Lavoro».')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Orari che imparano' })).not.toBeInTheDocument())
+  })
+
+  it("non propone nulla se c'è già un promemoria vicino", async () => {
+    seedSchedule([600])
+    seedHabit()
+    renderPage()
+    await screen.findByRole('button', { name: 'Modifica Lavoro' })
+    await new Promise((r) => setTimeout(r, 50))
+    expect(screen.queryByRole('region', { name: 'Orari che imparano' })).not.toBeInTheDocument()
+  })
+
+  it('«Non ora» nasconde la proposta anche alla prossima apertura', async () => {
+    seedSchedule([480])
+    seedHabit()
+    const { unmount } = renderPage()
+    await userEvent.click(await screen.findByRole('button', { name: 'Non ora' }))
+    expect(screen.queryByRole('region', { name: 'Orari che imparano' })).not.toBeInTheDocument()
+    unmount()
+    renderPage()
+    await screen.findByRole('button', { name: 'Modifica Lavoro' })
+    await new Promise((r) => setTimeout(r, 50))
+    expect(screen.queryByRole('region', { name: 'Orari che imparano' })).not.toBeInTheDocument()
+  })
+})

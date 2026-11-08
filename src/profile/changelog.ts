@@ -12,6 +12,15 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '1.7.1',
+    date: '2026-11-08',
+    title: 'Notifiche su misura',
+    notes: [
+      "Nel Profilo puoi mettere nel promemoria «Bevuto 200 ml» e «Bevuto 500 ml», per segnare quanto hai bevuto davvero. Su Android prendono il posto di «Bevuto ✓» e «Tra 15 min».",
+      "In Promemoria, Bere guarda quando bevi di solito e ti propone di aggiungere un promemoria agli orari in cui non ne ricevi. Basta un tocco, oppure «Non ora».",
+    ],
+  },
+  {
     version: '1.7.0',
     date: '2026-11-07',
     title: 'Notifiche più furbe',

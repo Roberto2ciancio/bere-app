@@ -1,10 +1,19 @@
 import { useProfile } from '../auth/ProfileProvider'
+import { formatAmount } from '../domain/hydration'
 
 export function NotificationPrefs() {
   const { profile, updateProfile } = useProfile()
   if (!profile) return null
+  const [small, large] = [200, 500].map((ml) => `«Bevuto ${formatAmount(ml, profile.units)}»`)
   return (
     <>
+      <label className="row">
+        Nel promemoria {small} e {large}
+        <input type="checkbox" checked={profile.push_amounts ?? false} onChange={(e) => void updateProfile({ push_amounts: e.target.checked })} />
+      </label>
+      {profile.push_amounts && (
+        <p className="hint">Su Android i pulsanti sono al massimo due: le quantità prendono il posto di «Bevuto ✓» e «Tra 15 min».</p>
+      )}
       <label className="row">
         Fermati quando raggiungo l'obiettivo
         <input type="checkbox" checked={profile.stop_at_goal ?? false} onChange={(e) => void updateProfile({ stop_at_goal: e.target.checked })} />

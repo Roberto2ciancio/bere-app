@@ -7,17 +7,31 @@ export interface NotificationPayload {
   logId?: string
   /** Avviso «obiettivo raggiunto» di un amico: il biglietto per i complimenti. */
   cheerToken?: string
+  /** Ha scelto le due quantità: i pulsanti «Bevuto …» al posto di «Bevuto ✓». */
+  amounts?: number[]
+  units?: Units
 }
 
 export const DRINK_ACTION = 'drink'
 export const CHEER_ACTION = 'cheer'
 export const SNOOZE_ACTION = 'snooze'
 
+/** «Bevuto 500 ml» ha l'azione «drink:500». */
+const amountAction = (ml: number) => `${DRINK_ACTION}:${ml}`
+
+/** La quantità scelta dal pulsante: null per «Bevuto ✓» (quella del profilo), undefined se non è un pulsante «Bevuto». */
+export function drinkAmountOf(action: string): number | null | undefined {
+  if (action === DRINK_ACTION) return null
+  const match = /^drink:(\d+)$/.exec(action)
+  return match ? Number(match[1]) : undefined
+}
+
 type Options = NotificationOptions & { actions?: { action: string; title: string }[] }
 
 /**
  * Niente tag: un tag fisso sostituirebbe in silenzio un promemoria ancora non letto.
  * Solo i promemoria (con logId) hanno «Bevuto ✓» e «Tra 15 min»: gli sproni non sono legati a un invio registrato.
+ * Chi ha scelto le due quantità ha «Bevuto 200 ml», «Bevuto 500 ml» e poi «Tra 15 min»: Android mostra solo i primi due.
  * Gli avvisi «obiettivo raggiunto» degli amici hanno «Complimenti».
  */
 export function notificationOptions(payload: NotificationPayload): Options {
@@ -27,10 +41,13 @@ export function notificationOptions(payload: NotificationPayload): Options {
     data: payload.logId ? { url: payload.url, logId: payload.logId } : { url: payload.url },
   }
   if (payload.logId) {
-    options.actions = [
-      { action: DRINK_ACTION, title: 'Bevuto ✓' },
-      { action: SNOOZE_ACTION, title: 'Tra 15 min' },
-    ]
+    const amounts = (payload.amounts ?? []).filter((ml) => Number.isInteger(ml) && ml > 0).slice(0, 2)
+    options.actions = amounts.length > 0
+      ? [...amounts.map((ml) => ({ action: amountAction(ml), title: `Bevuto ${formatAmount(ml, payload.units)}` })), { action: SNOOZE_ACTION, title: 'Tra 15 min' }]
+      : [
+          { action: DRINK_ACTION, title: 'Bevuto ✓' },
+          { action: SNOOZE_ACTION, title: 'Tra 15 min' },
+        ]
   }
   if (payload.cheerToken) {
     options.data = { url: payload.url, cheerToken: payload.cheerToken }

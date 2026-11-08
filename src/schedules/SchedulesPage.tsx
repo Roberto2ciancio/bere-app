@@ -2,8 +2,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
+import { formatTime } from '../domain/format'
 import { pushSupportState } from '../push/subscribe'
 import { IntervalCreator } from './IntervalCreator'
+import { LearnedTimes } from './LearnedTimes'
 import { ScheduleCard } from './ScheduleCard'
 import { ScheduleEditor } from './ScheduleEditor'
 import { deleteSchedule, hasDuplicateReminders, listSchedules, saveSchedule, type Schedule, type ScheduleDraft } from './schedulesApi'
@@ -88,6 +90,15 @@ export function SchedulesPage() {
     }
   }
 
+  async function addLearnedTime(schedule: Schedule, minutes: number) {
+    if (!userId) return
+    setMessage(null)
+    const draft = toDraft(schedule)
+    await saveSchedule(userId, { ...draft, minutes: [...draft.minutes, minutes].sort((a, b) => a - b) })
+    await reload()
+    setMessage(`Aggiunto il promemoria delle ${formatTime(minutes)} a «${schedule.name}».`)
+  }
+
   async function remove(id: string) {
     try {
       await deleteSchedule(id)
@@ -134,6 +145,16 @@ export function SchedulesPage() {
             />
           ))}
         </ul>
+      )}
+
+      {userId && schedules && adding === 'none' && !editingId && (
+        <LearnedTimes
+          userId={userId}
+          tz={tz}
+          schedules={schedules}
+          hours={profile?.active_split ? { start: profile.active_start_min ?? 480, end: profile.active_end_min ?? 1080 } : undefined}
+          onAdd={addLearnedTime}
+        />
       )}
 
       {schedules?.filter((s) => s.id === editingId).map((s) => (

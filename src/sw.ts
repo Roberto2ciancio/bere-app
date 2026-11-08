@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching'
 import { NavigationRoute, registerRoute } from 'workbox-routing'
-import { CHEER_ACTION, cheerConfirmation, DRINK_ACTION, drinkConfirmation, notificationOptions, SNOOZE_ACTION, snoozeConfirmation, type DrinkFromPushResult, type NotificationPayload, type SnoozeFromPushResult } from './push/notification'
+import { CHEER_ACTION, cheerConfirmation, drinkAmountOf, drinkConfirmation, notificationOptions, SNOOZE_ACTION, snoozeConfirmation, type DrinkFromPushResult, type NotificationPayload, type SnoozeFromPushResult } from './push/notification'
 
 declare const self: ServiceWorkerGlobalScope
 
@@ -16,12 +16,12 @@ self.addEventListener('install', () => void self.skipWaiting())
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()))
 
 // Il service worker non ha la sessione dell'utente: queste funzioni accettano la chiave pubblica e l'id del promemoria.
-function rpc(name: string, logId: string) {
+function rpc(name: string, logId: string, extra: Record<string, unknown> = {}) {
   const key = import.meta.env.VITE_SUPABASE_ANON_KEY
   return fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/${name}`, {
     method: 'POST',
     headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ p_log_id: logId }),
+    body: JSON.stringify({ p_log_id: logId, ...extra }),
   })
 }
 
@@ -33,11 +33,11 @@ async function markReceived(logId: string) {
   }
 }
 
-/** «Bevuto ✓»: segna la bevuta senza aprire l'app e risponde con il totale di oggi. */
-async function drinkFromNotification(logId: string) {
+/** «Bevuto ✓» o «Bevuto 500 ml»: segna la bevuta senza aprire l'app e risponde con il totale di oggi. */
+async function drinkFromNotification(logId: string, amountMl: number | null) {
   let result: DrinkFromPushResult | null = null
   try {
-    const response = await rpc('drink_from_push', logId)
+    const response = await rpc('drink_from_push', logId, amountMl === null ? {} : { p_amount_ml: amountMl })
     if (response.ok) result = (await response.json()) as DrinkFromPushResult
   } catch {
     // Senza rete: la conferma invita ad aprire l'app.
@@ -95,8 +95,9 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   const data = event.notification.data as { url?: string; logId?: string; cheerToken?: string } | null
-  if (event.action === DRINK_ACTION && data?.logId) {
-    event.waitUntil(drinkFromNotification(data.logId))
+  const amountMl = drinkAmountOf(event.action)
+  if (amountMl !== undefined && data?.logId) {
+    event.waitUntil(drinkFromNotification(data.logId, amountMl))
     return
   }
   if (event.action === SNOOZE_ACTION && data?.logId) {

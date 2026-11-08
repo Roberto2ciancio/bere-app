@@ -21,6 +21,7 @@ export interface Profile {
   activity?: Activity | null
   units?: Units
   stop_at_goal?: boolean
+  push_amounts?: boolean
   allow_pokes?: boolean
   share_goal?: boolean
   friend_goal_alerts?: boolean

@@ -1,6 +1,6 @@
 # Bere: idee per le prossime versioni
 
-Ultimo aggiornamento: 7 novembre 2026 (app alla versione 1.7.0).
+Ultimo aggiornamento: 8 novembre 2026 (app alla versione 1.7.1).
 
 Legenda: 🟢 piccolo · 🟡 medio · 🔴 grande · 🗄️ tocca il server (database o funzioni) · 📦 serve un nuovo APK
 
@@ -12,8 +12,8 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 
 - [x] 🟢 🗄️ **«Ricordamelo tra 15 minuti»** (fatto in 1.7.0: «Tra 15 min», fino a 3 volte per promemoria): secondo pulsante nelle notifiche, accanto a «Bevuto ✓».
 - [x] 🟢 🗄️ **Modalità pausa** (fatto in 1.7.0: 1, 3, 7 o 14 giorni dal Profilo; la classifica settimanale non cambia) (vacanza, malattia): spegne tutte le notifiche per X giorni; la serie non si rompe.
-- [ ] 🟡 🗄️ **Orari che imparano**: l'app propone i promemoria negli orari in cui di solito bevi davvero.
-- [ ] 🟢 🗄️ **Due quantità nella notifica**: «Bevuto 200 ml» e «Bevuto 500 ml».
+- [x] 🟡 **Orari che imparano** (fatto in 1.7.1: in Promemoria, dalle bevute delle ultime 4 settimane, con un tocco per aggiungere l'orario): l'app propone i promemoria negli orari in cui di solito bevi davvero.
+- [x] 🟢 🗄️ **Due quantità nella notifica** (fatto in 1.7.1: da attivare nel Profilo; su Android sostituiscono «Bevuto ✓» e «Tra 15 min», che ci stanno al massimo due pulsanti): «Bevuto 200 ml» e «Bevuto 500 ml».
 
 ## 1.8: motivazione a lungo termine
 
@@ -56,9 +56,8 @@ Richiede di passare da TWA a Capacitor e rifare le notifiche con Firebase Cloud 
 
 ## Da dove partire
 
-1. Due quantità nella notifica e orari che imparano: chiudono la 1.7.
-2. Salva-serie e statistiche mensili: tengono le persone motivate nel tempo.
-3. Avviso se il job delle notifiche si ferma: ora che ci sono rimandi e pause, conta ancora di più.
+1. Salva-serie e statistiche mensili: tengono le persone motivate nel tempo.
+2. Avviso se il job delle notifiche si ferma: ora che ci sono rimandi e pause, conta ancora di più.
 
 ## Come si pubblica una versione
 
