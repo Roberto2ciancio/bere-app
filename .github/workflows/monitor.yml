@@ -1,0 +1,71 @@
+name: Controllo notifiche
+
+# Ogni 10 minuti guarda quando ha girato l'ultima volta send-reminders (gira ogni minuto).
+# Fermo da più di 10 minuti → apre una issue «Notifiche ferme» (arriva l'email di GitHub).
+# Quando riparte → commenta e chiude la issue. Una sola email per guasto, non una ogni 10 minuti.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+concurrency:
+  group: monitor
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Controlla il segno di vita
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          MAX_MINUTES: '10'
+        run: |
+          set -u
+          now=$(date -u +%s)
+          last=$(curl -sf --max-time 20 -X POST "$SUPABASE_URL/rest/v1/rpc/reminders_last_run" \
+            -H "apikey: $SUPABASE_KEY" -H "Content-Type: application/json" -d '{}' | tr -d '"') || last="irraggiungibile"
+
+          if [ "$last" = "irraggiungibile" ]; then
+            problem="Supabase non risponde (il controllo non è riuscito a leggere il segno di vita)."
+          elif [ -z "$last" ] || [ "$last" = "null" ]; then
+            problem="Il job non ha mai registrato un giro."
+          else
+            age=$(( (now - $(date -u -d "$last" +%s)) / 60 ))
+            echo "Ultimo giro: $last ($age minuti fa)"
+            if [ "$age" -gt "$MAX_MINUTES" ]; then
+              problem="L'ultimo giro di send-reminders è di $age minuti fa ($last UTC): dovrebbe girare ogni minuto."
+            else
+              problem=""
+            fi
+          fi
+
+          open=$(gh issue list --label monitor --state open --json number -q '.[0].number // empty')
+
+          if [ -n "$problem" ]; then
+            echo "::warning::$problem"
+            if [ -z "$open" ]; then
+              gh label create monitor --color B60205 --description "Avvisi del controllo automatico" 2>/dev/null || true
+              gh issue create --label monitor --title "⚠️ Notifiche ferme" --body "$(printf '%s\n\n%s\n%s\n%s\n%s\n\n%s' \
+                "$problem" \
+                "Cosa controllare:" \
+                "- Supabase › Integrations › Cron: il job che chiama send-reminders è attivo e riesce?" \
+                "- Supabase › Edge Functions › send-reminders › Logs: errori?" \
+                "- Il progetto Supabase è in pausa o ha superato i limiti?" \
+                "Questa issue si chiude da sola quando il job riparte.")"
+            else
+              echo "Issue #$open già aperta: nessuna nuova email."
+            fi
+          elif [ -n "$open" ]; then
+            gh issue comment "$open" --body "✅ Ripartito: ultimo giro alle $last UTC."
+            gh issue close "$open"
+          else
+            echo "Tutto a posto."
+          fi
