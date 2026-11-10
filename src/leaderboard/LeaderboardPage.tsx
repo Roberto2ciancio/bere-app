@@ -7,6 +7,7 @@ import { useLevels } from '../levels/useLevels'
 import { supabase } from '../lib/supabase'
 import { avatarUrl } from '../profile/imageUpload'
 import { weekStart } from './weekStart'
+import { Stagger } from '../ui/motion/Stagger'
 
 interface Entry {
   user_id: string
@@ -131,7 +132,7 @@ export function LeaderboardPage() {
   const me = entries && mine >= 0 ? entries[mine] : null
 
   return (
-    <main className="page board">
+    <Stagger as="main" className="page board">
       <header className="board-head">
         <h1>Classifica</h1>
         <p className="hint">Settimana {weekLabel(week)}</p>
@@ -216,6 +217,6 @@ export function LeaderboardPage() {
           <p className="hint">Nome e foto sono visibili a tutti gli utenti dell'app, insieme ai giorni in cui hai raggiunto l'obiettivo. Le quantità bevute restano private.</p>
         </div>
       </details>
-    </main>
+    </Stagger>
   )
 }

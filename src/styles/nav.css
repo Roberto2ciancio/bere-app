@@ -1,7 +1,8 @@
 .shell { position: relative; height: 100%; display: flex; flex-direction: column; isolation: isolate; }
 .shell-bg { position: absolute; inset: 0; z-index: -1; background-size: cover; background-position: center; }
 .shell-bg::after { content: ''; position: absolute; inset: 0; background: var(--bg); opacity: 0.78; }
-.shell-body { flex: 1; min-height: 0; overflow-y: auto; }
+.shell-body { position: relative; flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; }
+.page-transition { height: 100%; }
 .tabs {
   display: flex;
   border-top: 1px solid var(--line);
@@ -10,12 +11,19 @@
 }
 .tabs a {
   flex: 1;
-  min-height: 52px;
-  display: grid;
-  place-items: center;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
   color: var(--ink-soft);
   font-weight: 600;
-  font-size: 0.92rem;
+  font-size: 0.78rem;
   text-decoration: none;
 }
-.tabs a.active { color: var(--ink); box-shadow: inset 0 3px 0 var(--water); }
+.tab-icon { display: grid; place-items: center; }
+.tabs a.active { color: var(--brand-deep); }
+.tabs a.active .tab-icon { animation: tab-bounce 0.4s var(--ease-out); }
+@keyframes tab-bounce { 0% { transform: translateY(0) scale(1); } 40% { transform: translateY(-4px) scale(1.12); } 100% { transform: translateY(0) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .tabs a.active .tab-icon { animation: none; } }

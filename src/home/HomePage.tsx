@@ -26,6 +26,7 @@ import { DropsView } from './DropsView'
 import { RingView } from './RingView'
 import { playSound } from './sounds'
 import type { ViewProps } from './views'
+import { Stagger } from '../ui/motion/Stagger'
 
 const DAYS = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica']
 const VIEWS = {
@@ -187,7 +188,7 @@ export function HomePage() {
   const percent = goalMl > 0 ? Math.min(100, Math.round((totalMl / goalMl) * 100)) : 0
 
   return (
-    <main className="home">
+    <Stagger as="main" className="home">
       <NewsIcon />
       <header className="home-head">
         <p className="home-total" aria-live="polite">{formatVolume(totalMl, units)}</p>
@@ -268,6 +269,6 @@ export function HomePage() {
       </footer>
 
       {sheetOpen && <DrinkSheet userId={userId} units={units} defaultMl={drinkMl} onDrink={onDrink} onClose={() => setSheetOpen(false)} />}
-    </main>
+    </Stagger>
   )
 }

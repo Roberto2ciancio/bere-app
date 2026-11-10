@@ -15,6 +15,7 @@ import { pausedDays } from '../pause/pauses'
 import { usePauses } from '../pause/usePauses'
 import { supabase } from '../lib/supabase'
 import { achievements, challenges, computeStats, dayResults, jollyThisWeek, type CaffeineByDay, type DayTotal } from './stats'
+import { Stagger } from '../ui/motion/Stagger'
 
 interface Entry {
   client_id: string
@@ -144,7 +145,7 @@ export function HistoryPage() {
   const pickPct = pick && pick.goalMl > 0 ? Math.min(100, Math.round((pick.totalMl / pick.goalMl) * 100)) : 0
 
   return (
-    <main className="page history">
+    <Stagger as="main" className="page history">
       <header className="page-head">
         <h1>Storico</h1>
         <div className="segmented" role="group" aria-label="Periodo">
@@ -325,6 +326,6 @@ export function HistoryPage() {
           </details>
         )}
       </section>
-    </main>
+    </Stagger>
   )
 }

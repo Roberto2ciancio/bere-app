@@ -11,6 +11,7 @@ import { pausedDays } from '../pause/pauses'
 import { usePauses } from '../pause/usePauses'
 import { addMonths, monthGrid, monthSummary, yearSummary, type CalendarDay, type DayLevel, type Inputs, type PeriodSummary } from './calendar'
 import { computeStats, type DayTotal } from './stats'
+import { Stagger } from '../ui/motion/Stagger'
 
 const WEEKDAYS = ['L', 'M', 'M', 'G', 'V', 'S', 'D']
 const LEVEL_LABEL: Record<DayLevel, string> = {
@@ -114,7 +115,7 @@ export function CalendarPage() {
   const thisYear = today.slice(0, 4)
 
   return (
-    <main className="page history calendar">
+    <Stagger as="main" className="page history calendar">
       {head}
       <Link className="back-link" to="/storico">‹ Storico</Link>
 
@@ -153,7 +154,7 @@ export function CalendarPage() {
           Il giorno salvato non allunga la serie. Dal secondo giorno mancato della settimana, la serie riparte da zero.
         </p>
       </section>
-    </main>
+    </Stagger>
   )
 }
 

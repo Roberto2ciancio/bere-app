@@ -9,13 +9,14 @@ import { DataBackup } from './DataBackup'
 import { GoalForm } from './GoalForm'
 import { HeatForm } from './HeatForm'
 import { PasswordForm } from './PasswordForm'
+import { Stagger } from '../ui/motion/Stagger'
 
 // Dall'alto: chi sei, quanto bere, come segnarlo, quando ricordartelo, l'aspetto, l'account.
 export function ProfilePage() {
   const { signOut } = useAuth()
 
   return (
-    <main className="page profile">
+    <Stagger as="main" className="page profile">
       <h1>Profilo</h1>
 
       <ProfileHeader />
@@ -57,6 +58,6 @@ export function ProfilePage() {
       </section>
 
       <p className="hint app-version">Bere {__APP_VERSION__}</p>
-    </main>
+    </Stagger>
   )
 }
