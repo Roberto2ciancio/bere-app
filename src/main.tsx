@@ -6,6 +6,7 @@ import App from './App.tsx'
 import { watchForUpdates } from './lib/appUpdate'
 import { installErrorReporting } from './lib/errorReporting'
 import { ErrorBoundary } from './ui/ErrorBoundary'
+import { MotionRoot } from './ui/motion/MotionRoot'
 import { rememberStartupData } from './profile/whatsNew'
 
 // Prima del render: serve a distinguere un aggiornamento da una nuova installazione.
@@ -23,7 +24,9 @@ if (import.meta.env.MODE === 'devapp') void import('./dev/mountDevBar')
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <App />
+      <MotionRoot>
+        <App />
+      </MotionRoot>
     </ErrorBoundary>
   </StrictMode>,
 )
