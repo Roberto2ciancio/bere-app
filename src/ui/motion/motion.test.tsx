@@ -1,12 +1,13 @@
-import { render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { act, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CountUp } from './CountUp'
 import { MotionRoot } from './MotionRoot'
-import { confetti, haptic } from './effects'
+import { haptic } from './effects'
 
-vi.mock('canvas-confetti', () => {
-  throw new Error('no canvas')
-})
+const confettiMock = vi.hoisted(() => ({ fire: vi.fn() }))
+vi.mock('canvas-confetti', () => ({ default: confettiMock.fire }))
+
+const originalMatchMedia = window.matchMedia
 
 function stubReducedMotion(reduce: boolean) {
   window.matchMedia = ((query: string) => ({
@@ -21,44 +22,100 @@ function stubReducedMotion(reduce: boolean) {
   })) as typeof window.matchMedia
 }
 
-afterEach(() => vi.unstubAllGlobals())
+beforeEach(() => stubReducedMotion(false))
+afterEach(() => {
+  window.matchMedia = originalMatchMedia
+  vi.unstubAllGlobals()
+  vi.useRealTimers()
+  vi.resetModules()
+  vi.doMock('canvas-confetti', () => ({ default: confettiMock.fire }))
+  confettiMock.fire.mockClear()
+})
+
+const ml = (n: number) => `${n} ml`
+const wrap = (value: number) => (
+  <MotionRoot>
+    <CountUp value={value} format={ml} />
+  </MotionRoot>
+)
 
 describe('CountUp', () => {
-  it('espone il valore finale come testo accessibile', () => {
-    stubReducedMotion(false)
-    render(
-      <MotionRoot>
-        <CountUp value={1250} format={(n) => `${n} ml`} />
-      </MotionRoot>,
-    )
-    expect(screen.getByLabelText('1250 ml')).toBeInTheDocument()
+  it('al primo render mostra subito il valore, con testo accessibile', () => {
+    render(wrap(1250))
+    expect(screen.getByLabelText('1250 ml')).toHaveTextContent('1250 ml')
   })
 
-  it('con riduzione movimento mostra subito il valore finale, anche dopo un cambio', () => {
+  it('quando il valore cambia anima e finisce sul valore finale', () => {
+    vi.useFakeTimers()
+    const { rerender } = render(wrap(500))
+    rerender(wrap(1000))
+    act(() => vi.advanceTimersByTime(300))
+    const mid = Number(screen.getByLabelText('1000 ml').textContent!.replace(' ml', ''))
+    expect(mid).toBeGreaterThan(500)
+    expect(mid).toBeLessThan(1000)
+    act(() => vi.advanceTimersByTime(600))
+    expect(screen.getByLabelText('1000 ml')).toHaveTextContent('1000 ml')
+  })
+
+  it('con riduzione movimento mostra subito il valore finale dopo un cambio', () => {
     stubReducedMotion(true)
-    const format = (n: number) => `${n} ml`
-    const { rerender } = render(
-      <MotionRoot>
-        <CountUp value={500} format={format} />
-      </MotionRoot>,
-    )
-    rerender(
-      <MotionRoot>
-        <CountUp value={1250} format={format} />
-      </MotionRoot>,
-    )
+    const { rerender } = render(wrap(500))
+    rerender(wrap(1250))
     expect(screen.getByLabelText('1250 ml')).toHaveTextContent('1250 ml')
   })
 })
 
-describe('effetti', () => {
-  it('confetti non lancia se canvas-confetti non si carica', async () => {
-    stubReducedMotion(false)
-    expect(() => confetti('goal')).not.toThrow()
-    await new Promise((r) => setTimeout(r, 0))
+describe('confetti', () => {
+  const flush = () => new Promise((r) => setTimeout(r, 0))
+
+  it('lancia canvas-confetti quando l\'import riesce', async () => {
+    const { confetti } = await import('./effects')
+    confetti('level')
+    await flush()
+    expect(confettiMock.fire).toHaveBeenCalledTimes(2)
   })
 
-  it('haptic non lancia senza navigator.vibrate', () => {
+  it('con riduzione movimento non fa nulla', async () => {
+    stubReducedMotion(true)
+    const { confetti } = await import('./effects')
+    confetti('goal')
+    await flush()
+    expect(confettiMock.fire).not.toHaveBeenCalled()
+  })
+
+  it('ingoia l\'errore se canvas-confetti non si carica (nessuna rejection non gestita)', async () => {
+    vi.doMock('canvas-confetti', () => {
+      throw new Error('no canvas')
+    })
+    const unhandled = vi.fn()
+    const proc = (globalThis as unknown as {
+      process: {
+        on: (e: string, f: () => void) => void
+        off: (e: string, f: () => void) => void
+      }
+    }).process
+    proc.on('unhandledRejection', unhandled)
+    try {
+      const { confetti } = await import('./effects')
+      expect(() => confetti('goal')).not.toThrow()
+      await flush()
+      await flush()
+      expect(unhandled).not.toHaveBeenCalled()
+    } finally {
+      proc.off('unhandledRejection', unhandled)
+    }
+  })
+})
+
+describe('haptic', () => {
+  it('chiama vibrate(10) quando c\'è', () => {
+    const vibrate = vi.fn()
+    vi.stubGlobal('navigator', { vibrate })
+    haptic()
+    expect(vibrate).toHaveBeenCalledWith(10)
+  })
+
+  it('non lancia senza navigator.vibrate', () => {
     vi.stubGlobal('navigator', {})
     expect(() => haptic()).not.toThrow()
   })

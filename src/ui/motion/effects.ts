@@ -1,3 +1,5 @@
+import type confettiFn from 'canvas-confetti'
+
 export function prefersReducedMotion(): boolean {
   try {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -16,7 +18,7 @@ export function haptic(): void {
 
 type Kind = 'goal' | 'level' | 'small'
 
-const BURSTS: Record<Kind, object[]> = {
+const BURSTS: Record<Kind, confettiFn.Options[]> = {
   goal: [{ particleCount: 90, spread: 70, startVelocity: 40, origin: { y: 0.7 } }],
   level: [
     { particleCount: 80, spread: 80, angle: 60, startVelocity: 50, origin: { x: 0, y: 0.75 } },
