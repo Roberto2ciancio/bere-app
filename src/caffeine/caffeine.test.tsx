@@ -109,19 +109,19 @@ describe('caffeina in home', () => {
     renderHome()
     tapLater(await coffee())
     await waitFor(() => expect(fake.tables.caffeine_intakes).toHaveLength(1))
-    expect(fake.tables.caffeine_intakes[0]).toMatchObject({ user_id: 'u1', kind: 'coffee', mg: 20, local_date: today() })
+    expect(fake.tables.caffeine_intakes[0]).toMatchObject({ user_id: 'u1', kind: 'coffee', mg: 80, local_date: today() })
     expect(fake.tables.drinks).toHaveLength(0)
     expect(screen.getByText('0 L')).toBeInTheDocument()
   })
 
-  it('i caffè già segnati a 80 mg restano a 80, i nuovi valgono 20', async () => {
-    fake.tables.caffeine_intakes = [row()]
+  it('i caffè già segnati a 20 mg restano a 20, i nuovi valgono 80', async () => {
+    fake.tables.caffeine_intakes = [row('coffee', today(), 20)]
     renderHome()
-    await screen.findByText('80 mg di caffeina su 400')
+    await screen.findByText('20 mg di caffeina su 400')
     tapLater(await coffee())
     expect(await screen.findByText('100 mg di caffeina su 400')).toBeInTheDocument()
     await waitFor(() => expect(fake.tables.caffeine_intakes).toHaveLength(2))
-    expect(fake.tables.caffeine_intakes.map((r) => r.mg)).toEqual([80, 20])
+    expect(fake.tables.caffeine_intakes.map((r) => r.mg)).toEqual([20, 80])
   })
 
   it('il doppio tocco entro 400 ms ne registra uno solo', async () => {

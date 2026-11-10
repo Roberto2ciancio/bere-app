@@ -12,6 +12,14 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '1.8.1',
+    date: '2026-11-10',
+    title: 'Caffè a 80 mg',
+    notes: [
+      'Un caffè torna a valere 80 mg di caffeina, il valore tipico di un espresso. I caffè già segnati restano come sono.',
+    ],
+  },
+  {
     version: '1.8.0',
     date: '2026-11-10',
     title: 'Salva-serie e calendario',
