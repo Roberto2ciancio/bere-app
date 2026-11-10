@@ -33,7 +33,7 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 - [x] 🟢 **Monitoraggio errori** (fatto in 1.6.1, con una tabella su Supabase invece di Sentry) (per esempio Sentry gratuito): sapere subito se l'app si rompe sul telefono di qualcuno.
 - [x] 🟡 **Test automatici su telefono simulato** (fatto in 1.6.1: `npm run test:e2e`, bloccano la pubblicazione se falliscono) (Playwright con le misure di un iPhone): avrebbero preso il bug
       della bottiglia sopra «Prossimo promemoria» prima della pubblicazione.
-- [ ] 🟢 🗄️ **Avviso se il job delle notifiche si ferma**: un'email se `send-reminders` non gira per 10 minuti.
+- [x] 🟢 🗄️ **Avviso se il job delle notifiche si ferma** (fatto: workflow «Controllo notifiche» ogni 10 minuti, apre e chiude da solo una issue su GitHub, che manda l'email): un'email se `send-reminders` non gira per 10 minuti.
 - [ ] 🟢 📦 **Tema scuro** automatico, che segue il telefono (anche i colori della barra di stato nell'APK).
 - [ ] 🟢 **Esporta in CSV** per aprire i dati in Excel.
 
@@ -56,8 +56,8 @@ Richiede di passare da TWA a Capacitor e rifare le notifiche con Firebase Cloud 
 
 ## Da dove partire
 
-1. Avviso se il job delle notifiche si ferma: ora che ci sono rimandi e pause, conta ancora di più.
-2. Livelli e punti, o «Condividi la settimana», per chiudere la 1.8.
+1. Livelli e punti, o «Condividi la settimana», per chiudere la 1.8.
+2. Tema scuro automatico, prima del Play Store.
 
 ## Come si pubblica una versione
 
