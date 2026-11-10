@@ -12,6 +12,16 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '1.8.2',
+    date: '2026-11-10',
+    title: 'Livelli e punti',
+    notes: [
+      "Ora guadagni punti: 1 ogni 100 ml fino all'obiettivo, +20 per ogni giorno a obiettivo, +50 per una settimana con almeno 5 giorni e +150 se sono tutti e 7.",
+      'Con i punti sali di livello, da Goccia 💧 a Oceano 🐋. Il tuo livello e quanto manca al prossimo sono nello Storico.',
+      'In classifica, accanto al nome di ognuno, c’è il suo livello. I punti contano anche i giorni passati.',
+    ],
+  },
+  {
     version: '1.8.1',
     date: '2026-11-10',
     title: 'Caffè a 80 mg',

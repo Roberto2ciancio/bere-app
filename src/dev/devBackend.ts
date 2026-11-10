@@ -4,6 +4,7 @@
  */
 import { effectiveMl } from '../domain/hydration'
 import { addDays } from '../domain/time'
+import { pointsFromDays } from '../levels/levels'
 import { readCache } from '../lib/cache'
 import { storageKey } from '../lib/storageKey'
 import { notificationOptions } from '../push/notification'
@@ -244,6 +245,17 @@ function leaderboard(week: string): Row[] {
   ].sort((a, b) => b.days_met - a.days_met || b.streak - a.streak || a.display_name.localeCompare(b.display_name))
 }
 
+/** Stesse regole della funzione SQL get_levels; gli amici finti hanno punti fissi. */
+function levels() {
+  const points = pointsFromDays(dailyTotals().map((d) => ({ day: d.day, totalMl: d.total_ml, goalMl: goalOn(d.day) })))
+  return [
+    { user_id: DEV_USER_ID, points },
+    { user_id: 'finto-1', points: 2350 },
+    { user_id: 'finto-2', points: 640 },
+    { user_id: 'finto-3', points: 90 },
+  ]
+}
+
 function dailyTotals() {
   const days = new Map<string, { day: string; total_ml: number; drinks: number }>()
   for (const drink of rowsOf('drinks')) {
@@ -314,6 +326,7 @@ export const supabase = {
   from: (table: string) => new Query(table),
   async rpc(name: string, args?: { week_start?: string }): Promise<Result> {
     if (name === 'daily_totals') return { data: dailyTotals(), error: null }
+    if (name === 'get_levels') return { data: levels(), error: null }
     // Marta (finta) ha già raggiunto l'obiettivo oggi: così si vedono i complimenti in classifica.
     if (name === 'cheerable_today') return { data: [{ user_id: 'finto-1', cheered: cheeredToday.has('finto-1') }], error: null }
     return { data: name === 'get_leaderboard' ? leaderboard(args?.week_start ?? '') : null, error: null }

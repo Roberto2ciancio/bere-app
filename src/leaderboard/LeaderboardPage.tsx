@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
 import { addDays } from '../domain/time'
+import { levelOf } from '../levels/levels'
+import { useLevels } from '../levels/useLevels'
 import { supabase } from '../lib/supabase'
 import { avatarUrl } from '../profile/imageUpload'
 import { weekStart } from './weekStart'
@@ -38,6 +40,15 @@ function Avatar({ entry, large = false }: { entry: Entry; large?: boolean }) {
   )
 }
 
+function LevelBadge({ points }: { points: number }) {
+  const lv = levelOf(points)
+  return (
+    <span className="level-badge" title={`Livello ${lv.level} · ${lv.name}`} aria-label={`livello ${lv.level}, ${lv.name}`}>
+      <span aria-hidden="true">{lv.emoji} {lv.level}</span>
+    </span>
+  )
+}
+
 function WeekBar({ met }: { met: number }) {
   return (
     <span className="week-bar" aria-hidden="true">
@@ -57,6 +68,7 @@ export function LeaderboardPage() {
   const [poking, setPoking] = useState(false)
   // Chi ha raggiunto l'obiettivo oggi, e se gli ho già fatto i complimenti.
   const [cheerable, setCheerable] = useState<Map<string, boolean>>(new Map())
+  const levels = useLevels()
 
   useEffect(() => {
     let active = true
@@ -158,6 +170,7 @@ export function LeaderboardPage() {
                   <div className="board-line">
                     <span className="board-who">
                       <span className="board-name">{entry.display_name}</span>
+                      {levels?.has(entry.user_id) && <LevelBadge points={levels.get(entry.user_id) ?? 0} />}
                       {isMe && <span className="tag">Tu</span>}
                     </span>
                     <strong className="num board-pts">{entry.days_met}/7</strong>
@@ -197,6 +210,7 @@ export function LeaderboardPage() {
         <summary>Come funziona</summary>
         <div className="fold-body">
           <p className="hint">Vince chi raggiunge il proprio obiettivo in più giorni, da lunedì a domenica. A parità, conta la serie più lunga di giorni consecutivi. Valgono solo obiettivi da 1,5 L in su.</p>
+          <p className="hint">Il numero accanto al nome è il livello: si sale bevendo e raggiungendo l'obiettivo, settimana dopo settimana. I dettagli sono nello Storico.</p>
           <p className="hint">Con «Sprona» mandi a un amico una notifica per ricordargli di bere. Al massimo 3 volte al giorno, e una volta all'ora per la stessa persona.</p>
           <p className="hint">Quando qualcuno raggiunge l'obiettivo del giorno, gli altri ricevono un avviso e possono mandargli i complimenti 👏, dalla notifica o da qui. Puoi spegnere questi avvisi nel Profilo.</p>
           <p className="hint">Nome e foto sono visibili a tutti gli utenti dell'app, insieme ai giorni in cui hai raggiunto l'obiettivo. Le quantità bevute restano private.</p>

@@ -8,6 +8,8 @@ import { drinkLabel, formatAmount, formatVolume } from '../domain/hydration'
 import { formatTime } from '../domain/format'
 import { addDays, localParts, weekdayOf } from '../domain/time'
 import { useGoalBoosts } from '../goal/useGoalBoosts'
+import { LevelCard } from '../levels/LevelCard'
+import { useLevels } from '../levels/useLevels'
 import { weekStart } from '../leaderboard/weekStart'
 import { pausedDays } from '../pause/pauses'
 import { usePauses } from '../pause/usePauses'
@@ -39,6 +41,7 @@ export function HistoryPage() {
   // Senza meteo: lo legge la schermata Oggi. Qui servono solo gli aumenti già salvati.
   const { byDay: boosts } = useGoalBoosts(userId, today)
   const { periods: pauses } = usePauses(userId, today)
+  const levels = useLevels()
 
   const [totals, setTotals] = useState<DayTotal[] | null>(null)
   const [goals, setGoals] = useState<GoalChange[]>([])
@@ -266,6 +269,8 @@ export function HistoryPage() {
         </p>
         <Link className="link-row" to="/storico/calendario">Calendario e statistiche del mese</Link>
       </section>
+
+      {userId && levels?.has(userId) && <LevelCard points={levels.get(userId) ?? 0} />}
 
       <section className="card">
         <h2>Sfide della settimana</h2>

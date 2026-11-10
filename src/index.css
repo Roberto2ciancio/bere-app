@@ -724,3 +724,11 @@ input[type='file']::file-selector-button {
 .year-month-name { text-transform: capitalize; font-weight: 600; }
 .jolly-note { margin: 10px 0 0; }
 .history .chart-col.saved .chart-bar { outline: 2px solid var(--water); outline-offset: -2px; }
+
+/* Livelli e punti */
+.level-head { display: flex; align-items: center; gap: 12px; }
+.level-emoji { flex: none; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; background: var(--bg); font-size: 1.6rem; }
+.level-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.level-text h2 { overflow-wrap: anywhere; }
+.level-rules { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+.level-badge { flex: none; padding: 1px 7px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); font-size: 0.78rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }

@@ -18,7 +18,7 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 ## 1.8: motivazione a lungo termine
 
 - [x] 🟡 **Salva-serie** (fatto in 1.8.0: automatico, il primo giorno mancato di ogni settimana; non vale nella classifica e nelle sfide «di fila»): un giorno «jolly» a settimana che non rompe la serie.
-- [ ] 🟡 🗄️ **Livelli e punti**: si sale di livello bevendo e completando sfide, con un badge accanto al nome in classifica.
+- [x] 🟡 🗄️ **Livelli e punti** (fatto in 1.8.2: 1 punto ogni 100 ml fino all'obiettivo, +20 a obiettivo, bonus settimanali; livelli da Goccia a Oceano): si sale di livello bevendo e completando sfide, con un badge accanto al nome in classifica.
 - [x] 🟡 **Statistiche mensili e annuali** (fatto in 1.8.0: Storico › Calendario, viste Mese e Anno), con un calendario colorato giorno per giorno.
 - [ ] 🟢 **Condividi la settimana**: un'immagine con il resoconto da mandare su WhatsApp o Instagram.
 
@@ -56,7 +56,7 @@ Richiede di passare da TWA a Capacitor e rifare le notifiche con Firebase Cloud 
 
 ## Da dove partire
 
-1. Livelli e punti, o «Condividi la settimana», per chiudere la 1.8.
+1. «Condividi la settimana», per chiudere la 1.8.
 2. Tema scuro automatico, prima del Play Store.
 
 ## Come si pubblica una versione
