@@ -27,6 +27,7 @@ import { RingView } from './RingView'
 import { playSound } from './sounds'
 import type { ViewProps } from './views'
 import { Stagger } from '../ui/motion/Stagger'
+import { CountUp } from '../ui/motion/CountUp'
 
 const DAYS = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica']
 const VIEWS = {
@@ -191,7 +192,7 @@ export function HomePage() {
     <Stagger as="main" className="home">
       <NewsIcon />
       <header className="home-head">
-        <p className="home-total" aria-live="polite">{formatVolume(totalMl, units)}</p>
+        <p className="home-total" aria-live="polite"><CountUp value={totalMl} format={(n) => formatVolume(n, units)} /></p>
         <div className="progress home-progress" aria-hidden="true">
           <span style={{ width: `${percent}%` }} />
         </div>

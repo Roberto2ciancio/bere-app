@@ -219,3 +219,11 @@ test('il popup delle novità sta nello schermo', async ({ page }) => {
   await page.getByRole('button', { name: 'Ho capito' }).click()
   await expect(dialog).toBeHidden()
 })
+
+test('con «riduci movimento» nessuna animazione gira', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'iPhone SE ridotto', 'solo per il progetto con movimento ridotto')
+  await openApp(page, '/home')
+  await page.waitForTimeout(1000)
+  const running = await page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running').length)
+  expect(running).toBe(0)
+})

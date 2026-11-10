@@ -18,12 +18,12 @@ export function CountUp({ value, format = String, duration = 0.6 }: Props) {
     if (start === value) return
     if (prefersReducedMotion()) {
       from.current = value
-      setShown(value)
       return
     }
     const t0 = performance.now()
     let raf = 0
-    const tick = (now: number) => {
+    const tick = () => {
+      const now = performance.now()
       const p = Math.min(1, (now - t0) / (duration * 1000))
       const eased = 1 - (1 - p) ** 3
       const n = p >= 1 ? value : start + (value - start) * eased
@@ -35,5 +35,7 @@ export function CountUp({ value, format = String, duration = 0.6 }: Props) {
     return () => cancelAnimationFrame(raf)
   }, [value, duration])
 
-  return <span aria-label={format(value)}>{format(Math.round(shown))}</span>
+  // Con «riduci movimento» il valore compare subito, senza passare dall'effetto.
+  const current = prefersReducedMotion() ? value : shown
+  return <span aria-label={format(value)}>{format(Math.round(current))}</span>
 }

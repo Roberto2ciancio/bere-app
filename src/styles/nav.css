@@ -2,7 +2,7 @@
 .shell-bg { position: absolute; inset: 0; z-index: -1; background-size: cover; background-position: center; }
 .shell-bg::after { content: ''; position: absolute; inset: 0; background: var(--bg); opacity: 0.78; }
 .shell-body { position: relative; flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; }
-.page-transition { height: 100%; }
+.page-transition { min-height: 100%; }
 .tabs {
   display: flex;
   border-top: 1px solid var(--line);

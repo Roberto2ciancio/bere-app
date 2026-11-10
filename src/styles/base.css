@@ -63,3 +63,8 @@ select { width: 100%; min-height: 46px; padding: 10px 12px; border: 2px solid va
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .bubble, .ripple { display: none; }
 }
+
+/* «Riduci movimento» del telefono: niente animazioni né transizioni, ovunque. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

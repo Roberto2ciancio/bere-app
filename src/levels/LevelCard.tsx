@@ -1,4 +1,5 @@
 import { levelOf, POINTS } from './levels'
+import { CountUp } from '../ui/motion/CountUp'
 
 const pts = (n: number) => `${n.toLocaleString('it-IT')} ${n === 1 ? 'punto' : 'punti'}`
 
@@ -10,7 +11,7 @@ export function LevelCard({ points }: { points: number }) {
         <span className="level-emoji" aria-hidden="true">{lv.emoji}</span>
         <div className="level-text">
           <h2>Livello {lv.level} · {lv.name}</h2>
-          <span className="chip chip-points">{pts(lv.points)}</span>
+          <span className="chip chip-points"><CountUp value={lv.points} format={pts} /></span>
         </div>
       </div>
       <div className="progress" role="progressbar" aria-label={`Verso il livello ${lv.level + 1}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={lv.progress}>

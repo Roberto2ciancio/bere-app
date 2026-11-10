@@ -49,7 +49,7 @@ describe('altre bevande dalla home', () => {
     await waitFor(() => expect(fake.tables.drinks).toHaveLength(1))
     expect(fake.tables.drinks[0]).toMatchObject({ amount_ml: 500, drink_type: 'water', hydration_pct: 100 })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(await screen.findByText('0,5 L')).toBeInTheDocument()
+    expect(await screen.findByText('0,5 L', {}, { timeout: 2500 })).toBeInTheDocument()
   })
 
   it('mostra le tue tazze al posto di quelle pronte', async () => {
@@ -67,7 +67,7 @@ describe('altre bevande dalla home', () => {
     await userEvent.click(within(sheet).getByRole('button', { name: 'Segna' }))
     await waitFor(() => expect(fake.tables.drinks).toHaveLength(1))
     expect(fake.tables.drinks[0]).toMatchObject({ amount_ml: 100, drink_type: 'coffee', hydration_pct: 80 })
-    expect(await screen.findByText('0,08 L')).toBeInTheDocument()
+    expect(await screen.findByText('0,08 L', {}, { timeout: 2500 })).toBeInTheDocument()
   })
 
   it('usa le bevande personalizzate con la loro percentuale', async () => {
@@ -321,7 +321,7 @@ describe('preferenze nel profilo', () => {
     fake.tables.drinks = [{ user_id: 'u1', client_id: 'x', amount_ml: 1500, hydration_pct: 100, drink_type: 'water', local_date: today(), drunk_at: new Date().toISOString() }]
     window.location.hash = '#/home'
     render(<App />)
-    await screen.findByText('1,5 L')
+    await screen.findByText('1,5 L', {}, { timeout: 2500 })
     const can = await screen.findByTestId('character-can')
     expect(can.querySelector('.character-water')?.getAttribute('height')).toBe('50')
     expect(can.querySelector('.character-face')).toBeNull()

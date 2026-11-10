@@ -26,6 +26,9 @@ export default defineConfig({
     { name: 'Android piccolo', use: { ...devices['Galaxy S5'] } },
     // 320 px con i caratteri di Chrome: ha trovato gli orari «Dalle/Alle» fuori schermo.
     { name: 'Android 320', use: { ...devices['Galaxy S9+'] } },
+    // Tema scuro automatico e «riduci movimento»: stesse misure, impostazioni del telefono diverse.
+    { name: 'Pixel 7 scuro', use: { ...devices['Pixel 7'], colorScheme: 'dark' } },
+    { name: 'iPhone SE ridotto', use: { ...devices['iPhone SE'], reducedMotion: 'reduce' } },
   ],
   webServer: {
     command: 'npx vite --mode devapp --port 5199 --strictPort',

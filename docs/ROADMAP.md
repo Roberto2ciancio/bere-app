@@ -1,6 +1,6 @@
 # Bere: idee per le prossime versioni
 
-Ultimo aggiornamento: 8 novembre 2026 (app alla versione 1.7.1).
+Ultimo aggiornamento: 10 novembre 2026 (app alla versione 1.9.0).
 
 Legenda: 🟢 piccolo · 🟡 medio · 🔴 grande · 🗄️ tocca il server (database o funzioni) · 📦 serve un nuovo APK
 
@@ -22,7 +22,14 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 - [x] 🟡 **Statistiche mensili e annuali** (fatto in 1.8.0: Storico › Calendario, viste Mese e Anno), con un calendario colorato giorno per giorno.
 - [ ] 🟢 **Condividi la settimana**: un'immagine con il resoconto da mandare su WhatsApp o Instagram.
 
-## 1.9: social
+## 1.9: nuova grafica e Glu
+
+- [x] 🟡 **1.9.0 · Nuova grafica**: colori vivaci, bottoni e card morbidi, tema scuro automatico, animazioni (numeri, cambi pagina, coriandoli) e «riduci movimento» rispettato.
+- [ ] 🟡 **1.9.1 · Glu nella Home**: la mascotte, una goccia d'acqua, accompagna la giornata.
+- [ ] 🟡 **1.9.2 · Glu nel resto dell'app**: Glu in Storico, classifica e popup.
+- [ ] 🟢 **1.9.3 · Rifiniture**: ultimi ritocchi, peso del pacchetto sotto i 60 KB gzip aggiunti.
+
+## 2.0: social
 
 - [ ] 🔴 🗄️ **Gruppi privati** (famiglia, colleghi, amici) con codice invito, ognuno con la sua classifica.
 - [ ] 🟡 🗄️ **Sfide 1 contro 1**: «Chi raggiunge più giorni questa settimana?».
@@ -34,10 +41,10 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 - [x] 🟡 **Test automatici su telefono simulato** (fatto in 1.6.1: `npm run test:e2e`, bloccano la pubblicazione se falliscono) (Playwright con le misure di un iPhone): avrebbero preso il bug
       della bottiglia sopra «Prossimo promemoria» prima della pubblicazione.
 - [x] 🟢 🗄️ **Avviso se il job delle notifiche si ferma** (fatto: workflow «Controllo notifiche» ogni 10 minuti, apre e chiude da solo una issue su GitHub, che manda l'email): un'email se `send-reminders` non gira per 10 minuti.
-- [ ] 🟢 📦 **Tema scuro** automatico, che segue il telefono (anche i colori della barra di stato nell'APK).
+- [x] 🟢 📦 **Tema scuro** automatico, che segue il telefono (fatto in 1.9.0 nell'app; resta da fare il colore della barra di stato nell'APK, che richiede un nuovo APK).
 - [ ] 🟢 **Esporta in CSV** per aprire i dati in Excel.
 
-## Verso il Play Store (2.0)
+## Verso il Play Store (2.1)
 
 - [ ] 📦 🗄️ **Dominio proprio**: `assetlinks.json` sul nuovo dominio, Redirect URL in Supabase, `host` e `startUrl`
       in `android/twa-manifest.json`. Gli utenti dovranno rifare l'accesso e riattivare le notifiche.
@@ -56,8 +63,9 @@ Richiede di passare da TWA a Capacitor e rifare le notifiche con Firebase Cloud 
 
 ## Da dove partire
 
-1. «Condividi la settimana», per chiudere la 1.8.
-2. Tema scuro automatico, prima del Play Store.
+1. Glu nella Home (1.9.1), poi nel resto dell'app (1.9.2).
+2. «Condividi la settimana», per chiudere la 1.8.
+3. Colore della barra di stato nell'APK (tema scuro), prima del Play Store.
 
 ## Come si pubblica una versione
 

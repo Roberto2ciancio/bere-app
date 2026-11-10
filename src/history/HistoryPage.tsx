@@ -15,6 +15,7 @@ import { pausedDays } from '../pause/pauses'
 import { usePauses } from '../pause/usePauses'
 import { supabase } from '../lib/supabase'
 import { achievements, challenges, computeStats, dayResults, jollyThisWeek, type CaffeineByDay, type DayTotal } from './stats'
+import { CountUp } from '../ui/motion/CountUp'
 import { Stagger } from '../ui/motion/Stagger'
 
 interface Entry {
@@ -257,8 +258,8 @@ export function HistoryPage() {
         <h2>Statistiche</h2>
         <dl className="stat-grid">
           <div><dt>Obiettivo raggiunto</dt><dd>{stats.completionRate}%</dd></div>
-          <div><dt>Serie in corso</dt><dd>{stats.currentStreak} gg</dd></div>
-          <div><dt>Serie migliore</dt><dd>{stats.bestStreak} gg</dd></div>
+          <div><dt>Serie in corso</dt><dd><CountUp value={stats.currentStreak} format={(n) => `${n} gg`} /></dd></div>
+          <div><dt>Serie migliore</dt><dd><CountUp value={stats.bestStreak} format={(n) => `${n} gg`} /></dd></div>
           <div><dt>Media al giorno</dt><dd>{formatVolume(stats.averageMl, units)}</dd></div>
           <div><dt>Totale bevuto</dt><dd>{formatVolume(stats.totalMl, units)}</dd></div>
           <div><dt>Giorni sotto metà</dt><dd>{stats.lowDays}</dd></div>
