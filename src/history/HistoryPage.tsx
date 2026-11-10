@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
 import { DrinkTypeSelect, hydrationOf, parseAmount, useDrinkOptions } from '../drinks/drinkOptions'
 import { type GoalChange } from '../domain/goals'
 import { drinkLabel, formatAmount, formatVolume } from '../domain/hydration'
 import { formatTime } from '../domain/format'
-import { localParts, weekdayOf } from '../domain/time'
+import { addDays, localParts, weekdayOf } from '../domain/time'
 import { useGoalBoosts } from '../goal/useGoalBoosts'
 import { weekStart } from '../leaderboard/weekStart'
 import { pausedDays } from '../pause/pauses'
 import { usePauses } from '../pause/usePauses'
 import { supabase } from '../lib/supabase'
-import { achievements, challenges, computeStats, dayResults, type CaffeineByDay, type DayTotal } from './stats'
+import { achievements, challenges, computeStats, dayResults, jollyThisWeek, type CaffeineByDay, type DayTotal } from './stats'
 
 interface Entry {
   client_id: string
@@ -130,6 +131,7 @@ export function HistoryPage() {
   const scale = Math.max(...days.map((d) => Math.max(d.totalMl, d.goalMl)), 1)
   const goalNow = days.at(-1)?.goalMl ?? 0
   const pick = days.find((d) => d.day === selected)
+  const jollyDay = jollyThisWeek(stats.savedDays, today)
 
   const badges = achievements(stats)
   const earned = badges.filter((a) => a.earned)
@@ -162,9 +164,9 @@ export function HistoryPage() {
             <button
               key={d.day}
               data-day={d.day}
-              className={d.met ? 'chart-col met' : 'chart-col'}
+              className={d.met ? 'chart-col met' : stats.savedDays.has(d.day) ? 'chart-col saved' : 'chart-col'}
               aria-pressed={d.day === selected}
-              aria-label={`${shortDay(d.day)}: ${formatVolume(d.totalMl, units)} su ${formatVolume(d.goalMl, units)}`}
+              aria-label={`${shortDay(d.day)}: ${formatVolume(d.totalMl, units)} su ${formatVolume(d.goalMl, units)}${stats.savedDays.has(d.day) ? ', salvato dal salva-serie' : ''}`}
               title={`${shortDay(d.day)}: ${formatVolume(d.totalMl, units)}`}
               onClick={() => setSelected(d.day)}
             >
@@ -195,7 +197,7 @@ export function HistoryPage() {
                   <tr key={d.day}>
                     <td>{shortDay(d.day)}</td>
                     <td>{formatVolume(d.totalMl, units)}</td>
-                    <td>{d.met ? 'Raggiunto' : formatVolume(d.goalMl, units)}</td>
+                    <td>{d.met ? 'Raggiunto' : stats.savedDays.has(d.day) ? 'Salva-serie' : formatVolume(d.goalMl, units)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -257,6 +259,12 @@ export function HistoryPage() {
           <div><dt>Totale bevuto</dt><dd>{formatVolume(stats.totalMl, units)}</dd></div>
           <div><dt>Giorni sotto metà</dt><dd>{stats.lowDays}</dd></div>
         </dl>
+        <p className="hint jolly-note">
+          {jollyDay
+            ? `🛟 Salva-serie usato ${jollyDay === addDays(today, -1) ? 'ieri' : longDay(jollyDay)}: la serie è salva. Il prossimo arriva lunedì.`
+            : '🛟 Salva-serie disponibile: se questa settimana manchi un giorno, la serie non si rompe.'}
+        </p>
+        <Link className="link-row" to="/storico/calendario">Calendario e statistiche del mese</Link>
       </section>
 
       <section className="card">

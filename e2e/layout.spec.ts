@@ -185,6 +185,7 @@ test.describe('Oggi', () => {
 
 const PAGES = [
   ['Storico', '/storico', 'Storico'],
+  ['Calendario', '/storico/calendario', 'Calendario'],
   ['Classifica', '/classifica', 'Classifica'],
   ['Profilo', '/profilo', 'Profilo'],
   ['Newsletter', '/novita', 'Newsletter'],

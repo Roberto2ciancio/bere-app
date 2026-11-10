@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dayResults, achievements, challenges, computeStats, type DayTotal } from '../history/stats'
+import { dayResults, achievements, challenges, computeStats, jollyThisWeek, type DayTotal } from '../history/stats'
 import { effectiveMl, expectedByNow, formatAmount, formatVolume, suggestGoal, BUILT_IN_DRINKS, drinkLabel } from './hydration'
 
 describe('effectiveMl', () => {
@@ -71,7 +71,7 @@ const day = (date: string, total: number, drinks = 5): DayTotal => ({ day: date,
 
 describe('computeStats', () => {
   it('senza dati è tutto a zero', () => {
-    expect(computeStats([], goals, '2026-11-10')).toEqual({ totalMl: 0, drinks: 0, daysTracked: 0, completionRate: 0, bestStreak: 0, currentStreak: 0, averageMl: 0, lowDays: 0, bestHalfRun: 0 })
+    expect(computeStats([], goals, '2026-11-10')).toEqual({ totalMl: 0, drinks: 0, daysTracked: 0, completionRate: 0, bestStreak: 0, currentStreak: 0, averageMl: 0, lowDays: 0, bestHalfRun: 0, savedDays: new Set() })
   })
 
   it('calcola totale, media, percentuale e giorni scarsi', () => {
@@ -89,8 +89,51 @@ describe('computeStats', () => {
     expect(computeStats([day('2026-11-09', 2000), day('2026-11-10', 100)], goals, '2026-11-10').currentStreak).toBe(1)
   })
 
-  it('ieri mancato azzera la serie in corso', () => {
-    expect(computeStats([day('2026-11-08', 2000), day('2026-11-09', 100)], goals, '2026-11-10').currentStreak).toBe(0)
+  it('ieri mancato azzera la serie in corso (senza salva-serie)', () => {
+    expect(computeStats([day('2026-11-08', 2000), day('2026-11-09', 100)], goals, '2026-11-10', undefined, new Set(), false).currentStreak).toBe(0)
+  })
+
+  describe('salva-serie', () => {
+    // 2026-11-02 è lunedì: la settimana va dal 2 all'8, la successiva dal 9 al 15.
+    const met = (...days: string[]) => days.map((d) => day(d, 2000))
+
+    it('il primo giorno mancato della settimana non rompe la serie e non la allunga', () => {
+      const stats = computeStats(met('2026-11-02', '2026-11-03', '2026-11-05', '2026-11-06'), goals, '2026-11-06')
+      expect(stats.currentStreak).toBe(4)
+      expect(stats.bestStreak).toBe(4)
+      expect([...stats.savedDays]).toEqual(['2026-11-04'])
+    })
+
+    it('ieri mancato è coperto: la serie in corso resta viva', () => {
+      const stats = computeStats(met('2026-11-08'), goals, '2026-11-10')
+      expect(stats.currentStreak).toBe(1)
+      expect(jollyThisWeek(stats.savedDays, '2026-11-10')).toBe('2026-11-09')
+    })
+
+    it('il secondo giorno mancato nella stessa settimana rompe la serie', () => {
+      const stats = computeStats(met('2026-11-02', '2026-11-03', '2026-11-05', '2026-11-07'), goals, '2026-11-07')
+      expect(stats.bestStreak).toBe(3)
+      expect(stats.currentStreak).toBe(1)
+    })
+
+    it('ogni settimana ne ha uno nuovo', () => {
+      const stats = computeStats(met('2026-11-05', '2026-11-07', '2026-11-08', '2026-11-10'), goals, '2026-11-10')
+      expect(stats.currentStreak).toBe(4)
+      expect([...stats.savedDays]).toEqual(['2026-11-06', '2026-11-09'])
+    })
+
+    it('due giorni mancati di fila rompono la serie e il salva-serie resta disponibile', () => {
+      const stats = computeStats(met('2026-11-02', '2026-11-05'), goals, '2026-11-05')
+      expect(stats.currentStreak).toBe(1)
+      expect(stats.savedDays.size).toBe(0)
+      expect(jollyThisWeek(stats.savedDays, '2026-11-05')).toBeNull()
+    })
+
+    it("non copre i giorni prima di aver mai raggiunto l'obiettivo", () => {
+      const stats = computeStats([day('2026-11-03', 100), ...met('2026-11-04')], goals, '2026-11-04')
+      expect(stats.currentStreak).toBe(1)
+      expect(stats.savedDays.size).toBe(0)
+    })
   })
 
   it('usa l\'obiettivo in vigore quel giorno', () => {
@@ -119,7 +162,7 @@ describe('computeStats', () => {
     })
 
     it('un giorno saltato fuori dalla pausa rompe comunque la serie', () => {
-      const stats = computeStats([...before, day('2026-11-08', 2000)], goals, '2026-11-08', undefined, paused)
+      const stats = computeStats([...before, day('2026-11-08', 2000)], goals, '2026-11-08', undefined, paused, false)
       expect(stats.bestStreak).toBe(2)
       expect(stats.currentStreak).toBe(1)
     })

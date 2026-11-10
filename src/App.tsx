@@ -7,6 +7,7 @@ import { RegisterPage } from './auth/RegisterPage'
 import { NewPasswordPage, ResetPasswordPage } from './auth/ResetPasswordPage'
 import { CupsPage } from './drinks/CupsPage'
 import { FeedbackForm } from './feedback/FeedbackForm'
+import { CalendarPage } from './history/CalendarPage'
 import { HistoryPage } from './history/HistoryPage'
 import { HomePage } from './home/HomePage'
 import { LeaderboardPage } from './leaderboard/LeaderboardPage'
@@ -51,6 +52,7 @@ export default function App() {
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/classifica" element={<LeaderboardPage />} />
                 <Route path="/storico" element={<HistoryPage />} />
+                <Route path="/storico/calendario" element={<CalendarPage />} />
                 <Route path="/tazze" element={<CupsPage />} />
                 <Route path="/profilo" element={<ProfilePage />} />
                 <Route path="/promemoria" element={<SchedulesPage />} />

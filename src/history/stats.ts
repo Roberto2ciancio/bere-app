@@ -1,6 +1,6 @@
 import { type GoalChange } from '../domain/goals'
 import { goalWithBoosts } from '../goal/boosts'
-import { addDays } from '../domain/time'
+import { addDays, weekdayOf } from '../domain/time'
 
 export interface DayTotal {
   day: string
@@ -26,6 +26,8 @@ export interface Stats {
   lowDays: number
   /** Giorni consecutivi più lunghi senza scendere sotto metà obiettivo (un giorno senza bevute conta come sotto). */
   bestHalfRun: number
+  /** Giorni mancati coperti dal salva-serie. */
+  savedDays: Set<string>
 }
 
 const isMet = (total: number, goal: number) => total >= goal
@@ -41,38 +43,68 @@ export function dayResults(totals: DayTotal[], goals: GoalChange[], today: strin
   })
 }
 
-/** Il giorno dopo `day`, saltando i giorni in pausa senza obiettivo raggiunto. */
-function nextCounted(day: string, metDays: Set<string>, paused: Set<string>): string {
-  let next = addDays(day, 1)
-  while (paused.has(next) && !metDays.has(next)) next = addDays(next, 1)
-  return next
+/** Il lunedì della settimana di `day`: il salva-serie vale una volta da lunedì a domenica. */
+export const mondayOf = (day: string) => addDays(day, 1 - weekdayOf(day))
+
+interface Streaks {
+  best: number
+  current: number
+  /** Giorni mancati che il salva-serie ha coperto senza rompere la serie. */
+  saved: Set<string>
 }
 
 /**
- * paused: giorni in pausa. Non rompono la serie e non la allungano;
- * se in pausa si raggiunge comunque l'obiettivo, quel giorno conta.
+ * Serie di giorni con l'obiettivo raggiunto, dal primo giorno raggiunto fino a oggi.
+ * - Giorni in pausa: non rompono la serie e non la allungano (se in pausa raggiungi l'obiettivo, conta).
+ * - Salva-serie (`jolly`): il primo giorno mancato di ogni settimana non rompe la serie e non la allunga.
+ *   Se la serie si rompe comunque poco dopo, il salva-serie non risulta usato.
+ * - Oggi può ancora arrivare all'obiettivo: se non è raggiunto, la serie si conta fino a ieri.
  */
-export function computeStats(totals: DayTotal[], goals: GoalChange[], today: string, boosts?: Map<string, number>, paused: Set<string> = new Set()): Stats {
+function streaks(metDays: Set<string>, today: string, paused: Set<string>, jolly: boolean): Streaks {
+  const first = [...metDays].sort()[0]
+  const saved = new Set<string>()
+  if (!first) return { best: 0, current: 0, saved }
+  const last = metDays.has(today) ? today : addDays(today, -1)
+  const usedWeeks = new Set<string>()
+  let pending: string[] = []
+  let run = 0
+  let best = 0
+  for (let day = first; day <= last; day = addDays(day, 1)) {
+    if (metDays.has(day)) {
+      run += 1
+      best = Math.max(best, run)
+      for (const d of pending) saved.add(d)
+      pending = []
+    } else if (paused.has(day)) {
+      continue
+    } else if (jolly && run > 0 && !usedWeeks.has(mondayOf(day))) {
+      usedWeeks.add(mondayOf(day))
+      pending.push(day)
+    } else {
+      for (const d of pending) usedWeeks.delete(mondayOf(d))
+      pending = []
+      run = 0
+    }
+  }
+  // Ieri mancato e coperto: la serie è ancora viva, quindi il salva-serie è usato davvero.
+  for (const d of pending) saved.add(d)
+  return { best, current: run, saved }
+}
+
+/**
+ * paused: giorni in pausa. jolly: salva-serie attivo (spento per le sfide «di fila» della settimana).
+ */
+export function computeStats(
+  totals: DayTotal[],
+  goals: GoalChange[],
+  today: string,
+  boosts?: Map<string, number>,
+  paused: Set<string> = new Set(),
+  jolly = true,
+): Stats {
   const sorted = [...totals].sort((a, b) => a.day.localeCompare(b.day))
   const metDays = new Set(sorted.filter((t) => isMet(t.total_ml, goalWithBoosts(goals, t.day, boosts))).map((t) => t.day))
-
-  let bestStreak = 0
-  let run = 0
-  let previous: string | null = null
-  for (const day of [...metDays]) {
-    run = previous && nextCounted(previous, metDays, paused) === day ? run + 1 : 1
-    bestStreak = Math.max(bestStreak, run)
-    previous = day
-  }
-
-  // Oggi può ancora arrivare all'obiettivo: se non è raggiunto, la serie si conta da ieri.
-  let currentStreak = 0
-  let cursor = metDays.has(today) ? today : addDays(today, -1)
-  for (;;) {
-    if (metDays.has(cursor)) currentStreak += 1
-    else if (!paused.has(cursor)) break
-    cursor = addDays(cursor, -1)
-  }
+  const { best: bestStreak, current: currentStreak, saved: savedDays } = streaks(metDays, today, paused, jolly)
 
   let bestHalfRun = 0
   let halfRun = 0
@@ -100,7 +132,14 @@ export function computeStats(totals: DayTotal[], goals: GoalChange[], today: str
     averageMl: daysTracked ? Math.round(totalMl / daysTracked) : 0,
     lowDays: sorted.filter((t) => t.total_ml < goalWithBoosts(goals, t.day, boosts) / 2).length,
     bestHalfRun,
+    savedDays,
   }
+}
+
+/** Il salva-serie di questa settimana: il giorno in cui è stato usato, oppure null se è ancora disponibile. */
+export function jollyThisWeek(savedDays: Set<string>, today: string): string | null {
+  const monday = mondayOf(today)
+  return [...savedDays].find((d) => d >= monday && d <= today) ?? null
 }
 
 export interface Achievement {
@@ -141,7 +180,8 @@ export const CAFFEINE_CHALLENGE_MG = 200
 
 export function challenges(totals: DayTotal[], goals: GoalChange[], weekStart: string, today: string, caffeine?: CaffeineByDay, boosts?: Map<string, number>): Challenge[] {
   const week = totals.filter((t) => t.day >= weekStart && t.day <= today)
-  const stats = computeStats(week, goals, today, boosts)
+  // «Di fila» nelle sfide vuol dire davvero di fila: qui il salva-serie non vale.
+  const stats = computeStats(week, goals, today, boosts, new Set(), false)
   const metDays = week.filter((t) => isMet(t.total_ml, goalWithBoosts(goals, t.day, boosts))).length
   const make = (id: string, label: string, value: number, target: number): Challenge => ({
     id,

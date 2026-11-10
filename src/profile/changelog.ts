@@ -12,6 +12,16 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '1.8.0',
+    date: '2026-11-10',
+    title: 'Salva-serie e calendario',
+    notes: [
+      "Salva-serie: ogni settimana il primo giorno in cui non raggiungi l'obiettivo la serie non si rompe. Nello Storico vedi se l'hai già usato.",
+      "Nuovo calendario, dallo Storico: ogni giorno del mese colorato per com'è andato (raggiunto, almeno metà, meno di metà, salva-serie, pausa).",
+      "Statistiche del mese e dell'anno: giorni a obiettivo, totale, media, serie più lunga e giorno migliore. Nella vista Anno tocchi un mese per aprirlo.",
+    ],
+  },
+  {
     version: '1.7.1',
     date: '2026-11-08',
     title: 'Notifiche su misura',

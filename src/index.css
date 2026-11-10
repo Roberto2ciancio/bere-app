@@ -692,3 +692,35 @@ input[type='file']::file-selector-button {
 /* Intestazioni «Titolo · Profilo»: con il testo grande di Android vanno a capo invece di uscire dallo schermo. */
 .page > div.row { flex-wrap: wrap; row-gap: 4px; }
 .page h1 { min-width: 0; overflow-wrap: anywhere; }
+
+/* Calendario: un quadratino per giorno, colorato per com'è andato */
+.history .stat-grid > .stat-wide { grid-column: 1 / -1; }
+.stat-wide dd .hint { font-family: var(--body); font-size: 0.85rem; font-weight: 400; }
+.cal-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cal-nav h2 { text-transform: capitalize; text-align: center; min-width: 0; }
+.cal-arrow { flex: none; width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--ink); font-size: 1.4rem; line-height: 1; }
+.cal-arrow:disabled { opacity: 0.35; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.cal-weekday { text-align: center; color: var(--ink-soft); font-size: 0.78rem; font-weight: 600; }
+.cal-cell { aspect-ratio: 1; display: grid; place-items: center; min-width: 0; border-radius: 8px; font-size: 0.85rem; font-variant-numeric: tabular-nums; background: var(--bg); color: var(--ink-soft); }
+.cal-cell.empty { background: none; }
+.cal-cell.met { background: var(--water); color: var(--on-accent); font-weight: 700; }
+.cal-cell.half { background: color-mix(in srgb, var(--water) 40%, var(--surface)); color: var(--ink); }
+.cal-cell.low { background: color-mix(in srgb, var(--water) 14%, var(--surface)); color: var(--ink); }
+.cal-cell.saved { background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 2px var(--water); }
+.cal-cell.paused { background: repeating-linear-gradient(135deg, var(--bg) 0 4px, var(--line) 4px 6px); color: var(--ink-soft); }
+.cal-cell.future, .cal-cell.before { background: none; color: color-mix(in srgb, var(--ink-soft) 55%, transparent); }
+.cal-cell.today { outline: 2px solid var(--ink); outline-offset: 1px; }
+.cal-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--ink-soft); font-size: 0.82rem; }
+.cal-legend li { display: flex; align-items: center; gap: 6px; }
+.cal-dot { width: 14px; height: 14px; border-radius: 4px; flex: none; }
+.cal-dot.met { background: var(--water); }
+.cal-dot.half { background: color-mix(in srgb, var(--water) 40%, var(--surface)); }
+.cal-dot.low { background: color-mix(in srgb, var(--water) 14%, var(--surface)); box-shadow: inset 0 0 0 1px var(--line); }
+.cal-dot.saved { background: var(--surface); box-shadow: inset 0 0 0 2px var(--water); }
+.cal-dot.paused { background: repeating-linear-gradient(135deg, var(--bg) 0 3px, var(--line) 3px 5px); }
+.year-month { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 4px 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
+.year-month .board-line { flex-wrap: wrap; }
+.year-month-name { text-transform: capitalize; font-weight: 600; }
+.jolly-note { margin: 10px 0 0; }
+.history .chart-col.saved .chart-bar { outline: 2px solid var(--water); outline-offset: -2px; }

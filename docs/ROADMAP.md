@@ -17,9 +17,9 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 
 ## 1.8: motivazione a lungo termine
 
-- [ ] 🟡 **Salva-serie**: un giorno «jolly» a settimana che non rompe la serie.
+- [x] 🟡 **Salva-serie** (fatto in 1.8.0: automatico, il primo giorno mancato di ogni settimana; non vale nella classifica e nelle sfide «di fila»): un giorno «jolly» a settimana che non rompe la serie.
 - [ ] 🟡 🗄️ **Livelli e punti**: si sale di livello bevendo e completando sfide, con un badge accanto al nome in classifica.
-- [ ] 🟡 **Statistiche mensili e annuali**, con un calendario colorato giorno per giorno.
+- [x] 🟡 **Statistiche mensili e annuali** (fatto in 1.8.0: Storico › Calendario, viste Mese e Anno), con un calendario colorato giorno per giorno.
 - [ ] 🟢 **Condividi la settimana**: un'immagine con il resoconto da mandare su WhatsApp o Instagram.
 
 ## 1.9: social
@@ -56,8 +56,8 @@ Richiede di passare da TWA a Capacitor e rifare le notifiche con Firebase Cloud 
 
 ## Da dove partire
 
-1. Salva-serie e statistiche mensili: tengono le persone motivate nel tempo.
-2. Avviso se il job delle notifiche si ferma: ora che ci sono rimandi e pause, conta ancora di più.
+1. Avviso se il job delle notifiche si ferma: ora che ci sono rimandi e pause, conta ancora di più.
+2. Livelli e punti, o «Condividi la settimana», per chiudere la 1.8.
 
 ## Come si pubblica una versione
 
