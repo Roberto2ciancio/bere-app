@@ -1,0 +1,39 @@
+button { font: inherit; color: inherit; cursor: pointer; }
+button:disabled { opacity: 0.55; cursor: default; }
+.primary {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+  transition: transform 0.12s var(--ease-out);
+}
+.primary:active { transform: scale(0.97); }
+.ghost {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.link-button { min-height: 28px; padding: 0 4px; border: 0; background: none; color: var(--ink-soft); font: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.choice {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+}
+.choice[aria-pressed='true'] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+.secondary {
+  min-height: 46px;
+  padding: 0 16px;
+  border: 1px solid var(--ink-soft);
+  border-radius: 12px;
+  background: none;
+  font-weight: 600;
+}

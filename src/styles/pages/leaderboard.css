@@ -1,0 +1,68 @@
+/* Classifica */
+.board-name { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.board-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.85rem; }
+
+/* Classifica */
+.board { gap: 16px; }
+.board-head { display: flex; flex-direction: column; gap: 4px; }
+.board-me { flex-direction: row; align-items: center; gap: 14px; padding: 14px 16px; }
+.board-me-rank { font-family: var(--display); font-size: 2.2rem; font-weight: 800; line-height: 1; color: var(--water-deep); font-variant-numeric: tabular-nums; }
+.board-me-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.board-toast { padding: 10px 14px; border-radius: 12px; background: color-mix(in srgb, var(--water) 14%, var(--surface)); font-size: 0.92rem; }
+.board-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.board-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.board-row.me { border-color: var(--water); background: color-mix(in srgb, var(--water) 10%, var(--surface)); font-weight: inherit; padding-inline: 14px !important; }
+.board-row .avatar { width: 44px; height: 44px; }
+.board-avatar { position: relative; flex: none; }
+.board-row .rank {
+  position: absolute;
+  left: -6px;
+  top: -6px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  background: var(--line);
+  color: var(--ink);
+  font-size: 0.72rem;
+  text-align: center;
+}
+.board-row .rank.podium-1 { background: #e8b923; color: #3d2c00; }
+.board-row .rank.podium-2 { background: #b9c2cc; color: #222a33; }
+.board-row .rank.podium-3 { background: #cd8a4f; color: #2e1503; }
+.board-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.board-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 24px; }
+.board-line .hint { white-space: nowrap; }
+.board-who { display: flex; align-items: center; gap: 6px; min-width: 0; font-weight: 700; }
+.board-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.board-pts { flex: none; font-size: 1.1rem; }
+.tag { flex: none; padding: 1px 8px; border-radius: 999px; background: var(--water-deep); color: var(--on-accent); font-size: 0.72rem; font-weight: 700; }
+.week-bar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.week-bar span { height: 6px; border-radius: 3px; background: var(--line); }
+.week-bar span.on { background: var(--water); }
+.poke { flex: none; min-height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: 0.85rem; font-weight: 600; }
+.poke:active { transform: scale(0.95); }
+/* Classifica: complimenti a chi ha raggiunto l'obiettivo oggi */
+.board-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.board-done { color: var(--water-deep); font-weight: 600; }
+.poke.cheer:not(:disabled) { background: color-mix(in srgb, var(--water) 18%, var(--surface)); }
+/* Con «Complimenti» e «Sprona» insieme la riga va a capo invece di uscire dallo schermo. */
+.board-main > .board-line:last-child { flex-wrap: wrap; row-gap: 6px; }
+.board-actions { margin-left: auto; flex-wrap: nowrap; }
+.board-done { overflow-wrap: anywhere; }
+/* Schermi stretti (iPhone SE): la riga sotto il nome va a capo invece di uscire dalla card. */
+.board-main > .board-line:last-child .hint { white-space: normal; min-width: 0; }
+.board-actions { flex-wrap: wrap; }
+@media (max-width: 360px) {
+  .poke { padding: 0 10px; font-size: 0.8rem; }
+}

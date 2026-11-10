@@ -1,0 +1,87 @@
+/* Profilo: schede ordinate per argomento */
+.profile { gap: 18px; }
+.pause { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.pause .hint, .pause-on { margin: 0; }
+.pause-choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.field { display: flex; flex-direction: column; gap: 8px; }
+.hours-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.profile-id { display: flex; align-items: center; gap: 14px; }
+.avatar-lg { width: 64px; height: 64px; font-size: 1.5rem; }
+.file-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--ink-soft);
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.file-button input { position: absolute; inset: 0; width: 100%; min-height: 0; padding: 0; opacity: 0; cursor: pointer; }
+.file-button:focus-within { outline: 3px solid var(--water); outline-offset: 2px; }
+.link-list { display: flex; flex-direction: column; }
+.link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  border-top: 1px solid var(--line);
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+.link-row::after { content: '›'; font-size: 1.4rem; color: var(--ink-soft); }
+.fold { border-top: 1px solid var(--line); }
+.fold summary { min-height: 48px; display: flex; align-items: center; justify-content: space-between; font-weight: 600; cursor: pointer; list-style: none; }
+.fold summary::-webkit-details-marker { display: none; }
+.fold summary::after { content: '›'; font-size: 1.4rem; color: var(--ink-soft); transition: transform 0.2s var(--ease-out); }
+.fold[open] summary::after { transform: rotate(90deg); }
+.fold-body { display: flex; flex-direction: column; gap: 12px; padding-bottom: 14px; }
+.choices { display: flex; flex-wrap: wrap; gap: 8px; }
+.interval-window { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.interval-field { display: flex; flex-direction: column; gap: 5px; font-weight: 600; font-size: 0.93rem; }
+.interval-field input[type='time'] { width: 100%; }
+.interval-fill summary { min-height: 44px; display: flex; align-items: center; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.schedule-card input[type='checkbox'] { flex: none; }
+.schedule-card.off strong, .schedule-card.off .schedule-summary { opacity: 0.6; }
+.schedule-summary { display: block; }
+.avatar {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--line);
+  color: var(--ink);
+  font-weight: 700;
+}
+input[type='file'] { flex: 1; min-width: 0; padding: 0; border: 0; background: none; min-height: 46px; color: var(--ink-soft); font-size: 0.88rem; }
+input[type='file']::file-selector-button {
+  min-height: 46px;
+  margin-right: 10px;
+  padding: 0 14px;
+  border: 1px solid var(--ink-soft);
+  border-radius: 12px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+}
+/* Profilo: versione e novità */
+.app-version { text-align: center; }
+.changelog { margin: 0.25rem 0 0.75rem; padding-left: 1.25rem; }
+.changelog li { margin: 0.2rem 0; }
+
+/* Novità dopo un aggiornamento: al centro, non dal basso come le altre schede */
+.whats-new-overlay { z-index: 60; align-items: center; padding: 20px; }
+.whats-new { border-radius: var(--radius); padding-bottom: 20px; max-height: 80%; }
+.whats-new h2 { margin: 0; }
+.whats-new h3 { margin: 4px 0 0; font-size: 0.95rem; }
+.whats-new-badge { margin: 0; font-size: 2rem; text-align: center; }
+.whats-new .primary { margin-top: 4px; }
+/* Su schermi da 320 px i campi orario affiancati devono potersi restringere (in Chrome con AM/PM sono larghi). */
+.interval-window, .hours-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.interval-field input[type='time'], .hours-pair input, .hours-pair select { min-width: 0; }

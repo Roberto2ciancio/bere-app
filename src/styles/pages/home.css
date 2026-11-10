@@ -1,0 +1,268 @@
+.home {
+  height: 100%;
+  min-height: 520px;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + 24px) 20px 16px;
+  display: flex;
+  flex-direction: column;
+}
+.home-head { text-align: center; }
+.home-total {
+  font-family: var(--display);
+  font-size: 3.4rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.home-goal { color: var(--ink-soft); margin-top: 4px; }
+.home-pace { color: var(--ink-soft); margin-top: 6px; font-size: 0.93rem; display: grid; gap: 2px; }
+/* Con poco spazio la pagina scorre: la vista non deve schiacciarsi fino a finire sopra i pulsanti.
+   Safari non risolve height: 100% dentro questo riquadro flessibile: la bottiglia prende l'altezza
+   dal contenitore (cqh), altrimenti esce dal riquadro e copre il prossimo promemoria. */
+.home-view { flex: 1 0 190px; min-height: 190px; display: grid; place-items: center; padding: 20px 0 10px; container-type: size; }
+.home-undos { display: flex; flex-wrap: wrap; justify-content: center; }
+.home-undos .ghost { min-height: 40px; }
+@media (max-height: 700px) {
+  .home { padding-top: calc(env(safe-area-inset-top) + 12px); padding-bottom: 8px; }
+  .home-total { font-size: 2.6rem; }
+  .home-view { flex-basis: 130px; min-height: 130px; padding: 8px 0 6px; }
+  .bottle-box, .ring-box, .character-box { min-height: 110px; }
+  .home-actions { gap: 6px; }
+  .drink, .drink-more { min-height: 52px; }
+}
+@media (max-height: 620px) {
+  .ring-box, .character-box { height: 112px; min-height: 112px; }
+}
+.home-actions { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.home-next { color: var(--ink-soft); font-size: 0.93rem; }
+.drink { font-size: 1.08rem; min-height: 60px; }
+
+/* Caffeina */
+.caffeine { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.caffeine-tiles { width: 100%; display: grid; gap: 8px; }
+.caffeine-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 52px;
+  padding: 6px 4px;
+  font-size: 0.92rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-weight: 600;
+  transition: transform 0.12s var(--ease-out);
+}
+.caffeine-tile:active { transform: scale(0.97); }
+.caffeine-count { font-family: var(--display); font-size: 1.5rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; animation: count-pop 0.3s var(--ease-out); }
+.caffeine-total { color: var(--ink-soft); font-size: 0.88rem; }
+.caffeine-total.error { color: var(--danger); }
+@keyframes count-pop { from { transform: scale(1.35); } }
+
+/* Altre bevande */
+.drink-row { width: 100%; display: flex; gap: 8px; }
+.drink-row .drink { flex: 1; width: auto; }
+.drink-more { flex: none; width: 60px; min-height: 60px; font-size: 1.6rem; line-height: 1; }
+.sheet-overlay { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; justify-content: center; background: rgba(0, 0, 0, 0.45); }
+.sheet { width: 100%; max-width: 480px; max-height: 90%; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 20px 20px calc(env(safe-area-inset-bottom) + 16px); border-radius: var(--radius) var(--radius) 0 0; background: var(--surface); text-align: left; }
+
+/* Personaggi */
+.character-box { position: relative; height: min(100%, 280px); height: min(100cqh, 280px); aspect-ratio: 1; min-height: 110px; min-height: min(150px, 100cqh); }
+.character-box.slosh { animation: slosh 0.7s var(--ease-out); }
+.character-box svg { width: 100%; height: 100%; }
+.character-body { fill: var(--surface); }
+.character-water { fill: var(--water); transition: y 0.9s var(--ease-out), height 0.9s var(--ease-out); }
+.character-outline { fill: none; stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: round; }
+.character-face { fill: var(--ink); }
+.character-smile { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+.character-can .character-body { fill: #d4dae2; }
+.character-can .character-water { fill: #1d3f8f; }
+.character-can .character-outline { stroke: #5c6875; stroke-width: 1.5; }
+.can-rim { fill: none; stroke: #8b95a3; stroke-width: 1.5; }
+.can-tab { fill: none; stroke: #8b95a3; stroke-width: 3; stroke-linecap: round; }
+.can-pattern path { fill: #ffffff; opacity: 0.16; }
+
+/* Bottiglia */
+.bottle-box { position: relative; height: min(100%, 300px); height: min(100cqh, 300px); aspect-ratio: 104 / 220; min-height: 110px; min-height: min(150px, 100cqh); }
+.bottle-cap {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 42%;
+  height: 7%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  border-radius: 6px 6px 0 0;
+}
+.bottle {
+  position: absolute;
+  inset: 7% 0 0;
+  overflow: hidden;
+  border: 3px solid var(--ink);
+  border-radius: 28% 28% 20% 20% / 14% 14% 10% 10%;
+  background: var(--surface);
+}
+.bottle.slosh { animation: slosh 0.7s var(--ease-out); }
+.water {
+  position: absolute;
+  inset: auto 0 0;
+  background: var(--water);
+  transition: height 1s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.wave { position: absolute; top: -9px; left: 0; width: 200%; height: 10px; fill: var(--water); animation: wave 2.4s linear infinite; }
+.bubble {
+  position: absolute;
+  bottom: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0;
+  animation: rise 1.1s ease-out backwards;
+}
+@keyframes wave { to { transform: translateX(-50%); } }
+@keyframes slosh { 25% { transform: rotate(-4deg); } 60% { transform: rotate(3deg); } }
+@keyframes rise { from { opacity: 0.85; transform: translateY(0); } to { opacity: 0; transform: translateY(-180px); } }
+
+/* Anello */
+.ring-box { position: relative; height: min(100%, 280px); height: min(100cqh, 280px); aspect-ratio: 1; min-height: 110px; min-height: min(150px, 100cqh); }
+.ring-box svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-track, .ring-fill { fill: none; stroke-width: 14; }
+.ring-track { stroke: var(--line); }
+.ring-fill { stroke: var(--water); stroke-linecap: round; transition: stroke-dashoffset 0.9s var(--ease-out); }
+.ripple {
+  position: absolute;
+  inset: 6%;
+  border: 2px solid var(--water);
+  border-radius: 50%;
+  opacity: 0;
+  animation: ripple 0.9s var(--ease-out);
+  pointer-events: none;
+}
+@keyframes ripple { from { opacity: 0.9; transform: scale(0.85); } to { opacity: 0; transform: scale(1.35); } }
+
+/* Gocce */
+/* Le gocce si rimpiccioliscono per stare nello spazio disponibile (cqh): fino a 6 file con obiettivi alti. */
+.drops {
+  --row-gap: 16px;
+  --cell: min(34px, calc((100cqh - (var(--rows, 3) - 1) * var(--row-gap)) / var(--rows, 3)));
+  display: grid;
+  grid-template-columns: repeat(5, 34px);
+  grid-template-columns: repeat(5, var(--cell));
+  gap: var(--row-gap) 12px;
+}
+@media (max-height: 700px) {
+  .drops { --row-gap: 10px; }
+}
+.drop {
+  width: 28px;
+  height: 28px;
+  width: calc(var(--cell, 34px) - 6px);
+  height: calc(var(--cell, 34px) - 6px);
+  margin: 3px;
+  border-radius: 0 50% 50% 50%;
+  transform: rotate(45deg);
+  background: var(--line);
+  transition: background 0.3s;
+}
+.drop.on { background: var(--water); }
+.drop.pop { animation: pop 0.6s cubic-bezier(0.3, 1.8, 0.5, 1); }
+@keyframes pop {
+  0% { transform: rotate(45deg) scale(0.3); }
+  60% { transform: rotate(45deg) scale(1.35); }
+  100% { transform: rotate(45deg) scale(1); }
+}
+/* Oggi: rifinitura */
+.home-progress { width: min(220px, 70%); height: 6px; margin: 10px auto 0; border-radius: 999px; background: var(--line); overflow: hidden; }
+.home-progress span { display: block; height: 100%; border-radius: inherit; background: var(--water); transition: width 0.5s var(--ease-out); }
+.home-goal { margin-top: 8px; font-size: 0.95rem; }
+.home-pace {
+  margin: 10px auto 0;
+  max-width: 340px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--water) 12%, var(--surface));
+  color: var(--ink);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+.home-pace p:first-child { font-weight: 600; }
+.home-pace p + p, .home-pace .hint { color: var(--ink-soft); }
+@media (max-height: 760px) {
+  .home-pace { margin-top: 8px; padding: 6px 12px; font-size: 0.8rem; }
+}
+.home-info { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; }
+.home-info:empty { display: none; }
+.home-info .home-next { font-size: 0.88rem; }
+.caffeine {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 6px 6px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.caffeine-tile { min-height: 44px; padding: 0 14px; gap: 8px; border-radius: 12px; background: var(--bg); border-color: transparent; }
+.caffeine-count { font-size: 1.15rem; }
+.caffeine-total { padding-right: 8px; text-align: right; font-size: 0.85rem; }
+.home-bell::before { content: '🔔 '; }
+/* Newsletter: icona in alto a sinistra in Oggi e pagina delle novità */
+.home { position: relative; }
+.news-icon {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 12px);
+  left: 16px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  z-index: 2;
+}
+.news-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  background: #e5484d;
+}
+.news-head h1 { margin: 6px 0 4px; }
+.back-link { color: var(--ink-soft); font-size: 0.92rem; text-decoration: none; }
+.news-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 12px; }
+.news-card h2 { margin: 6px 0 4px; font-size: 1.15rem; }
+.news-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.news-version { font-weight: 700; color: var(--water-deep); }
+.news-meta time { margin-left: auto; font-size: 0.82rem; }
+/* Obiettivo che si adatta: caldo e allenamento */
+.home-boost { margin-top: 4px; color: var(--water-deep); font-size: 0.85rem; font-weight: 600; }
+.workout-tile {
+  width: 100%;
+  min-height: 40px;
+  justify-content: center;
+  gap: 8px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+}
+.workout-tile.on { border-style: solid; border-color: var(--water); background: color-mix(in srgb, var(--water) 12%, var(--surface)); color: var(--ink); font-weight: 600; }
+.link-row-inline { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 0; }
+/* La vista non supera mai lo spazio tra il riquadro in alto e i pulsanti (cqh), nemmeno sugli schermi bassi. */
+.workout-tile { min-height: 36px; }
+@media (max-height: 700px) {
+  .workout-tile { min-height: 32px; font-size: 0.8rem; }
+  .home-boost { font-size: 0.8rem; }
+}

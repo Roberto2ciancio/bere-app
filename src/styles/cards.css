@@ -1,0 +1,25 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.card h3 { margin: 0; font-size: 0.93rem; font-weight: 700; }
+.card hr { width: 100%; margin: 4px 0; border: 0; border-top: 1px solid var(--line); }
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.list > li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.list .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.me { font-weight: 700; background: color-mix(in srgb, var(--water) 16%, transparent); border-radius: 8px; padding-inline: 8px !important; }
+.rank { width: 1.6em; font-variant-numeric: tabular-nums; font-weight: 700; text-align: right; }
+.num { font-variant-numeric: tabular-nums; }
+.steps { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 6px; }
+/* Livelli e punti */
+.level-head { display: flex; align-items: center; gap: 12px; }
+.level-emoji { flex: none; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; background: var(--bg); font-size: 1.6rem; }
+.level-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.level-text h2 { overflow-wrap: anywhere; }
+.level-rules { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; }
+.level-badge { flex: none; padding: 1px 7px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); font-size: 0.78rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }

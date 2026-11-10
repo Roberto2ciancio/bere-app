@@ -1,0 +1,53 @@
+:root {
+  --bg: #eaf8fc;
+  --surface: #ffffff;
+  --surface-2: #d9eef6;
+  --ink: #0b2a4a;
+  --ink-soft: #46617a;
+  --line: #c3dde8;
+  --brand: #0a7ea8;
+  --brand-deep: #075f80;
+  --on-brand: #ffffff;
+  --success: #7cc720;
+  --success-deep: #4f9a0a;
+  --streak: #ffc21a;
+  --danger: #c63a24;
+  --reward: #7b4fd6;
+  --water: #1f93b2;
+  --water-deep: #1a7f9a;
+  --radius: 20px;
+  --radius-lg: 24px;
+  --shadow: 0 6px 18px rgba(10, 126, 168, 0.14);
+  --press: 4px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --display: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
+  --body: ui-sans-serif, -apple-system, 'Segoe UI', system-ui, sans-serif;
+  /* Alias finché tutte le regole non usano --brand (Task 3) */
+  --accent: var(--brand);
+  --on-accent: var(--on-brand);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b1a33;
+    --surface: #14284a;
+    --surface-2: #1c3560;
+    --ink: #f2f7ff;
+    --ink-soft: #a9bbd6;
+    --line: #2a4470;
+    --brand: #3cc3ef;
+    --brand-deep: #1fa5d0;
+    --on-brand: #06203a;
+    --success: #9be02f;
+    --success-deep: #7cc720;
+    --streak: #ffd23f;
+    --danger: #ff8a78;
+    --reward: #b69bff;
+    --water: #3cc3ef;
+    --water-deep: #2fb0d8;
+    --shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
+  }
+}

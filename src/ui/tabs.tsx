@@ -13,6 +13,7 @@ export function TabsLayout() {
   const [background, setBackground] = useState<string | null>(null)
 
   useEffect(() => {
+    // Serve solo alle viste della Home: non cambia più i colori
     document.documentElement.dataset.style = style
   }, [style])
 

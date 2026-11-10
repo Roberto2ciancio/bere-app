@@ -1,0 +1,21 @@
+.shell { position: relative; height: 100%; display: flex; flex-direction: column; isolation: isolate; }
+.shell-bg { position: absolute; inset: 0; z-index: -1; background-size: cover; background-position: center; }
+.shell-bg::after { content: ''; position: absolute; inset: 0; background: var(--bg); opacity: 0.78; }
+.shell-body { flex: 1; min-height: 0; overflow-y: auto; }
+.tabs {
+  display: flex;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.tabs a {
+  flex: 1;
+  min-height: 52px;
+  display: grid;
+  place-items: center;
+  color: var(--ink-soft);
+  font-weight: 600;
+  font-size: 0.92rem;
+  text-decoration: none;
+}
+.tabs a.active { color: var(--ink); box-shadow: inset 0 3px 0 var(--water); }

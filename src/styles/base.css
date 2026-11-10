@@ -1,0 +1,64 @@
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.45 var(--body);
+  -webkit-tap-highlight-color: transparent;
+}
+::selection { background: var(--water); color: var(--on-accent); }
+:focus-visible { outline: 3px solid var(--water); outline-offset: 2px; }
+a { color: inherit; text-underline-offset: 3px; }
+h1, h2 { font-family: var(--display); line-height: 1.1; text-wrap: balance; margin: 0; }
+h1 { font-size: 1.9rem; }
+h2 { font-size: 1.2rem; }
+p { margin: 0; }
+
+input, textarea, select {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px; /* sotto i 16px iOS ingrandisce la pagina al tocco */
+  caret-color: var(--water);
+}
+input[type='checkbox'] { width: 22px; min-height: 22px; accent-color: var(--water-deep); }
+input[type='time'] { width: auto; }
+select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; }
+
+.stack { display: flex; flex-direction: column; gap: 14px; }
+.stack label { display: flex; flex-direction: column; gap: 5px; font-weight: 600; font-size: 0.93rem; }
+.stack label.row { flex-direction: row; align-items: center; }
+.hint { color: var(--ink-soft); font-size: 0.88rem; }
+.error { color: var(--danger); font-size: 0.92rem; font-weight: 600; }
+.center-note { padding: 40px 16px; text-align: center; color: var(--ink-soft); }
+/* Pagine interne */
+.page {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + 24px) 20px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.section { display: flex; flex-direction: column; gap: 12px; }
+.section + .section { border-top: 1px solid var(--line); padding-top: 24px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+/* Intestazioni «Titolo · Profilo»: con il testo grande di Android vanno a capo invece di uscire dallo schermo. */
+.page > div.row { flex-wrap: wrap; row-gap: 4px; }
+.page h1 { min-width: 0; overflow-wrap: anywhere; }
+/* Errore imprevisto: al posto dello schermo bianco */
+.error-page { display: grid; gap: 12px; align-content: center; min-height: 100%; text-align: center; }
+/* App di prova */
+.dev-bar { position: fixed; z-index: 40; top: calc(env(safe-area-inset-top) + 2px); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; width: min(92vw, 360px); pointer-events: none; }
+.dev-pill { pointer-events: auto; min-height: 24px; padding: 2px 10px; border: 0; border-radius: 999px; background: #d6430e; color: #fff; font: inherit; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; }
+.dev-panel { pointer-events: auto; width: 100%; display: flex; flex-direction: column; gap: 8px; padding: 14px; border: 2px solid #d6430e; border-radius: var(--radius); background: var(--surface); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .bubble, .ripple { display: none; }
+}
