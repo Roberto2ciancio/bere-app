@@ -89,7 +89,7 @@ describe('livelli nell’app', () => {
     render(<App />)
     const card = await screen.findByRole('region', { name: 'Livello e punti' })
     expect(within(card).getByRole('heading', { name: 'Livello 3 · Sorso' })).toBeInTheDocument()
-    expect(within(card).getByText('350 punti')).toBeInTheDocument()
+    expect(within(card).getAllByText('350 punti')[0]).toBeInTheDocument()
     expect(within(card).getByText('Ancora 250 punti per il livello 4.')).toBeInTheDocument()
     expect(within(card).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '16')
     expect(within(card).getByText(/\+20 per ogni giorno/)).toBeInTheDocument()

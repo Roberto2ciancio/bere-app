@@ -123,7 +123,7 @@ describe('home con la fascia attiva', () => {
     drunk(1000)
     fake.tables.profiles[0].active_split = false
     wrap(<HomePage />)
-    expect(await screen.findByText('1 L')).toBeInTheDocument()
+    expect((await screen.findAllByText('1 L'))[0]).toBeInTheDocument()
     expect(screen.queryByText(/Sei |Riprendo|all'ora/)).not.toBeInTheDocument()
   })
 })

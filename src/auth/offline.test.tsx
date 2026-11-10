@@ -27,7 +27,7 @@ async function openOnline() {
   fake.tables.schedules = [{ id: 's1', user_id: 'u1', name: 'x', weekdays: [1, 2, 3, 4, 5, 6, 7], enabled: true }]
   fake.tables.schedule_times = [{ id: 't1', schedule_id: 's1', minutes: 1439 }]
   const view = render(<App />)
-  await screen.findByText('0,8 L', {}, { timeout: 2500 })
+  await screen.findAllByText('0,8 L')
   await screen.findByText(/prossimo promemoria/i)
   view.unmount()
 }
@@ -75,9 +75,9 @@ describe('riapertura senza rete con token scaduto', () => {
     await openOnline()
     goOffline()
     render(<App />)
-    expect(await screen.findByText('0,8 L', {}, { timeout: 2500 })).toBeInTheDocument()
+    expect((await screen.findAllByText('0,8 L')).length).toBeGreaterThan(0)
     ;(await screen.findByRole('button', { name: /ho bevuto/i })).click()
-    expect(await screen.findByText('1 L', {}, { timeout: 2500 })).toBeInTheDocument()
+    expect((await screen.findAllByText('1 L')).length).toBeGreaterThan(0)
     expect(pendingDrinks('u1')).toHaveLength(1)
   })
 

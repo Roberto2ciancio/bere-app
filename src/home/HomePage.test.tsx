@@ -57,7 +57,7 @@ describe('HomePage', () => {
   it('mostra il totale già bevuto oggi', async () => {
     fake.tables.drinks = [{ user_id: 'u1', client_id: 'x', amount_ml: 400, local_date: today(), drunk_at: new Date().toISOString() }]
     renderHome()
-    expect(await screen.findByText('0,4 L', {}, { timeout: 2500 })).toBeInTheDocument()
+    expect((await screen.findAllByText('0,4 L')).length).toBeGreaterThan(0)
     expect(screen.getByText(/su 3 L/)).toBeInTheDocument()
   })
 
@@ -65,7 +65,7 @@ describe('HomePage', () => {
     fake.tables.profiles[0].drink_ml = 250
     renderHome()
     tapLater(await drinkButton())
-    expect(await screen.findByText('0,25 L', {}, { timeout: 2500 })).toBeInTheDocument()
+    expect((await screen.findAllByText('0,25 L')).length).toBeGreaterThan(0)
     await waitFor(() => expect(fake.tables.drinks).toHaveLength(1))
     expect(fake.tables.drinks[0]).toMatchObject({ user_id: 'u1', amount_ml: 250, local_date: today() })
   })
@@ -74,7 +74,7 @@ describe('HomePage', () => {
     fake.failures.upsert = 'Failed to fetch'
     renderHome()
     tapLater(await drinkButton())
-    expect(await screen.findByText('0,2 L', {}, { timeout: 2500 })).toBeInTheDocument()
+    expect((await screen.findAllByText('0,2 L')).length).toBeGreaterThan(0)
     await waitFor(() => expect(screen.getByText(/appena torna la rete/i)).toBeInTheDocument())
     expect(pendingDrinks('u1')).toHaveLength(1)
     expect(fake.tables.drinks).toHaveLength(0)
@@ -94,7 +94,7 @@ describe('HomePage', () => {
       window.dispatchEvent(new Event('online'))
     })
     expect(fake.tables.drinks).toHaveLength(1)
-    expect(await screen.findByText('0,2 L', {}, { timeout: 2500 })).toBeInTheDocument()
+    expect((await screen.findAllByText('0,2 L')).length).toBeGreaterThan(0)
     expect(screen.queryByText(/appena torna la rete/i)).not.toBeInTheDocument()
   })
 
@@ -148,7 +148,7 @@ describe('HomePage', () => {
     tapLater(button)
     await waitFor(() => expect(fake.tables.drinks).toHaveLength(2))
     fireEvent.click(screen.getByRole('button', { name: /annulla/i }))
-    expect(await screen.findByText('0,2 L', {}, { timeout: 2500 })).toBeInTheDocument()
+    expect((await screen.findAllByText('0,2 L')).length).toBeGreaterThan(0)
     await waitFor(() => expect(fake.tables.drinks).toHaveLength(1))
   })
 
@@ -158,7 +158,7 @@ describe('HomePage', () => {
     tapLater(await drinkButton())
     await screen.findByText(/appena torna la rete/i)
     fireEvent.click(screen.getByRole('button', { name: /annulla/i }))
-    expect(await screen.findByText('0 L', {}, { timeout: 2500 })).toBeInTheDocument()
+    expect((await screen.findAllByText('0 L')).length).toBeGreaterThan(0)
     expect(pendingDrinks('u1')).toEqual([])
   })
 
@@ -175,7 +175,7 @@ describe('HomePage', () => {
   it('obiettivo superato: la bottiglia resta piena e il testo mostra il totale reale', async () => {
     fake.tables.drinks = [{ user_id: 'u1', client_id: 'x', amount_ml: 3400, local_date: today(), drunk_at: new Date().toISOString() }]
     renderHome()
-    expect(await screen.findByText('3,4 L', {}, { timeout: 2500 })).toBeInTheDocument()
+    expect((await screen.findAllByText('3,4 L')).length).toBeGreaterThan(0)
     expect(screen.getByTestId('bottle-water').style.height).toBe('100%')
     expect(screen.getByText(/obiettivo raggiunto/i)).toBeInTheDocument()
   })
@@ -193,7 +193,7 @@ describe('HomePage', () => {
     const button = await screen.findByRole('button', { name: /300 ml/ })
     expect(screen.getByText(/su 2 L/)).toBeInTheDocument()
     tapLater(button)
-    expect(await screen.findByText('0,3 L', {}, { timeout: 2500 })).toBeInTheDocument()
+    expect((await screen.findAllByText('0,3 L')).length).toBeGreaterThan(0)
   })
 
   it('senza promemoria invita a impostarli', async () => {

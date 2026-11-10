@@ -37,5 +37,11 @@ export function CountUp({ value, format = String, duration = 0.6 }: Props) {
 
   // Con «riduci movimento» il valore compare subito, senza passare dall'effetto.
   const current = prefersReducedMotion() ? value : shown
-  return <span aria-label={format(value)}>{format(Math.round(current))}</span>
+  // Gli screen reader leggono solo il valore finale, non le cifre intermedie.
+  return (
+    <>
+      <span aria-hidden="true">{format(Math.round(current))}</span>
+      <span className="visually-hidden">{format(value)}</span>
+    </>
+  )
 }

@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CountUp } from './CountUp'
 import { MotionRoot } from './MotionRoot'
@@ -33,6 +33,10 @@ afterEach(() => {
 })
 
 const ml = (n: number) => `${n} ml`
+// Cifre animate (nascoste agli screen reader) e valore finale per gli screen reader.
+const animated = (c: HTMLElement) => c.querySelector('[aria-hidden="true"]')!
+const spoken = (c: HTMLElement) => c.querySelector('.visually-hidden')!
+
 const wrap = (value: number) => (
   <MotionRoot>
     <CountUp value={value} format={ml} />
@@ -41,27 +45,29 @@ const wrap = (value: number) => (
 
 describe('CountUp', () => {
   it('al primo render mostra subito il valore, con testo accessibile', () => {
-    render(wrap(1250))
-    expect(screen.getByLabelText('1250 ml')).toHaveTextContent('1250 ml')
+    const { container } = render(wrap(1250))
+    expect(animated(container)).toHaveTextContent('1250 ml')
+    expect(spoken(container)).toHaveTextContent('1250 ml')
   })
 
   it('quando il valore cambia anima e finisce sul valore finale', () => {
     vi.useFakeTimers()
-    const { rerender } = render(wrap(500))
+    const { container, rerender } = render(wrap(500))
     rerender(wrap(1000))
+    expect(spoken(container)).toHaveTextContent('1000 ml')
     act(() => vi.advanceTimersByTime(300))
-    const mid = Number(screen.getByLabelText('1000 ml').textContent!.replace(' ml', ''))
+    const mid = Number(animated(container).textContent!.replace(' ml', ''))
     expect(mid).toBeGreaterThan(500)
     expect(mid).toBeLessThan(1000)
     act(() => vi.advanceTimersByTime(600))
-    expect(screen.getByLabelText('1000 ml')).toHaveTextContent('1000 ml')
+    expect(animated(container)).toHaveTextContent('1000 ml')
   })
 
   it('con riduzione movimento mostra subito il valore finale dopo un cambio', () => {
     stubReducedMotion(true)
-    const { rerender } = render(wrap(500))
+    const { container, rerender } = render(wrap(500))
     rerender(wrap(1250))
-    expect(screen.getByLabelText('1250 ml')).toHaveTextContent('1250 ml')
+    expect(animated(container)).toHaveTextContent('1250 ml')
   })
 })
 

@@ -111,7 +111,7 @@ describe('caffeina in home', () => {
     await waitFor(() => expect(fake.tables.caffeine_intakes).toHaveLength(1))
     expect(fake.tables.caffeine_intakes[0]).toMatchObject({ user_id: 'u1', kind: 'coffee', mg: 80, local_date: today() })
     expect(fake.tables.drinks).toHaveLength(0)
-    expect(screen.getByText('0 L')).toBeInTheDocument()
+    expect(screen.getAllByText('0 L')[0]).toBeInTheDocument()
   })
 
   it('i caffè già segnati a 20 mg restano a 20, i nuovi valgono 80', async () => {

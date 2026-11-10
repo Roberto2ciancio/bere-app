@@ -17,8 +17,8 @@ export const CHANGELOG: Release[] = [
     title: 'Nuova grafica',
     notes: [
       'Colori nuovi e più vivaci, bottoni più morbidi e card rinnovate in tutta l’app.',
-      'Il tema scuro è automatico e segue il telefono. I vecchi temi di colore «notte» e «caldo» sono sostituiti da chiaro e scuro.',
-      'Animazioni nuove: numeri che salgono, cambi di pagina più fluidi e coriandoli quando raggiungi l’obiettivo.',
+      'Il tema chiaro o scuro segue quello del telefono. Gli stili Anello e Gocce non cambiano più i colori dell’app.',
+      'Animazioni nuove: numeri che salgono e cambi di pagina più fluidi.',
       'Se sul telefono hai attivato «riduci movimento», l’app non anima più nulla.',
     ],
   },
