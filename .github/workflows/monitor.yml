@@ -7,6 +7,10 @@ on:
   schedule:
     - cron: '*/10 * * * *'
   workflow_dispatch:
+    inputs:
+      max_minutes:
+        description: 'Minuti oltre i quali è «fermo» (-1 = prova del guasto con il job vivo)'
+        default: '10'
 
 permissions:
   issues: write
@@ -26,7 +30,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
           SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          MAX_MINUTES: '10'
+          MAX_MINUTES: ${{ inputs.max_minutes || '10' }}
         run: |
           set -u
           now=$(date -u +%s)
@@ -51,6 +55,7 @@ jobs:
 
           if [ -n "$problem" ]; then
             echo "::warning::$problem"
+            [ "$MAX_MINUTES" -lt 0 ] && problem="[Prova del guasto, soglia $MAX_MINUTES] $problem"
             if [ -z "$open" ]; then
               gh label create monitor --color B60205 --description "Avvisi del controllo automatico" 2>/dev/null || true
               gh issue create --label monitor --title "⚠️ Notifiche ferme" --body "$(printf '%s\n\n%s\n%s\n%s\n%s\n\n%s' \
