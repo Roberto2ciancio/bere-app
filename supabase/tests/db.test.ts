@@ -4,13 +4,14 @@ import { join } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql', '0012_remove_energy_drinks.sql', '0013_poke_cooldown.sql', '0014_active_hours.sql', '0015_drink_from_push.sql', '0016_social_notifications.sql', '0017_motivation.sql', '0018_client_errors.sql', '0019_smarter_notifications.sql', '0020_two_amounts.sql']
+const MIGRATIONS = ['0001_schema.sql', '0002_rls.sql', '0003_leaderboard.sql', '0006_reminder_rows.sql', '0007_resilience.sql', '0008_caffeine.sql', '0009_leaderboard_caffeine.sql', '0010_waterminder.sql', '0011_can_character.sql', '0012_remove_energy_drinks.sql', '0013_poke_cooldown.sql', '0014_active_hours.sql', '0015_drink_from_push.sql', '0016_social_notifications.sql', '0017_motivation.sql', '0018_client_errors.sql', '0019_smarter_notifications.sql', '0020_two_amounts.sql', '0021_reminders_monitor.sql', '0022_levels.sql']
 const A = '00000000-0000-0000-0000-00000000000a'
 const B = '00000000-0000-0000-0000-00000000000b'
 const WEEK = '2026-11-02'
 const TODAY_ROME = `(now() at time zone 'Europe/Rome')::date`
 
 let db: PGlite
+let preMigration: { id: string; home_style: string }[] = []
 
 const STUBS = `
   create role anon nologin;
@@ -18,7 +19,7 @@ const STUBS = `
   create role service_role nologin bypassrls;
   create schema auth;
   grant usage on schema auth to authenticated, anon;
-  create table auth.users (id uuid primary key, raw_user_meta_data jsonb default '{}');
+  create table auth.users (id uuid primary key, raw_user_meta_data jsonb default '{}', created_at timestamptz not null default now());
   create function auth.uid() returns uuid language sql stable as
     $$ select nullif(current_setting('request.jwt.sub', true), '')::uuid $$;
   grant execute on function auth.uid() to authenticated, anon;
@@ -67,6 +68,13 @@ beforeAll(async () => {
   for (const file of MIGRATIONS) {
     await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', file), 'utf8'))
   }
+  // Profili esistenti prima della 0023: la migrazione deve cambiare solo 'bottle'.
+  for (const [id, style] of [[A, 'bottle'], [B, 'ring']]) {
+    await db.query(`insert into auth.users (id) values ($1)`, [id])
+    await db.query(`update profiles set home_style = $2 where id = $1`, [id, style])
+  }
+  await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0023_glu.sql'), 'utf8'))
+  preMigration = (await db.query<{ id: string; home_style: string }>(`select id, home_style from profiles`)).rows
 }, 60_000)
 
 beforeEach(async () => {
@@ -80,7 +88,7 @@ describe('registrazione', () => {
     const id = '00000000-0000-0000-0000-00000000000c'
     await db.query(`insert into auth.users (id, raw_user_meta_data) values ($1, '{"display_name":"Carla","tz":"Europe/Paris"}')`, [id])
     const profile = (await db.query(`select * from profiles where id = $1`, [id])).rows[0]
-    expect(profile).toMatchObject({ display_name: 'Carla', home_style: 'bottle', drink_ml: 200, tz: 'Europe/Paris' })
+    expect(profile).toMatchObject({ display_name: 'Carla', home_style: 'glu', drink_ml: 200, tz: 'Europe/Paris' })
     const goals = (await db.query(`select goal_ml from goal_changes where user_id = $1`, [id])).rows
     expect(goals).toEqual([{ goal_ml: 3000 }])
   })
@@ -1020,5 +1028,66 @@ describe('due quantità nella notifica', () => {
     await asUser(A, () => db.query(`update profiles set push_amounts = true where id = $1`, [B]))
     const rows = (await db.query<{ id: string; push_amounts: boolean }>(`select id, push_amounts from profiles where id in ($1, $2) order by id`, [A, B])).rows
     expect(rows).toEqual([{ id: A, push_amounts: true }, { id: B, push_amounts: false }])
+  })
+})
+
+describe('migrazione 0023: Glu', () => {
+  const setGoal = (id: string, ml: number) => asUser(id, () => db.query(`select public.set_initial_goal(${ml})`))
+  const goalRows = async (id: string) =>
+    (await db.query<{ effective_from: string; goal_ml: number; today: string }>(
+      `select effective_from::text, goal_ml, ${TODAY_ROME}::text as today from goal_changes where user_id = $1 order by effective_from`,
+      [id],
+    )).rows
+
+  beforeEach(async () => {
+    // account nuovo (creato ora) e senza bevute, in fuso di Roma
+    await db.query(`update profiles set tz = 'Europe/Rome' where id = $1`, [A])
+  })
+
+  it('imposta il traguardo da oggi nel fuso del profilo e lo aggiorna se richiamato', async () => {
+    await setGoal(A, 2300)
+    let rows = await goalRows(A)
+    const mine = rows.find((r) => r.goal_ml === 2300)
+    expect(mine?.effective_from).toBe(rows[0].today)
+    await setGoal(A, 2500)
+    rows = await goalRows(A)
+    expect(rows.filter((r) => r.effective_from === rows[0].today)).toHaveLength(1)
+    expect(rows.find((r) => r.effective_from === rows[0].today)?.goal_ml).toBe(2500)
+  })
+
+  it('rifiuta un account creato più di 24 ore fa', async () => {
+    await db.query(`update auth.users set created_at = now() - interval '25 hours' where id = $1`, [A])
+    await expect(setGoal(A, 2300)).rejects.toThrow(/account_not_new/)
+  })
+
+  it('rifiuta chi ha già una bevuta', async () => {
+    await drink(A, WEEK, 200)
+    await expect(setGoal(A, 2300)).rejects.toThrow(/has_drinks/)
+  })
+
+  it('rifiuta obiettivi fuori da 100–10000', async () => {
+    await expect(setGoal(A, 99)).rejects.toThrow(/invalid_goal/)
+    await expect(setGoal(A, 10001)).rejects.toThrow(/invalid_goal/)
+    expect((await goalRows(A)).some((r) => r.goal_ml === 99 || r.goal_ml === 10001)).toBe(false)
+  })
+
+  it('anon non può eseguirla', async () => {
+    await db.exec(`set role anon`)
+    try {
+      await expect(db.query(`select public.set_initial_goal(2300)`)).rejects.toThrow(/permission denied/)
+    } finally {
+      await db.exec(`reset role`)
+    }
+  })
+
+  it('home_style: glu accettato, predefinito glu, solo i bottle migrati', async () => {
+    await db.query(`update profiles set home_style = 'glu' where id = $1`, [B])
+    await expect(db.query(`update profiles set home_style = 'nope' where id = $1`, [B])).rejects.toThrow(/check/)
+    const def = (await db.query<{ column_default: string }>(
+      `select column_default from information_schema.columns where table_name = 'profiles' and column_name = 'home_style'`,
+    )).rows[0].column_default
+    expect(def).toContain("'glu'")
+    expect(preMigration.find((r) => r.id === A)?.home_style).toBe('glu')
+    expect(preMigration.find((r) => r.id === B)?.home_style).toBe('ring')
   })
 })

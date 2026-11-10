@@ -322,9 +322,24 @@ if (import.meta.env.MODE === 'devapp') {
 
 const cheeredToday = new Set<string>()
 
+/** Come la funzione SQL set_initial_goal: obiettivo da oggi (nel fuso del profilo), solo senza bevute. */
+function setInitialGoal(goal: number | undefined): Result {
+  if (goal === undefined || goal < 100 || goal > 10000) return { data: null, error: { message: 'invalid_goal' } }
+  if (rowsOf('drinks').length > 0) return { data: null, error: { message: 'has_drinks' } }
+  const tz = (rowsOf('profiles')[0]?.tz as string | undefined) ?? 'UTC'
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date())
+  const rows = rowsOf('goal_changes')
+  const same = rows.find((r) => r.user_id === DEV_USER_ID && r.effective_from === today)
+  if (same) same.goal_ml = goal
+  else rows.push({ user_id: DEV_USER_ID, effective_from: today, goal_ml: goal })
+  persist()
+  return { data: null, error: null }
+}
+
 export const supabase = {
   from: (table: string) => new Query(table),
-  async rpc(name: string, args?: { week_start?: string }): Promise<Result> {
+  async rpc(name: string, args?: { week_start?: string; p_goal_ml?: number }): Promise<Result> {
+    if (name === 'set_initial_goal') return setInitialGoal(args?.p_goal_ml)
     if (name === 'daily_totals') return { data: dailyTotals(), error: null }
     if (name === 'get_levels') return { data: levels(), error: null }
     // Marta (finta) ha già raggiunto l'obiettivo oggi: così si vedono i complimenti in classifica.
