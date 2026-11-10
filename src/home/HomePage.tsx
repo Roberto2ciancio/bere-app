@@ -191,7 +191,7 @@ export function HomePage() {
       <NewsIcon />
       <header className="home-head">
         <p className="home-total" aria-live="polite">{formatVolume(totalMl, units)}</p>
-        <div className="home-progress" aria-hidden="true">
+        <div className="progress home-progress" aria-hidden="true">
           <span style={{ width: `${percent}%` }} />
         </div>
         <p className="home-goal">

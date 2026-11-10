@@ -31,7 +31,7 @@ export function DeleteAccount() {
         <input autoCapitalize="characters" autoComplete="off" value={text} onChange={(e) => setText(e.target.value)} />
       </label>
       {error && <p role="alert" className="error">{error}</p>}
-      <button className="secondary" disabled={text !== WORD || busy}>Elimina definitivamente il profilo</button>
+      <button className="danger-button" disabled={text !== WORD || busy}>Elimina definitivamente il profilo</button>
     </form>
   )
 }

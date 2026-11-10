@@ -15,9 +15,9 @@
 /* Storico: schede */
 .history { gap: 16px; }
 .page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.segmented { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); }
-.segmented button { min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: none; font-size: 0.9rem; font-weight: 600; color: var(--ink-soft); }
-.segmented button[aria-pressed='true'] { background: var(--accent); color: var(--on-accent); }
+.segmented { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--surface-2); }
+.segmented button { min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: none; font-size: 0.9rem; font-weight: 600; color: var(--ink-soft); transition: transform 0.14s var(--ease-spring); }
+.segmented button[aria-pressed='true'] { background: var(--brand); color: var(--on-brand); }
 .history-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .history-summary > div { display: flex; flex-direction: column; gap: 2px; }
 .history-summary strong { font-family: var(--display); font-size: 1.3rem; font-variant-numeric: tabular-nums; }
@@ -34,8 +34,6 @@
 .day-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .day-head h2 { text-transform: capitalize; }
 .day-head strong { white-space: nowrap; }
-.progress { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; }
-.progress span { display: block; height: 100%; border-radius: inherit; background: var(--water); transition: width 0.4s var(--ease-out); }
 .entry-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .entry-list li { display: flex; align-items: center; gap: 12px; min-height: 48px; border-top: 1px solid var(--line); }
 .entry-time { width: 3em; color: var(--ink-soft); font-size: 0.9rem; }
@@ -46,10 +44,10 @@
 .history .stat-grid dd { font-size: 1.25rem; }
 .challenge-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
 .challenge-list li { display: flex; flex-direction: column; gap: 6px; font-size: 0.95rem; }
-.challenge-list li.done .progress span { background: var(--water-deep); }
+.challenge-list li.done .progress > span { background: var(--water-deep); }
 .badge-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .badge-list li { display: flex; align-items: center; gap: 12px; }
-.badge-icon { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: var(--water); color: var(--on-accent); font-weight: 700; }
+.badge-icon { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: var(--water); color: var(--on-brand); font-weight: 700; }
 .badge-list li.locked .badge-icon { background: var(--bg); font-size: 0.9rem; }
 .badge-list li.locked strong { color: var(--ink-soft); }
 .history .chart { margin-top: 14px; }
@@ -66,7 +64,7 @@
 .cal-weekday { text-align: center; color: var(--ink-soft); font-size: 0.78rem; font-weight: 600; }
 .cal-cell { aspect-ratio: 1; display: grid; place-items: center; min-width: 0; border-radius: 8px; font-size: 0.85rem; font-variant-numeric: tabular-nums; background: var(--bg); color: var(--ink-soft); }
 .cal-cell.empty { background: none; }
-.cal-cell.met { background: var(--water); color: var(--on-accent); font-weight: 700; }
+.cal-cell.met { background: var(--water); color: var(--on-brand); font-weight: 700; }
 .cal-cell.half { background: color-mix(in srgb, var(--water) 40%, var(--surface)); color: var(--ink); }
 .cal-cell.low { background: color-mix(in srgb, var(--water) 14%, var(--surface)); color: var(--ink); }
 .cal-cell.saved { background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 2px var(--water); }

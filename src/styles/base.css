@@ -7,7 +7,7 @@ body {
   font: 16px/1.45 var(--body);
   -webkit-tap-highlight-color: transparent;
 }
-::selection { background: var(--water); color: var(--on-accent); }
+::selection { background: var(--water); color: var(--on-brand); }
 :focus-visible { outline: 3px solid var(--water); outline-offset: 2px; }
 a { color: inherit; text-underline-offset: 3px; }
 h1, h2 { font-family: var(--display); line-height: 1.1; text-wrap: balance; margin: 0; }
@@ -19,17 +19,18 @@ input, textarea, select {
   width: 100%;
   min-height: 46px;
   padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
   background: var(--surface);
   color: var(--ink);
   font: inherit;
   font-size: 16px; /* sotto i 16px iOS ingrandisce la pagina al tocco */
   caret-color: var(--water);
 }
+input:focus-visible, textarea:focus-visible, select:focus-visible { border-color: var(--brand-deep); }
 input[type='checkbox'] { width: 22px; min-height: 22px; accent-color: var(--water-deep); }
 input[type='time'] { width: auto; }
-select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; }
+select { width: 100%; min-height: 46px; padding: 10px 12px; border: 2px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; }
 
 .stack { display: flex; flex-direction: column; gap: 14px; }
 .stack label { display: flex; flex-direction: column; gap: 5px; font-weight: 600; font-size: 0.93rem; }

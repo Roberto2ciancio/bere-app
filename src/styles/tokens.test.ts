@@ -55,6 +55,10 @@ const pairs: [string, string][] = [
   ['--on-brand', '--danger'],
   ['--danger', '--surface'],
   ['--brand-deep', '--surface'],
+  ['--brand-deep', '--bg'],
+  ['--brand-deep', '--surface-2'],
+  ['--ink-soft', '--surface-2'],
+  ['--on-brand', '--reward'],
 ]
 
 describe('tokens.css', () => {

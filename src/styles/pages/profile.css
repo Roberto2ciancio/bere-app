@@ -6,7 +6,6 @@
 .field { display: flex; flex-direction: column; gap: 8px; }
 .hours-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .profile-id { display: flex; align-items: center; gap: 14px; }
-.avatar-lg { width: 64px; height: 64px; font-size: 1.5rem; }
 .file-button {
   position: relative;
   display: inline-flex;
@@ -58,6 +57,7 @@
   color: var(--ink);
   font-weight: 700;
 }
+.avatar.avatar-lg { width: 64px; height: 64px; font-size: 1.5rem; }
 input[type='file'] { flex: 1; min-width: 0; padding: 0; border: 0; background: none; min-height: 46px; color: var(--ink-soft); font-size: 0.88rem; }
 input[type='file']::file-selector-button {
   min-height: 46px;

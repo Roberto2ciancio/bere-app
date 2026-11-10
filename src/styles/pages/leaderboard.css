@@ -46,7 +46,7 @@
 .board-who { display: flex; align-items: center; gap: 6px; min-width: 0; font-weight: 700; }
 .board-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .board-pts { flex: none; font-size: 1.1rem; }
-.tag { flex: none; padding: 1px 8px; border-radius: 999px; background: var(--water-deep); color: var(--on-accent); font-size: 0.72rem; font-weight: 700; }
+.tag { flex: none; padding: 1px 8px; border-radius: 999px; background: var(--water-deep); color: var(--on-brand); font-size: 0.72rem; font-weight: 700; }
 .week-bar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
 .week-bar span { height: 6px; border-radius: 3px; background: var(--line); }
 .week-bar span.on { background: var(--water); }
