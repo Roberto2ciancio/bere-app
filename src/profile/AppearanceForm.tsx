@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { useProfile, type HomeStyle } from '../auth/ProfileProvider'
 import type { Units } from '../domain/hydration'
 import { playSound, SOUNDS } from '../home/sounds'
+import { currentDeviceSettingsName } from '../lib/platform'
 import {
   AVATAR_SIDE,
   BACKGROUND_SIDE,
@@ -164,7 +165,7 @@ export function DrinkPrefs() {
             </button>
           ))}
         </div>
-        <p className="hint">Il suono si sente solo con l'app aperta. Le notifiche usano sempre il suono scelto nelle impostazioni dell'iPhone.</p>
+        <p className="hint">Il suono si sente solo con l'app aperta. Le notifiche usano sempre il suono scelto nelle impostazioni {currentDeviceSettingsName()}.</p>
       </div>
       <Link className="link-row" to="/tazze">Tazze e bevande</Link>
     </section>
