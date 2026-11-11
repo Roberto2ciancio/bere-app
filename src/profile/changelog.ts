@@ -12,6 +12,18 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '1.9.5',
+    date: '2026-11-11',
+    title: 'Glu reagisce',
+    notes: [
+      'Nella Home ora c’è solo Glu: arriveranno più Glu tra cui scegliere.',
+      'Glu si affloscia se non bevi da un po’, si agita dopo un caffè e si mette la fascia quando ti alleni.',
+      'Con 7, 14 e 30 giorni di fila Glu si mette la corona.',
+      'L’acqua dentro Glu segue l’inclinazione del telefono.',
+      'Se preferisci un Glu fermo, attiva «Glu tranquillo» in Profilo › Aspetto.',
+    ],
+  },
+  {
     version: '1.9.4',
     date: '2026-11-11',
     title: 'Correzioni',

@@ -165,6 +165,36 @@ describe('Glu: serie e corona', () => {
     expect(bubble()).not.toContain('giorni di fila')
   })
 
+  it('la bevuta di oggi conta subito: al 7º giorno la corona arriva senza aspettare', async () => {
+    fake.tables.drinks = [{ ...drinkAt(10 * MIN), amount_ml: 3000 }]
+    fake.rpcResults.daily_totals = streakOf(6)
+    renderHome()
+    await waitFor(() => expect(document.querySelector('.glu-crown-drop')).not.toBeNull())
+    expect(readCache<number>('bere.streakReward.u1')).toBe(7)
+  })
+
+  it('finché gli obiettivi non arrivano dal server la serie non si calcola né si salva', async () => {
+    fake.tables.drinks = [drinkAt(10 * MIN)]
+    fake.rpcResults.daily_totals = streakOf(7)
+    writeCache('bere.streakReward.u1', 7)
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    const from = fake.client.from.bind(fake.client)
+    vi.spyOn(fake.client, 'from').mockImplementation(((table: string) => {
+      const query = from(table as never) as { select: (...args: unknown[]) => PromiseLike<unknown> }
+      if (table !== 'goal_changes') return query
+      return { ...query, select: (...args: unknown[]) => ({ eq: (...a: unknown[]) => gate.then(() => (query.select(...args) as unknown as { eq: (...x: unknown[]) => unknown }).eq(...a)) }) }
+    }) as never)
+    renderHome()
+    await screen.findByTestId('glu')
+    await act(() => vi.advanceTimersByTimeAsync(500))
+    expect(document.querySelector('.glu-crown')).toBeNull()
+    expect(readCache<number>('bere.streakReward.u1')).toBe(7)
+    await act(async () => release())
+    await waitFor(() => expect(document.querySelector('.glu-crown')).not.toBeNull())
+    expect(document.querySelector('.glu-crown-drop')).toBeNull()
+  })
+
   it('senza i totali giornalieri niente corona', async () => {
     fake.tables.drinks = [drinkAt(10 * MIN)]
     fake.rpcResults.daily_totals = streakOf(7)

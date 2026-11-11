@@ -4,6 +4,9 @@ import { Glu, type GluExtras } from '../mascot/Glu'
 import type { GluMood } from '../mascot/mood'
 import { phraseFor, specialPhraseFor, type SpecialPhrase } from '../mascot/phrases'
 import type { CrownTier } from '../mascot/reactions'
+import { TiltInvite } from '../mascot/TiltInvite'
+import { useTilt } from '../mascot/useTilt'
+import { prefersReducedMotion } from '../ui/motion/effects'
 import { ProgressRing } from './ProgressRing'
 
 interface Props {
@@ -18,6 +21,8 @@ interface Props {
   workoutText?: string
   /** Caffè oltre il limite di caffeina del giorno. */
   coffeeOver?: boolean
+  /** «Glu tranquillo»: l'acqua non segue il telefono. */
+  calm?: boolean
 }
 
 /** Frase su misura se c'è un motivo (festa della corona, sete forte, allenamento, troppa caffeina). */
@@ -32,7 +37,7 @@ function variantFor({ mood, extras, streakCelebrate, workoutText, coffeeOver }: 
 
 /** Glu dentro l'anello del progresso, che si riempie d'acqua e dice la sua nel fumetto. */
 export function GluView(props: Props) {
-  const { fill, mood, name, now, extras, workoutText } = props
+  const { fill, mood, name, now, extras, workoutText, calm = false } = props
   const variant = variantFor(props)
   const pick = () => (variant === 'workout' ? (workoutText ?? '') : variant ? specialPhraseFor(variant, now) : phraseFor(mood, name, now))
   // La frase si sceglie quando cambia l'umore, il nome o il motivo, non a ogni render.
@@ -42,14 +47,21 @@ export function GluView(props: Props) {
     text = pick()
     setChosen({ mood, name, variant, text })
   }
+  const [reduced] = useState(prefersReducedMotion)
+  const still = calm || reduced
+  const { tilt, needsPermission, permission, request, dismiss } = useTilt(!still)
+  // Con Glu pieno e molto inclinato un lato resterebbe vuoto in cima: l'ampiezza si dimezza.
+  const waterTilt = fill >= 0.95 ? tilt * 0.5 : tilt
+  const glu = tilt ? { ...extras, tilt: waterTilt } : extras
   return (
     <div className="glu-box" data-testid="glu-view">
       <Bubble text={text} />
       <div className="ring-slot">
         <ProgressRing fill={fill} wide>
-          <Glu mood={mood} fill={fill} size={186} extras={extras} />
+          <Glu mood={mood} fill={fill} size={186} extras={glu} />
         </ProgressRing>
       </div>
+      {needsPermission && permission === null && !still && <TiltInvite onAccept={() => void request()} onDismiss={dismiss} />}
     </div>
   )
 }

@@ -5,7 +5,7 @@ import { readCache, writeCache } from '../lib/cache'
 import { supabase } from '../lib/supabase'
 import { usePauses } from '../pause/usePauses'
 import { computeStats, type DayTotal } from '../history/stats'
-import { pausedDays } from '../pause/pauses'
+import { pausedDays, type PausePeriod } from '../pause/pauses'
 import { saveStreak } from './accessories'
 import { isGluCalm } from './calm'
 import type { GluExtras } from './Glu'
@@ -38,6 +38,8 @@ interface Input {
   workoutStartedAt?: number | null
   /** Aumenti dell'obiettivo per giorno, per contare la serie come lo Storico. */
   boosts?: Map<string, number>
+  /** Gli obiettivi arrivati dal server (non quelli della cache): senza, la serie non si calcola. */
+  goalsLoaded?: boolean
 }
 
 export interface GluState {
@@ -63,6 +65,7 @@ export function useGluMood({
   workoutActive = false,
   workoutStartedAt = null,
   boosts,
+  goalsLoaded = true,
 }: Input): GluState {
   const [now, setNow] = useState(() => new Date())
   const [justDrank, setJustDrank] = useState(false)
@@ -70,8 +73,10 @@ export function useGluMood({
   const [sadShown, setSadShown] = useState(() => !!userId && readCache<string>(`bere.gluSad.${userId}`) === localParts(new Date(), tz).date)
   const [yesterday, setYesterday] = useState<{ day: string; totals: DayTotal[] } | null>(null)
 
-  const { date: today, minutes: nowMinutes } = localParts(now, tz)
-  const { periods, current: pause } = usePauses(enabled ? userId : null, today)
+  const today = localParts(now, tz).date
+  const nowMinutes = localParts(now, tz).minutes
+  const pauses = usePauses(enabled ? userId : null, today)
+  const { loaded: pausesLoaded, current: pause } = pauses
 
   // Il fumetto e l'umore dipendono dall'ora: si ricalcola ogni minuto.
   useEffect(() => {
@@ -119,8 +124,13 @@ export function useGluMood({
     }
   }, [enabled, userId, yesterdayDate])
 
-  // La serie viene dai totali già letti per «ieri»: senza (errore o non ancora arrivati) niente corona.
-  const currentStreak = yesterday ? computeStats(yesterday.totals, goals, today, boosts, pausedDays(periods, today)).currentStreak : null
+  // La serie viene dai totali già letti per «ieri», con la bevuta di oggi aggiunta (il 7º giorno la corona arriva subito).
+  // Senza totali, obiettivi o pause dal server (errore o non ancora arrivati) niente corona: i segnaposto darebbero una serie più bassa.
+  const yesterdayTotals = yesterday?.totals ?? null
+  const currentStreak = useMemo(
+    () => (yesterdayTotals && goalsLoaded && pausesLoaded ? streakWithToday(yesterdayTotals, totalMl, goals, today, boosts, pauses.periods) : null),
+    [yesterdayTotals, goalsLoaded, pausesLoaded, totalMl, goals, today, boosts, pauses.periods],
+  )
   useEffect(() => {
     if (userId && currentStreak !== null) saveStreak(userId, currentStreak)
   }, [userId, currentStreak])
@@ -175,4 +185,12 @@ function yesterdayMet(yesterday: { day: string; totals: DayTotal[] } | null, goa
   if (!totals.some((t) => t.day <= day)) return null
   const total = totals.find((t) => t.day === day)?.total_ml ?? 0
   return total >= goalForDate(goals, day)
+}
+
+/** Serie con la bevuta di oggi (se più alta del totale già letto) aggiunta ai giorni passati. */
+function streakWithToday(totals: DayTotal[], totalMl: number, goals: GoalChange[], today: string, boosts: Map<string, number> | undefined, periods: PausePeriod[]): number {
+  const withToday = totals.some((t) => t.day === today)
+    ? totals.map((t) => (t.day === today ? { ...t, total_ml: Math.max(t.total_ml, totalMl) } : t))
+    : [...totals, { day: today, total_ml: totalMl, drinks: 0 }]
+  return computeStats(withToday, goals, today, boosts, pausedDays(periods, today)).currentStreak
 }

@@ -21,6 +21,7 @@ import { readCache, writeCache } from '../lib/cache'
 import { useLevels } from '../levels/useLevels'
 import { useLevelUp } from '../levels/useLevelUp'
 import { Celebration } from '../mascot/Celebration'
+import { isGluCalm } from '../mascot/calm'
 import { useGluMood } from '../mascot/useGluMood'
 import { confetti, haptic } from '../ui/motion/effects'
 import { supabase } from '../lib/supabase'
@@ -98,6 +99,7 @@ export function HomePage() {
 
   const [now, setNow] = useState(() => new Date())
   const [goals, setGoals] = useState<GoalChange[]>([])
+  const [goalsLoaded, setGoalsLoaded] = useState(false)
   const [reminders, setReminders] = useState<Reminder[] | null>(null)
   const [pulse, setPulse] = useState(0)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -142,6 +144,7 @@ export function HomePage() {
       const loaded = rows.map((r) => ({ effectiveFrom: r.effective_from, goalMl: r.goal_ml }))
       writeCache(goalsKey, loaded)
       setGoals(loaded)
+      setGoalsLoaded(true)
     })
     const remindersKey = `bere.reminders.${userId}`
     setReminders(readCache<Reminder[]>(remindersKey))
@@ -231,6 +234,7 @@ export function HomePage() {
     workoutActive: !!boosts.workout,
     workoutStartedAt,
     boosts: boosts.byDay,
+    goalsLoaded,
   })
 
   // La festa parte solo se una bevuta di questa sessione supera l'obiettivo, e una volta al giorno.
@@ -285,6 +289,7 @@ export function HomePage() {
           streakCelebrate={glu.streakCelebrate}
           workoutText={`Obiettivo di oggi +${formatAmount(WORKOUT_BOOST_ML, units)}!`}
           coffeeOver={caffeine.overLimit}
+          calm={!!userId && isGluCalm(userId)}
           name={profile.display_name.trim().split(/\s+/)[0] ?? ''}
         />
       </div>

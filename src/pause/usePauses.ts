@@ -8,6 +8,8 @@ import { currentPause, pauseRange, type PausePeriod } from './pauses'
 export function usePauses(userId: string | null, today: string) {
   const cacheKey = `bere.pauses.${userId}`
   const [periods, setPeriods] = useState<PausePeriod[]>(() => (userId ? readCache<PausePeriod[]>(cacheKey) ?? [] : []))
+  // Vero solo dopo la risposta del server: la cache può essere vuota o vecchia.
+  const [loaded, setLoaded] = useState(false)
 
   const store = useCallback(
     (next: PausePeriod[]) => {
@@ -25,7 +27,9 @@ export function usePauses(userId: string | null, today: string) {
       .select('id, start_date, end_date')
       .eq('user_id', userId)
       .then(({ data, error }) => {
-        if (active && !error && data) store(data as PausePeriod[])
+        if (!active || error || !data) return
+        store(data as PausePeriod[])
+        setLoaded(true)
       })
     return () => {
       active = false
@@ -58,5 +62,5 @@ export function usePauses(userId: string | null, today: string) {
     return true
   }, [userId, today, periods, store])
 
-  return { periods, current: currentPause(periods, today), start, resume }
+  return { periods, loaded, current: currentPause(periods, today), start, resume }
 }

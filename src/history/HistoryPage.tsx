@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
@@ -14,6 +14,7 @@ import { weekStart } from '../leaderboard/weekStart'
 import { pausedDays } from '../pause/pauses'
 import { usePauses } from '../pause/usePauses'
 import { supabase } from '../lib/supabase'
+import { saveStreak } from '../mascot/accessories'
 import { GluCorner } from '../mascot/GluCorner'
 import { CORNER_PHRASES, historyStreakPhrase } from '../mascot/phrases'
 import { streakAccessory } from '../mascot/reactions'
@@ -45,11 +46,12 @@ export function HistoryPage() {
   const { custom } = useDrinkOptions(userId)
   // Senza meteo: lo legge la schermata Oggi. Qui servono solo gli aumenti già salvati.
   const { byDay: boosts } = useGoalBoosts(userId, today)
-  const { periods: pauses } = usePauses(userId, today)
+  const { periods: pauses, loaded: pausesLoaded } = usePauses(userId, today)
   const levels = useLevels()
 
   const [totals, setTotals] = useState<DayTotal[] | null>(null)
   const [goals, setGoals] = useState<GoalChange[]>([])
+  const [goalsLoaded, setGoalsLoaded] = useState(false)
   const [range, setRange] = useState(7)
   const [selected, setSelected] = useState(today)
   const [entries, setEntries] = useState<Entry[]>([])
@@ -95,7 +97,9 @@ export function HistoryPage() {
   useEffect(() => {
     if (!userId) return
     Promise.resolve(supabase.from('goal_changes').select('effective_from, goal_ml').eq('user_id', userId)).then(({ data }) => {
-      if (data) setGoals((data as { effective_from: string; goal_ml: number }[]).map((r) => ({ effectiveFrom: r.effective_from, goalMl: r.goal_ml })))
+      if (!data) return
+      setGoals((data as { effective_from: string; goal_ml: number }[]).map((r) => ({ effectiveFrom: r.effective_from, goalMl: r.goal_ml })))
+      setGoalsLoaded(true)
     })
   }, [userId])
 
@@ -124,6 +128,13 @@ export function HistoryPage() {
     await Promise.all([loadEntries(), loadTotals()])
   }
 
+  const stats = useMemo(() => (totals ? computeStats(totals, goals, today, boosts, pausedDays(pauses, today)) : null), [totals, goals, today, boosts, pauses])
+  // I Glu piccoli delle altre pagine leggono la serie da qui: si salva solo con obiettivi e pause veri.
+  const streak = goalsLoaded && pausesLoaded ? (stats?.currentStreak ?? null) : null
+  useEffect(() => {
+    if (userId && streak !== null) saveStreak(userId, streak)
+  }, [userId, streak])
+
   if (failed) {
     return (
       <main className="page">
@@ -132,10 +143,9 @@ export function HistoryPage() {
       </main>
     )
   }
-  if (!totals) return <p className="center-note">Caricamento…</p>
+  if (!totals || !stats) return <p className="center-note">Caricamento…</p>
 
   const days = dayResults(totals, goals, today, range, boosts)
-  const stats = computeStats(totals, goals, today, boosts, pausedDays(pauses, today))
   const scale = Math.max(...days.map((d) => Math.max(d.totalMl, d.goalMl)), 1)
   const goalNow = days.at(-1)?.goalMl ?? 0
   const pick = days.find((d) => d.day === selected)

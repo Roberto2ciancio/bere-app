@@ -1,6 +1,6 @@
 # Bere: idee per le prossime versioni
 
-Ultimo aggiornamento: 11 novembre 2026 (app alla versione 1.9.4).
+Ultimo aggiornamento: 11 novembre 2026 (app alla versione 1.9.5).
 
 Legenda: 🟢 piccolo · 🟡 medio · 🔴 grande · 🗄️ tocca il server (database o funzioni) · 📦 serve un nuovo APK
 
@@ -30,7 +30,7 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 - [x] 🟡 **1.9.3 · Glu nelle pagine vuote**: festa con coriandoli quando sali di livello, Glu nelle pagine vuote (Storico, Classifica, Promemoria) e nel popup delle novità.
 - [x] 🟢 **1.9.3 · Rifiniture**: ultimi ritocchi, peso del pacchetto sotto i 60 KB gzip aggiunti.
 - [x] 🟢 **1.9.4 · Correzioni**: saltare l'obiettivo nel primo avvio non cambia più quello di chi usa già l'app, chi cambia telefono non rifà il primo avvio da capo, scegliendo un avatar pronto la foto caricata prima viene cancellata, e Glu ti accompagna sempre in cima a Storico, Classifica e Profilo.
-- [ ] 🟡 **1.9.5 · Glu reagisce**: sete crescente (da 2 a 4 ore senza bere), caffè (20 minuti dopo), allenamento, serie di giorni (corona a 7, 14 e 30 giorni) e notte (fuori dall'orario dei promemoria); il telefono inclinato per ultimo.
+- [x] 🟡 **1.9.5 · Glu reagisce**: solo Glu nella Home, sete crescente (da 2 a 4 ore senza bere), caffè (20 minuti dopo), allenamento con la fascia, serie di giorni (corona a 7, 14 e 30 giorni), notte (fuori dall'orario dei promemoria), acqua che segue il telefono inclinato e «Glu tranquillo» in Profilo › Aspetto.
 
 ## 2.0: social
 
@@ -49,6 +49,7 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 
 ## Più avanti: Glu in 3D
 
+- [ ] 🟡 **Più Glu tra cui scegliere**: altri personaggi oltre a Glu, da scegliere in Profilo › Aspetto.
 - [ ] 🔴 **Glu 3D**: Glu 3D animato come nei video della proposta: saluta, salta quando bevi, si sposta tra le schermate e va a mettersi in basso sopra la barra, cammina, dà un consiglio quando lo tocchi; sostituisce il Glu 2D della Home e i Glu piccoli di Storico, Classifica e Profilo.
 
 ## Verso il Play Store (2.1)
@@ -70,9 +71,8 @@ Richiede di passare da TWA a Capacitor e rifare le notifiche con Firebase Cloud 
 
 ## Da dove partire
 
-1. Glu che reagisce (1.9.5), dopo la Home (1.9.1), il primo avvio (1.9.2) e il resto dell'app (1.9.3).
-2. «Condividi la settimana», per chiudere la 1.8.
-3. Colore della barra di stato nell'APK (tema scuro), prima del Play Store.
+1. «Condividi la settimana», per chiudere la 1.8.
+2. Colore della barra di stato nell'APK (tema scuro), prima del Play Store.
 
 ## Come si pubblica una versione
 
