@@ -1,0 +1,28 @@
+.glu-bubble {
+  position: relative;
+  box-sizing: border-box;
+  max-width: 100%;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  transform-origin: 20px 100%;
+}
+
+/* Codina verso Glu, in basso a sinistra */
+.glu-bubble::after {
+  content: '';
+  position: absolute;
+  left: 20px;
+  bottom: -7px;
+  width: 14px;
+  height: 14px;
+  background: var(--surface);
+  border-radius: 0 0 4px 0;
+  transform: rotate(45deg);
+}
