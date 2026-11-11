@@ -211,6 +211,8 @@ describe('pannello di prova', () => {
 describe('l\'app intera sul database finto', () => {
   it('fa primo avvio e classifica senza account e senza mai usare la rete', async () => {
     render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Iniziamo!' }))
+    for (let i = 0; i < 3; i++) await userEvent.click(await screen.findByRole('button', { name: 'Salta' }))
     await screen.findByRole('heading', { name: 'Quando vuoi bere?' })
     await userEvent.click(screen.getByRole('button', { name: 'Crea promemoria' }))
     await waitFor(async () => expect(await rows('schedules')).toHaveLength(1))

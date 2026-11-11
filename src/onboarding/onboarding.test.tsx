@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createFakeSupabase, type FakeSupabase } from '../test/fakeSupabase'
@@ -18,10 +18,13 @@ const push = vi.hoisted(() => ({
 vi.mock('../push/subscribe', async (original) => ({ ...(await original<object>()), ...push }))
 
 import App from '../App'
-import { markOnboarded } from './onboardingFlag'
+import { formatLiters } from '../domain/format'
+import { goalChangeDate } from '../domain/goals'
+import { suggestGoal } from '../domain/hydration'
+import { markOnboarded, pendingOnboardingStep, saveOnboardingProgress } from './onboardingFlag'
 
 const heading = (name: string) => screen.findByRole('heading', { name })
-const click = (name: string) => userEvent.click(screen.getByRole('button', { name }))
+const click = (name: string | RegExp) => userEvent.click(screen.getByRole('button', { name }))
 
 function seedSchedule() {
   fake.tables.schedules = [{ id: 's1', user_id: 'u1', name: 'Mio', weekdays: [1], enabled: true }]
@@ -30,6 +33,8 @@ function seedSchedule() {
 
 beforeEach(() => {
   localStorage.clear()
+  // Salvo diversa indicazione i test partono dai promemoria, cioè dopo i primi quattro passi.
+  saveOnboardingProgress('u1', 'cup')
   fake = createFakeSupabase()
   fake.signIn()
   fake.tables.profiles = [{ id: 'u1', display_name: 'Anna', home_style: 'bottle', drink_ml: 200, tz: 'Europe/Rome', sound: 'none' }]
@@ -42,7 +47,29 @@ beforeEach(() => {
 })
 
 describe('quando parte', () => {
-  it('un nuovo utente arriva ai promemoria, senza programmi già pronti', async () => {
+  it('un nuovo utente conosce Glu e, concluso il resto, arriva ai promemoria', async () => {
+    localStorage.clear()
+    render(<App />)
+    expect(await screen.findByRole('progressbar', { name: 'Passo 1 di 7' })).toBeInTheDocument()
+    expect(screen.getByText(/Sono Glu/)).toBeInTheDocument()
+    await click('Iniziamo!')
+    expect(await screen.findByRole('progressbar', { name: 'Passo 2 di 7' })).toBeInTheDocument()
+    await click('Salta')
+    await screen.findByRole('progressbar', { name: 'Passo 3 di 7' })
+    await click('Salta')
+    await screen.findByRole('progressbar', { name: 'Passo 4 di 7' })
+    await click('Salta')
+    expect(await heading('Quando vuoi bere?')).toBeInTheDocument()
+    expect(localStorage.getItem('bere.onboardingStep.u1')).toContain('cup')
+  })
+
+  it("chi ha chiuso l'app a metà riparte dal passo successivo", async () => {
+    saveOnboardingProgress('u1', 'avatar')
+    render(<App />)
+    expect(await screen.findByRole('progressbar', { name: 'Passo 3 di 7' })).toBeInTheDocument()
+  })
+
+  it('dopo i primi passi non ci sono promemoria già pronti', async () => {
     render(<App />)
     expect(await heading('Quando vuoi bere?')).toBeInTheDocument()
     expect(screen.queryByText(/modello/i)).not.toBeInTheDocument()
@@ -259,5 +286,95 @@ describe('passo della prova', () => {
     await reachTest()
     await click('Salta la prova')
     expect(await screen.findByRole('button', { name: /ho bevuto/i })).toBeInTheDocument()
+  })
+})
+
+describe('passi 1-4', () => {
+  beforeEach(() => localStorage.clear())
+
+  it("l'avatar scelto si salva subito", async () => {
+    saveOnboardingProgress('u1', 'hello')
+    render(<App />)
+    await screen.findByText('Come ti fai vedere in classifica?')
+    await userEvent.click(screen.getAllByRole('radio')[0])
+    await waitFor(() => expect(String(fake.tables.profiles[0].avatar_path)).toMatch(/^preset:/))
+  })
+
+  it('un avatar non salvato non risulta scelto e lo dice', async () => {
+    saveOnboardingProgress('u1', 'hello')
+    render(<App />)
+    await screen.findByText('Come ti fai vedere in classifica?')
+    fake.failures.update = 'offline'
+    await userEvent.click(screen.getAllByRole('radio')[0])
+    expect(await screen.findByRole('alert')).toHaveTextContent(/salvataggio non riuscito/i)
+    expect(screen.getAllByRole('radio').every((r) => r.getAttribute('aria-checked') === 'false')).toBe(true)
+  })
+
+  it("con peso 70 e attività normale propone l'obiettivo calcolato e lo imposta da oggi", async () => {
+    saveOnboardingProgress('u1', 'avatar')
+    render(<App />)
+    await screen.findByRole('progressbar', { name: 'Passo 3 di 7' })
+    const goal = suggestGoal(70, 'light', false)
+    fireEvent.change(screen.getByLabelText('Peso (kg)'), { target: { value: '70' } })
+    await click('Normale')
+    expect(screen.getByText(`Per te: ${formatLiters(goal)} al giorno`)).toBeInTheDocument()
+    await click('Avanti')
+    expect(await screen.findByRole('progressbar', { name: 'Passo 4 di 7' })).toBeInTheDocument()
+    expect(fake.rpcCalls).toContainEqual({ name: 'set_initial_goal', args: { p_goal_ml: goal } })
+    expect(fake.tables.profiles[0]).toMatchObject({ weight_kg: 70, activity: 'light' })
+  })
+
+  it("l'obiettivo si ritocca di 100 ml", async () => {
+    saveOnboardingProgress('u1', 'avatar')
+    render(<App />)
+    await screen.findByRole('progressbar', { name: 'Passo 3 di 7' })
+    const goal = suggestGoal(70, 'light', false)
+    await click('Più acqua')
+    expect(screen.getByText(`Per te: ${formatLiters(goal + 100)} al giorno`)).toBeInTheDocument()
+  })
+
+  it("se il server non accetta l'obiettivo da oggi, vale da domani e Glu lo dice", async () => {
+    saveOnboardingProgress('u1', 'avatar')
+    render(<App />)
+    await screen.findByRole('progressbar', { name: 'Passo 3 di 7' })
+    vi.spyOn(fake.client, 'rpc').mockResolvedValue({ data: null, error: { message: 'has_drinks' } } as never)
+    await click('Avanti')
+    expect(await screen.findByText(/Da domani/)).toBeInTheDocument()
+    const goal = suggestGoal(70, 'light', false)
+    expect(fake.tables.goal_changes).toContainEqual(expect.objectContaining({ user_id: 'u1', effective_from: goalChangeDate(new Date(), 'Europe/Rome'), goal_ml: goal }))
+    await click('Avanti')
+    expect(await screen.findByRole('progressbar', { name: 'Passo 4 di 7' })).toBeInTheDocument()
+  })
+
+  it('il bicchiere scelto si salva e dice quanti ne servono', async () => {
+    saveOnboardingProgress('u1', 'goal')
+    fake.tables.goal_changes = [{ user_id: 'u1', effective_from: '2026-01-01', goal_ml: 2300 }]
+    render(<App />)
+    await screen.findByRole('progressbar', { name: 'Passo 4 di 7' })
+    await click(/Bottiglietta/)
+    expect(await screen.findByText(/Circa 5 bicchieri/)).toBeInTheDocument()
+    await click('Avanti')
+    expect(await heading('Quando vuoi bere?')).toBeInTheDocument()
+    expect(fake.tables.profiles[0].drink_ml).toBe(500)
+  })
+})
+
+describe('pendingOnboardingStep', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('per chi non ha mai iniziato è il primo passo', () => {
+    expect(pendingOnboardingStep('u1', 0)).toBe('hello')
+  })
+  it('dopo un passo concluso è il successivo, ma senza programmi non oltre i promemoria', () => {
+    saveOnboardingProgress('u1', 'goal')
+    expect(pendingOnboardingStep('u1', 0)).toBe('cup')
+    saveOnboardingProgress('u1', 'notifications')
+    expect(pendingOnboardingStep('u1', 0)).toBe('schedule')
+  })
+  it('chi ha programmi parte dalle notifiche, chi ha finito da nessuna parte', () => {
+    push.pushSupportState.mockReturnValue('prompt')
+    expect(pendingOnboardingStep('u1', 2)).toBe('notifications')
+    markOnboarded('u1')
+    expect(pendingOnboardingStep('u1', 0)).toBeNull()
   })
 })

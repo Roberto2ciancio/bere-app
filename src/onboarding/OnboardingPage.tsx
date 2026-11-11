@@ -8,9 +8,15 @@ import { IntervalCreator } from '../schedules/IntervalCreator'
 import { ScheduleEditor } from '../schedules/ScheduleEditor'
 import { saveSchedule, type ScheduleDraft } from '../schedules/schedulesApi'
 import { useGoalMl } from '../schedules/useGoalMl'
-import { markOnboarded, type OnboardingStep } from './onboardingFlag'
+import { markOnboarded, nextOnboardingStep, pendingOnboardingStep, saveOnboardingProgress, type OnboardingStep } from './onboardingFlag'
+import { AvatarStep } from './steps/AvatarStep'
+import { CupStep } from './steps/CupStep'
+import { GoalStep } from './steps/GoalStep'
+import { HelloStep } from './steps/HelloStep'
 
-type Step = OnboardingStep | 'test'
+// Passi 5-7: per ora restano le schermate di prima (promemoria, notifiche, prova), 'test' fa da passo 7.
+type Step = Exclude<OnboardingStep, 'first-drink'> | 'test'
+const LEGACY_NUMBER = { schedule: 5, notifications: 6, test: 7 }
 
 const stepAfterSchedule = (): Step => (pushSupportState() === 'granted' && !isPushOff() ? 'test' : 'notifications')
 
@@ -18,17 +24,30 @@ export function OnboardingPage() {
   const { user } = useAuth()
   const { profile } = useProfile()
   const navigate = useNavigate()
-  const start = (useLocation().state as { step?: OnboardingStep } | null)?.step ?? 'schedule'
+  const requested = (useLocation().state as { step?: OnboardingStep } | null)?.step
   const userId = user?.id ?? null
   const tz = profile?.tz ?? new Intl.DateTimeFormat().resolvedOptions().timeZone
-  const goalMl = useGoalMl(userId, tz)
+  const currentGoalMl = useGoalMl(userId, tz)
+  const [chosenGoalMl, setChosenGoalMl] = useState<number | null>(null)
+  const goalMl = chosenGoalMl ?? currentGoalMl
 
-  const [step, setStep] = useState<Step>(start)
+  // Senza un passo richiesto si riparte dal primo non concluso.
+  const [step, setStep] = useState<Step>(() => {
+    const start = requested ?? (userId ? pendingOnboardingStep(userId, 0) : null) ?? 'hello'
+    return start === 'first-drink' ? 'test' : start
+  })
   const [manual, setManual] = useState(false)
   const [pushState, setPushState] = useState(() => pushSupportState())
   const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
   const [busy, setBusy] = useState(false)
+
+  // Ogni passo concluso o saltato si ricorda: chi chiude l'app riparte dal successivo.
+  function advance(from: OnboardingStep, to: Step) {
+    if (userId) saveOnboardingProgress(userId, from)
+    setStep(to)
+  }
+  const after = (from: OnboardingStep) => () => advance(from, (nextOnboardingStep(from) as Step | null) ?? 'test')
 
   function leave(to: string) {
     if (userId) markOnboarded(userId)
@@ -39,7 +58,7 @@ export function OnboardingPage() {
     if (!userId) return
     await saveSchedule(userId, draft)
     setPushState(pushSupportState())
-    setStep(stepAfterSchedule())
+    advance('schedule', stepAfterSchedule())
   }
 
   async function enable() {
@@ -47,7 +66,7 @@ export function OnboardingPage() {
     setError(null)
     try {
       await subscribePush()
-      setStep('test')
+      advance('notifications', 'test')
     } catch {
       const next = pushSupportState()
       setPushState(next)
@@ -74,10 +93,15 @@ export function OnboardingPage() {
     setBusy(false)
   }
 
+  if (step === 'hello') return <HelloStep onNext={after('hello')} />
+  if (step === 'avatar') return <AvatarStep onNext={after('avatar')} />
+  if (step === 'goal') return <GoalStep tz={tz} onGoal={setChosenGoalMl} onNext={after('goal')} />
+  if (step === 'cup') return <CupStep goalMl={goalMl} onNext={after('cup')} />
+
   if (step === 'schedule') {
     return (
       <main className="page">
-        <p className="hint">Passo 1 di 3</p>
+        <p className="hint">Passo {LEGACY_NUMBER.schedule} di 7</p>
         <h1>Quando vuoi bere?</h1>
         <p>Imposta i promemoria come preferisci. Potrai cambiarli quando vuoi.</p>
         {manual ? (
@@ -105,7 +129,7 @@ export function OnboardingPage() {
   if (step === 'notifications') {
     return (
       <main className="page">
-        <p className="hint">Passo 2 di 3</p>
+        <p className="hint">Passo {LEGACY_NUMBER.notifications} di 7</p>
         {pushState === 'needs-install' && (
           <>
             <InstallGuide />
@@ -142,7 +166,7 @@ export function OnboardingPage() {
 
   return (
     <main className="page">
-      <p className="hint">Passo 3 di 3</p>
+      <p className="hint">Passo {LEGACY_NUMBER.test} di 7</p>
       <h1>Prova la notifica</h1>
       <p>Tocca il pulsante, poi chiudi l'app o blocca il telefono: dovrebbe arrivare in pochi secondi.</p>
       {error && <p role="alert" className="error">{error}</p>}
