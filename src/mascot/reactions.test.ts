@@ -45,6 +45,10 @@ describe('nextStreakReward', () => {
   it('non ripete lo stesso traguardo', () => {
     expect(nextStreakReward(8, 7)).toEqual({ celebrate: null, store: 7 })
   })
+  it('scende di soglia: si ricorda la nuova, risalire festeggia', () => {
+    expect(nextStreakReward(7, 30)).toEqual({ celebrate: null, store: 7 })
+    expect(nextStreakReward(14, 7)).toEqual({ celebrate: 14, store: 14 })
+  })
   it('rottura: azzera, poi si festeggia di nuovo a 7', () => {
     expect(nextStreakReward(3, 7)).toEqual({ celebrate: null, store: 0 })
     expect(nextStreakReward(7, 0)).toEqual({ celebrate: 7, store: 7 })

@@ -90,5 +90,8 @@ export function useCaffeine(userId: string | null, date: string, tz: string) {
     await supabase.from('caffeine_intakes').delete().eq('user_id', userId).eq('client_id', last.client_id)
   }, [userId, entries, refreshQueue])
 
-  return { ...summarizeCaffeine(entries), pending: hasQueued, canUndo: entries.length > 0, add, undoLast }
+  const lastIso = entries.reduce<string | null>((max, c) => (max === null || c.taken_at > max ? c.taken_at : max), null)
+  const lastAt = lastIso ? new Date(lastIso) : null
+
+  return { ...summarizeCaffeine(entries), lastAt, pending: hasQueued, canUndo: entries.length > 0, add, undoLast }
 }

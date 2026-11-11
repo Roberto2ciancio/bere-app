@@ -1,10 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { goalForDate, type GoalChange } from '../domain/goals'
 import { addDays, localParts } from '../domain/time'
 import { readCache, writeCache } from '../lib/cache'
 import { supabase } from '../lib/supabase'
 import { usePauses } from '../pause/usePauses'
-import { pickMood, type GluMood } from './mood'
+import { computeStats, type DayTotal } from '../history/stats'
+import { pausedDays } from '../pause/pauses'
+import { saveStreak } from './accessories'
+import { isGluCalm } from './calm'
+import type { GluExtras } from './Glu'
+import { isAsleep, pickMood, type GluMood } from './mood'
+import { REACTIONS, type CrownTier } from './reactions'
+import { useGluReactions } from './useGluReactions'
 
 const JUST_DRANK_MS = 1500
 const HELLO_MS = 3000
@@ -24,15 +31,39 @@ interface Input {
   levelUp?: boolean
   /** Solo con lo stile Glu: altrimenti nessuna richiesta e nessun timer. */
   enabled?: boolean
+  lastDrinkAt?: Date | null
+  lastCoffeeAt?: Date | null
+  workoutActive?: boolean
+  /** Quando l'allenamento è stato acceso in questa sessione. */
+  workoutStartedAt?: number | null
+  /** Aumenti dell'obiettivo per giorno, per contare la serie come lo Storico. */
+  boosts?: Map<string, number>
 }
 
-interface DayTotal {
-  day: string
-  total_ml: number
+export interface GluState {
+  mood: GluMood
+  extras: GluExtras
+  streakCelebrate: CrownTier | null
 }
 
 /** L'umore di Glu: i segnali del giorno (bevute, pause, ieri) messi in ordine da `pickMood`. */
-export function useGluMood({ userId, tz, totalMl, goalMl, expectedMl, todayMinutes, pulse, goals, levelUp = false, enabled = true }: Input): GluMood {
+export function useGluMood({
+  userId,
+  tz,
+  totalMl,
+  goalMl,
+  expectedMl,
+  todayMinutes,
+  pulse,
+  goals,
+  levelUp = false,
+  enabled = true,
+  lastDrinkAt = null,
+  lastCoffeeAt = null,
+  workoutActive = false,
+  workoutStartedAt = null,
+  boosts,
+}: Input): GluState {
   const [now, setNow] = useState(() => new Date())
   const [justDrank, setJustDrank] = useState(false)
   const [firstOpenToday, setFirstOpenToday] = useState(false)
@@ -40,7 +71,7 @@ export function useGluMood({ userId, tz, totalMl, goalMl, expectedMl, todayMinut
   const [yesterday, setYesterday] = useState<{ day: string; totals: DayTotal[] } | null>(null)
 
   const { date: today, minutes: nowMinutes } = localParts(now, tz)
-  const { current: pause } = usePauses(enabled ? userId : null, today)
+  const { periods, current: pause } = usePauses(enabled ? userId : null, today)
 
   // Il fumetto e l'umore dipendono dall'ora: si ricalcola ogni minuto.
   useEffect(() => {
@@ -88,6 +119,27 @@ export function useGluMood({ userId, tz, totalMl, goalMl, expectedMl, todayMinut
     }
   }, [enabled, userId, yesterdayDate])
 
+  // La serie viene dai totali già letti per «ieri»: senza (errore o non ancora arrivati) niente corona.
+  const currentStreak = yesterday ? computeStats(yesterday.totals, goals, today, boosts, pausedDays(periods, today)).currentStreak : null
+  useEffect(() => {
+    if (userId && currentStreak !== null) saveStreak(userId, currentStreak)
+  }, [userId, currentStreak])
+
+  const asleep = isAsleep({ paused: !!pause, todayMinutes, nowMinutes })
+  const calm = useMemo(() => !!userId && isGluCalm(userId), [userId])
+  const reactions = useGluReactions({
+    userId: enabled ? userId : null,
+    tz,
+    lastDrinkAt,
+    lastCoffeeAt,
+    workoutActive,
+    workoutStartedAt,
+    currentStreak,
+    dayStartMin: todayMinutes.length ? Math.min(...todayMinutes) : REACTIONS.defaultDayStartMin,
+    asleep,
+    calm,
+  })
+
   const mood = pickMood({
     nowMinutes,
     totalMl,
@@ -100,9 +152,7 @@ export function useGluMood({ userId, tz, totalMl, goalMl, expectedMl, todayMinut
     firstOpenToday,
     yesterdayMet: yesterdayMet(yesterday, goals),
     sadShown,
-    coffee: false, // collegati in G4
-    workoutJustStarted: false,
-    thirst: 0,
+    ...reactions.mood,
   })
 
   // La tristezza dura 4 s e si vede una volta al giorno: il giorno si segna quando compare davvero
@@ -115,7 +165,7 @@ export function useGluMood({ userId, tz, totalMl, goalMl, expectedMl, todayMinut
     return () => clearTimeout(timer)
   }, [sad, userId, today])
 
-  return mood
+  return { mood, extras: reactions.extras, streakCelebrate: reactions.streakCelebrate }
 }
 
 // Senza nessun giorno registrato prima di oggi (account nuovo) non c'è un «ieri» da rimpiangere.

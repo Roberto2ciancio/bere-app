@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CORNER_PHRASES, historyStreakPhrase, PHRASES, phraseFor, profileGreeting } from './phrases'
+import { CORNER_PHRASES, historyStreakPhrase, PHRASES, phraseFor, profileGreeting, SPECIAL_PHRASES } from './phrases'
 import type { GluMood } from './mood'
 
 const moods = Object.keys(PHRASES) as GluMood[]
@@ -90,5 +90,20 @@ describe('phraseFor', () => {
 
   it('cambia frase al blocco successivo', () => {
     expect(phraseFor('idle', 'Anna', 0)).not.toBe(phraseFor('idle', 'Anna', 30000))
+  })
+})
+
+describe('SPECIAL_PHRASES', () => {
+  it('al massimo 60 caratteri, lingua neutra', () => {
+    const vietate = /(bravo|brava|salito|salita|stanco|stanca|pronto a|pronta a|pronto per|pronta per|contento|contenta|solo|sola)/i
+    for (const list of Object.values(SPECIAL_PHRASES)) {
+      for (const p of list) {
+        expect(p.length).toBeLessThanOrEqual(60)
+        expect(p).not.toMatch(vietate)
+      }
+    }
+  })
+  it('il caffè usa il tu: «Gustalo con calma»', () => {
+    expect(PHRASES.coffee).toContain('Gustalo con calma, io sto qui.')
   })
 })

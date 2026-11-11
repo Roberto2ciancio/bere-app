@@ -46,7 +46,7 @@ export function pickMood(s: MoodState): GluMood {
   return 'idle'
 }
 
-function isAsleep(s: MoodState): boolean {
+export function isAsleep(s: Pick<MoodState, 'paused' | 'todayMinutes' | 'nowMinutes'>): boolean {
   if (s.paused) return true
   if (s.todayMinutes.length === 0) return false
   const first = Math.min(...s.todayMinutes)

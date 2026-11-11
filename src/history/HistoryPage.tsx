@@ -16,6 +16,7 @@ import { usePauses } from '../pause/usePauses'
 import { supabase } from '../lib/supabase'
 import { GluCorner } from '../mascot/GluCorner'
 import { CORNER_PHRASES, historyStreakPhrase } from '../mascot/phrases'
+import { streakAccessory } from '../mascot/reactions'
 import { achievements, challenges, computeStats, dayResults, jollyThisWeek, type CaffeineByDay, type DayTotal } from './stats'
 import { CountUp } from '../ui/motion/CountUp'
 import { Stagger } from '../ui/motion/Stagger'
@@ -165,6 +166,7 @@ export function HistoryPage() {
         mood={stats.currentStreak > 0 ? (stats.currentStreak >= 7 ? 'goal' : 'almost') : 'idle'}
         text={stats.currentStreak > 0 ? historyStreakPhrase(stats.currentStreak) : CORNER_PHRASES.historyIdle}
         fill={todayFill}
+        crown={streakAccessory(stats.currentStreak)}
       />
 
       <section className="card">

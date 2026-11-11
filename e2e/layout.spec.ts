@@ -42,11 +42,20 @@ interface Setup {
   goalMl?: number
   /** Nessun promemoria salvato. */
   noSchedules?: boolean
+  /** Ora fissa dell'app (ISO con fuso): le reazioni di Glu dipendono dall'ora del giorno. */
+  at?: string
+  /** Ultima bevuta di oggi tante ore fa (sete di Glu). */
+  lastDrinkHoursAgo?: number
+  /** Caffè preso tanti minuti fa (Glu agitato). */
+  coffeeMinutesAgo?: number
+  /** Giorni di fila a obiettivo fino a ieri (corona di Glu). */
+  streak?: number
 }
 
 /** Apre l'app di prova senza popup delle novità, dopo aver preparato il finto database. */
 async function openApp(page: Page, path: string, setup: Setup = {}) {
   await skipOnboarding(page)
+  if (setup.at) await page.clock.setFixedTime(new Date(setup.at))
   // Mai il meteo vero nei test.
   await page.route(/open-meteo\.com/, (route) => route.fulfill({ json: { daily: { temperature_2m_max: [31] } } }))
   await page.addInitScript((version) => {
@@ -77,6 +86,19 @@ async function openApp(page: Page, path: string, setup: Setup = {}) {
         extra_ml: ml,
         note: kind === 'heat' ? '31 °C' : null,
       }))
+      // Bevute, caffè e giorni passati, per far reagire Glu (la data di oggi è quella dell'ora fissa, se c'è).
+      const day = (back: number) => new Date(Date.now() - back * 86_400_000).toLocaleDateString('sv-SE')
+      const drinks = (db.tables.drinks ??= [])
+      const drink = (id: string, at: number, local_date: string) =>
+        drinks.push({ user_id: profile.id, client_id: id, amount_ml: 200, drink_type: 'water', hydration_pct: 100, drunk_at: new Date(at).toISOString(), local_date })
+      if (setup.lastDrinkHoursAgo !== undefined) drink('e2e-last', Date.now() - setup.lastDrinkHoursAgo * 3_600_000, today)
+      for (let i = 1; i <= (setup.streak ?? 0); i++) {
+        drinks.push({ user_id: profile.id, client_id: `e2e-day${i}`, amount_ml: 5000, drink_type: 'water', hydration_pct: 100, drunk_at: new Date(Date.now() - i * 86_400_000).toISOString(), local_date: day(i) })
+      }
+      if (setup.coffeeMinutesAgo !== undefined) {
+        const cups = (db.tables.caffeine_intakes ??= [])
+        cups.push({ user_id: profile.id, client_id: 'e2e-coffee', kind: 'coffee', mg: 80, taken_at: new Date(Date.now() - setup.coffeeMinutesAgo * 60_000).toISOString(), local_date: today })
+      }
       localStorage.setItem(key, JSON.stringify(db))
     },
     { key: DB_KEY, setup },
@@ -242,6 +264,9 @@ async function expectFocusNotCovered(page: Page, browserName: string) {
   }
 }
 
+// Le 15:00 di un giorno qualsiasi a Roma: sveglio, e abbastanza tardi perché «4 ore fa» sia dopo le 8:00.
+const AFTERNOON = '2026-11-11T15:00:00+01:00'
+
 const ALL_DAY = { active_split: true, active_start_min: 0, active_end_min: 1440 }
 
 test.describe('Oggi', () => {
@@ -253,6 +278,22 @@ test.describe('Oggi', () => {
     await expectHomeInOrder(page)
     await expectNoHorizontalScroll(page)
   })
+
+  // Le reazioni di Glu non devono spingere niente fuori posto, da 320 px e col testo al 130%.
+  const reactions: [string, Setup, string][] = [
+    ['sete forte', { at: AFTERNOON, noSchedules: true, lastDrinkHoursAgo: 4 }, '.glu-fan'],
+    ['caffè', { at: AFTERNOON, noSchedules: true, lastDrinkHoursAgo: 1, coffeeMinutesAgo: 5 }, '[data-testid="glu"][data-mood="coffee"]'],
+    ['allenamento', { at: AFTERNOON, noSchedules: true, lastDrinkHoursAgo: 1, boosts: { workout: 500 } }, '.glu-headband'],
+    ['serie di 7 giorni', { at: AFTERNOON, noSchedules: true, lastDrinkHoursAgo: 1, streak: 7 }, '.glu-crown'],
+  ]
+  for (const [name, setup, part] of reactions) {
+    test(`Glu con ${name}`, async ({ page }) => {
+      await openApp(page, '/home', setup)
+      await expect(page.locator(part)).toHaveCount(1)
+      await expectHomeInOrder(page)
+      await expectNoHorizontalScroll(page)
+    })
+  }
 
   test('con tutto acceso: fascia attiva, caldo, allenamento e «Annulla»', async ({ page, browserName }) => {
     await openApp(page, '/home', { profile: ALL_DAY, boosts: { heat: 500, workout: 500 } })

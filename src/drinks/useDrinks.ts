@@ -99,5 +99,9 @@ export function useDrinks(userId: string | null, date: string, tz: string, drink
     await supabase.from('drinks').delete().eq('user_id', userId).eq('client_id', last.client_id)
   }, [userId, entries, refreshQueue])
 
-  return { totalMl, loaded, pending: queued.length > 0, canUndo: entries.length > 0, drink, undoLast }
+  // Ultima bevuta di oggi (anche in coda): serve alla sete di Glu.
+  const lastIso = entries.reduce<string | null>((max, d) => (max === null || d.drunk_at > max ? d.drunk_at : max), null)
+  const lastAt = lastIso ? new Date(lastIso) : null
+
+  return { totalMl, lastAt, loaded, pending: queued.length > 0, canUndo: entries.length > 0, drink, undoLast }
 }

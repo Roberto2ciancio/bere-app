@@ -64,7 +64,7 @@ export const PHRASES: Record<GluMood, string[]> = {
     'Un caffè? Poi un sorso d’acqua, ti va?',
     'Che profumino! Io resto fresco.',
     'Caffè e acqua vanno d’accordo, sai?',
-    'Gustatelo con calma, io sto qui.',
+    'Gustalo con calma, io sto qui.',
   ],
   workout: [
     'Si parte! Io ti seguo a ritmo di onde.',
@@ -73,6 +73,22 @@ export const PHRASES: Record<GluMood, string[]> = {
     'Muoviamoci! Poi si beve insieme.',
   ],
 }
+
+/** Frasi su misura: festa della corona, sete forte, caffè oltre il limite (al massimo 60 caratteri, lingua neutra). */
+export const SPECIAL_PHRASES = {
+  streak7: ['7 giorni di fila! Guarda che corona.'],
+  streak14: ['14 giorni di fila! La corona ora ha una gemma.'],
+  streak30: ['30 giorni di fila! Corona e mantellina: che stile.'],
+  thirstyStrong: [
+    'Ho la gola secca… un sorso insieme?',
+    'Mi sventolo un po’: un bicchiere d’acqua?',
+    'Un sorso e torno a gonfiarmi di gioia!',
+    'Sono tutto asciutto… beviamo qualcosa?',
+  ],
+  coffeeOver: ['Tanta caffeina oggi: un bicchiere d’acqua ci sta.', 'Che giornata di caffè! Io ti aspetto con l’acqua.'],
+} as const
+
+export type SpecialPhrase = keyof typeof SPECIAL_PHRASES
 
 // Le battute di Glu in cima a Storico, Classifica e Profilo (al massimo 60 caratteri, lingua neutra).
 export const CORNER_PHRASES = {
@@ -94,6 +110,11 @@ function hash(s: string): number {
   let h = 0
   for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0
   return h
+}
+
+export function specialPhraseFor(kind: SpecialPhrase, now: number): string {
+  const list = SPECIAL_PHRASES[kind]
+  return list[Math.floor(now / 30000) % list.length]
 }
 
 // Stabile per blocchi di 30 s, così il fumetto non sfarfalla a ogni render.

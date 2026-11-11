@@ -1,4 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { useAuth } from '../auth/AuthProvider'
+import { isGluCalm, setGluCalm } from '../mascot/calm'
 import { Link } from 'react-router-dom'
 import { useProfile } from '../auth/ProfileProvider'
 import { Avatar } from '../avatars/Avatar'
@@ -142,6 +144,9 @@ export function DrinkPrefs() {
 export function AppearanceForm() {
   const { profile, updateProfile } = useProfile()
   const { error, busy, replaceImage } = useImageReplace()
+  const { user } = useAuth()
+  const userId = user?.id ?? null
+  const [calm, setCalm] = useState(() => !!userId && isGluCalm(userId))
   if (!profile) return null
 
   async function removeBackground() {
@@ -167,6 +172,23 @@ export function AppearanceForm() {
         </div>
       </div>
       {error && <p role="alert" className="error">{error}</p>}
+      {userId && (
+        <div className="field">
+          <label className="row">
+            Glu tranquillo
+            <input
+              type="checkbox"
+              checked={calm}
+              aria-describedby="glu-calm-hint"
+              onChange={(e) => {
+                setGluCalm(userId, e.target.checked)
+                setCalm(e.target.checked)
+              }}
+            />
+          </label>
+          <p id="glu-calm-hint" className="hint">Glu resta, ma senza scenette e tremarelle.</p>
+        </div>
+      )}
     </section>
   )
 }

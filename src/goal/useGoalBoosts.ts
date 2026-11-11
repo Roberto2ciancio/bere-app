@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { readCache, writeCache } from '../lib/cache'
 import { supabase } from '../lib/supabase'
 import { boostsByDay, heatBoostMl, maxTemperature, WORKOUT_BOOST_ML, type GoalBoost } from './boosts'
@@ -102,10 +102,11 @@ export function useGoalBoosts(userId: string | null, today: string, heat?: HeatP
     if (userId && heatDisabled && heatToday) void remove(today, 'heat')
   }, [userId, heatDisabled, heatToday, today, remove])
 
+  const byDay = useMemo(() => boostsByDay(boosts), [boosts])
   const todays = boosts.filter((b) => b.local_date === today)
   return {
     boosts,
-    byDay: boostsByDay(boosts),
+    byDay,
     heat: todays.find((b) => b.kind === 'heat') ?? null,
     workout: todays.find((b) => b.kind === 'workout') ?? null,
     setWorkout,

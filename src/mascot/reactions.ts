@@ -44,5 +44,6 @@ export function nextStreakReward(
   const tier = streakAccessory(currentStreak)
   if (tier === 0) return { celebrate: null, store: 0 }
   if (tier > celebrated) return { celebrate: tier, store: tier }
-  return { celebrate: null, store: celebrated }
+  // Se si scende di soglia (7 dopo 14) si ricorda quella nuova: risalire a 14 si festeggia di nuovo.
+  return { celebrate: null, store: tier }
 }

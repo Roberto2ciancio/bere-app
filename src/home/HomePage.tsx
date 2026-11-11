@@ -104,6 +104,8 @@ export function HomePage() {
   const [party, setParty] = useState(false)
   // Una bevuta di questa sessione è in attesa di rientrare nel totale: serve a riconoscere chi supera l'obiettivo.
   const [drankHere, setDrankHere] = useState(false)
+  // Quando l'allenamento è stato acceso in questa sessione: la scenetta parte solo allora, non al caricamento.
+  const [workoutStartedAt, setWorkoutStartedAt] = useState<number | null>(null)
   const [lastTotal, setLastTotal] = useState<number | null>(null)
   const caffeineId = useId()
   const levelUp = useLevelUp(userId ?? '', useLevels()?.get(userId ?? '') ?? null)
@@ -164,7 +166,7 @@ export function HomePage() {
   const boosts = useGoalBoosts(userId, today, { enabled: profile?.heat_boost, lat: profile?.city_lat, lon: profile?.city_lon })
   const baseGoalMl = goalForDate(goals, today)
   const goalMl = baseGoalMl + (boosts.byDay.get(today) ?? 0)
-  const { totalMl, pending, canUndo, drink, undoLast } = useDrinks(userId, today, tz, drinkMl)
+  const { totalMl, lastAt: lastDrinkAt, pending, canUndo, drink, undoLast } = useDrinks(userId, today, tz, drinkMl)
   const caffeine = useCaffeine(userId, today, tz)
   const split = profile?.active_split ?? false
   const hours: ActiveHours = { start: profile?.active_start_min ?? DEFAULT_ACTIVE_START, end: profile?.active_end_min ?? DEFAULT_ACTIVE_END }
@@ -213,7 +215,23 @@ export function HomePage() {
   const parts = localParts(now, tz)
   const todayMinutes = (reminders ?? []).filter((r) => r.weekdays.includes(weekdayOf(today))).map((r) => r.minutes)
   const expected = split ? null : expectedByNow(todayMinutes, goalMl, parts.minutes)
-  const mood = useGluMood({ userId, tz, totalMl, goalMl, expectedMl: expected, todayMinutes, pulse, goals, levelUp: levelParty, enabled: !!profile })
+  const glu = useGluMood({
+    userId,
+    tz,
+    totalMl,
+    goalMl,
+    expectedMl: expected,
+    todayMinutes,
+    pulse,
+    goals,
+    levelUp: levelParty,
+    enabled: !!profile,
+    lastDrinkAt,
+    lastCoffeeAt: caffeine.lastAt,
+    workoutActive: !!boosts.workout,
+    workoutStartedAt,
+    boosts: boosts.byDay,
+  })
 
   // La festa parte solo se una bevuta di questa sessione supera l'obiettivo, e una volta al giorno.
   const partyKey = userId ? `bere.goalParty.${userId}` : null
@@ -259,7 +277,16 @@ export function HomePage() {
       </header>
 
       <div className="home-view">
-        <GluView fill={fill} now={now.getTime()} mood={mood} name={profile.display_name.trim().split(/\s+/)[0] ?? ''} />
+        <GluView
+          fill={fill}
+          now={now.getTime()}
+          mood={glu.mood}
+          extras={glu.extras}
+          streakCelebrate={glu.streakCelebrate}
+          workoutText={`Obiettivo di oggi +${formatAmount(WORKOUT_BOOST_ML, units)}!`}
+          coffeeOver={caffeine.overLimit}
+          name={profile.display_name.trim().split(/\s+/)[0] ?? ''}
+        />
       </div>
 
       <div className="home-stats">
@@ -312,7 +339,10 @@ export function HomePage() {
               ? `Allenamento segnato: +${formatAmount(boosts.workout.extra_ml, units)} oggi`
               : `Ho fatto allenamento: +${formatAmount(WORKOUT_BOOST_ML, units)} all'obiettivo`
           }
-          onClick={() => void boosts.setWorkout(today, !boosts.workout)}
+          onClick={() => {
+            const on = !boosts.workout
+            void boosts.setWorkout(today, on).then((ok) => ok && on && setWorkoutStartedAt(Date.now()))
+          }}
         >
           <span className="home-tile-icon"><WorkoutIcon /></span>
           <span className="home-tile-text">

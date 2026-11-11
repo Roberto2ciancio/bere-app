@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { useGluAccessories } from './accessories'
 import { Glu } from './Glu'
 import type { GluMood } from './mood'
 
@@ -13,9 +14,10 @@ interface Props {
 
 /** Una pagina senza niente da mostrare: Glu e una riga che dice perché, senza spingere giù le azioni. */
 export function EmptyState({ mood, title, size = 120, compact = false, children }: Props) {
+  const accessories = useGluAccessories()
   return (
     <div className={compact ? 'empty-state compact' : 'empty-state'} style={{ '--glu-size': `${size}px` } as CSSProperties}>
-      <Glu mood={mood} fill={0.5} size={size} />
+      <Glu mood={mood} fill={0.5} size={size} extras={accessories} />
       <p className="empty-state-title">{title}</p>
       {children}
     </div>

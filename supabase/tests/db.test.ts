@@ -1100,4 +1100,16 @@ describe('solo Glu (0024)', () => {
     await expect(db.query(`update profiles set home_style = 'bottle' where id = $1`, [B])).rejects.toThrow(/check/)
     await db.query(`update profiles set home_style = 'glu' where id = $1`, [A])
   })
+
+  it('insert profile without home_style → glu', async () => {
+    const id = '00000000-0000-0000-0000-0000000000c1'
+    await db.query(`insert into auth.users (id) values ($1)`, [id])
+    try {
+      await db.query(`delete from profiles where id = $1`, [id])
+      await db.query(`insert into profiles (id, display_name) values ($1, 'Nuovo')`, [id])
+      expect((await db.query<{ home_style: string }>(`select home_style from profiles where id = $1`, [id])).rows[0].home_style).toBe('glu')
+    } finally {
+      await db.query(`delete from auth.users where id = $1`, [id])
+    }
+  })
 })
