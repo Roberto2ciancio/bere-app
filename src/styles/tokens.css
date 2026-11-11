@@ -2,6 +2,7 @@
   --bg: #f2faff;
   --surface: #ffffff;
   --surface-2: #e1f0fa;
+  --track: #e1f0fa;
   --ink: #0b2545;
   --ink-soft: #47607d;
   --line: #d5e8f4;
@@ -35,6 +36,7 @@
     --bg: #071a33;
     --surface: #0f2747;
     --surface-2: #12305a;
+    --track: #1e3d66;
     --ink: #f2faff;
     --ink-soft: #a9c0da;
     --line: #1e3d66;

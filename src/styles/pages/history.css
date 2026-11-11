@@ -15,7 +15,7 @@
 /* Storico: schede */
 .history { gap: 16px; }
 .page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.segmented { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--surface-2); }
+.segmented { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--track); }
 .segmented button { min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: none; font-size: 0.9rem; font-weight: 600; color: var(--ink-soft); transition: transform 0.14s var(--ease-spring); }
 .segmented button[aria-pressed='true'] { background: var(--brand); color: var(--on-brand); }
 .history-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
