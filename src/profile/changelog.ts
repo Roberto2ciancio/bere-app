@@ -17,7 +17,7 @@ export const CHANGELOG: Release[] = [
     title: 'Un primo avvio con Glu',
     notes: [
       'Il primo avvio è una passeggiata con Glu in sette passi: avatar, obiettivo, bicchiere, orari, notifiche e primo sorso. Ogni passo si può saltare.',
-      'L’obiettivo si calcola da peso e movimento e vale da subito, con un ritocco di 100 ml in più o in meno.',
+      'L’obiettivo si calcola da peso e movimento, si ritocca di 100 ml e, per chi si è appena registrato, vale da subito.',
       'Gli orari si scelgono con due cursori, sveglia e sonno: Glu propone promemoria a intervalli regolari. Se le notifiche non arrivano, ti porta a sistemarle.',
       '12 avatar pronti, amici di Glu, da scegliere anche in Profilo › Aspetto, al posto della foto.',
     ],

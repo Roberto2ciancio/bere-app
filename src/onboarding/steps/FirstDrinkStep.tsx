@@ -18,10 +18,12 @@ const SCENE: Record<Phase, [GluMood, string]> = {
 interface Props {
   tz: string
   drinkMl: number
+  /** Il test delle notifiche non è andato: alla fine si passa da /notifiche. */
+  toNotifications?: boolean
   onNext: () => void
 }
 
-export function FirstDrinkStep({ tz, drinkMl, onNext }: Props) {
+export function FirstDrinkStep({ tz, drinkMl, toNotifications = false, onNext }: Props) {
   const { user } = useAuth()
   // Stessa strada della Home: coda offline compresa.
   const [today] = useState(() => localParts(new Date(), tz).date)
@@ -42,7 +44,8 @@ export function FirstDrinkStep({ tz, drinkMl, onNext }: Props) {
     setPhase('drinking')
   }
 
-  const [mood, say] = SCENE[phase]
+  const [mood, scene] = SCENE[phase]
+  const say = phase === 'cheer' && toNotifications ? 'Evviva! Ora sistemiamo le notifiche' : scene
   return (
     <OnboardingShell
       step="first-drink"
@@ -50,12 +53,12 @@ export function FirstDrinkStep({ tz, drinkMl, onNext }: Props) {
       say={say}
       onNext={phase === 'ready' ? log : onNext}
       onSkip={phase === 'ready' ? onNext : undefined}
-      nextLabel={phase === 'ready' ? 'Registra il primo bicchiere' : 'Vai alla Home'}
+      nextLabel={phase === 'ready' ? 'Registra il primo bicchiere' : toNotifications ? 'Sistemiamo le notifiche' : 'Vai alla Home'}
       nextDisabled={phase === 'drinking'}
     >
       <div className="ob-first">
         <h1 className="ob-title">Primo sorso!</h1>
-        <p>{phase === 'ready' ? `Un tocco registra ${drinkMl} ml d'acqua.` : `Registrati ${drinkMl} ml d'acqua. Ci vediamo nella Home!`}</p>
+        <p>{phase === 'ready' ? `Un tocco registra ${drinkMl} ml d'acqua.` : `Registrati ${drinkMl} ml d'acqua. ${toNotifications ? 'Ora sistemiamo le notifiche.' : 'Ci vediamo nella Home!'}`}</p>
       </div>
     </OnboardingShell>
   )

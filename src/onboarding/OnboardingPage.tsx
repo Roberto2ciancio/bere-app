@@ -84,5 +84,5 @@ function Onboarding({ scheduleCount, requested }: { scheduleCount: number; reque
       />
     )
   }
-  return <FirstDrinkStep tz={tz} drinkMl={profile?.drink_ml ?? 200} onNext={leave} />
+  return <FirstDrinkStep tz={tz} drinkMl={profile?.drink_ml ?? 200} toNotifications={notArrived} onNext={leave} />
 }

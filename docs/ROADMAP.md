@@ -26,7 +26,8 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 
 - [x] 🟡 **1.9.0 · Nuova grafica**: colori vivaci, bottoni e card morbidi, tema scuro automatico, animazioni (numeri e cambi pagina; i coriandoli arrivano con Glu nella 1.9.1) e «riduci movimento» rispettato.
 - [x] 🟡 **1.9.1 · Arriva Glu**: nuova schermata Oggi con Glu al centro nell'anello del progresso, Glu che si riempie e cambia espressione, azioni a portata di pollice e festa che sale dal basso quando raggiungi l'obiettivo.
-- [x] 🟡 **1.9.2 · Un primo avvio con Glu**: primo avvio guidato da Glu in sette passi (avatar, obiettivo valido da subito, bicchiere, orari, notifiche, primo sorso) e 12 avatar pronti, anche in Profilo › Aspetto.
+- [x] 🟡 **1.9.2 · Un primo avvio con Glu**: primo avvio guidato da Glu in sette passi (avatar, obiettivo che per chi si è appena registrato vale da subito, bicchiere, orari, notifiche, primo sorso) e 12 avatar pronti, anche in Profilo › Aspetto.
+- [ ] 🟡 **1.9.3 · Glu nel resto dell'app**: Glu in Storico, Classifica e popup delle novità.
 - [ ] 🟢 **1.9.3 · Rifiniture**: ultimi ritocchi, peso del pacchetto sotto i 60 KB gzip aggiunti.
 
 ## 2.0: social

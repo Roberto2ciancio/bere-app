@@ -190,6 +190,32 @@ describe('passo delle notifiche', () => {
     expect(await heading('Stato notifiche')).toBeInTheDocument()
   })
 
+  it('dopo «No» il primo sorso non parla di Home e finisce sulle notifiche', async () => {
+    render(<App />)
+    await heading('Attiva le notifiche')
+    await click('Attiva le notifiche')
+    await screen.findByText('Arrivata?')
+    await click('No, non è arrivata')
+    await heading('Primo sorso!')
+    await click('Registra il primo bicchiere')
+    expect(await screen.findByText('Evviva! Ora sistemiamo le notifiche')).toBeInTheDocument()
+    expect(screen.queryByText(/Home/)).not.toBeInTheDocument()
+    await click('Sistemiamo le notifiche')
+    expect(await heading('Stato notifiche')).toBeInTheDocument()
+  })
+
+  it('«Salta» dopo una prova fallita finisce sulle notifiche', async () => {
+    fake.setInvokeResult({ status: 'failed' })
+    render(<App />)
+    await heading('Attiva le notifiche')
+    await click('Attiva le notifiche')
+    await screen.findByRole('alert')
+    await click('Salta')
+    await heading('Primo sorso!')
+    await click('Salta')
+    expect(await heading('Stato notifiche')).toBeInTheDocument()
+  })
+
   it("se l'attivazione fallisce si può riprovare", async () => {
     push.subscribePush.mockRejectedValueOnce(new Error('no'))
     render(<App />)
@@ -206,7 +232,7 @@ describe('passo delle notifiche', () => {
     await click('Attiva le notifiche')
     expect(await screen.findByRole('alert')).toHaveTextContent(/non è partita/i)
     fake.setInvokeResult({ status: 'sent' })
-    await click('Riprova la prova')
+    await click('Riprova')
     expect(await screen.findByText('Arrivata?')).toBeInTheDocument()
   })
 

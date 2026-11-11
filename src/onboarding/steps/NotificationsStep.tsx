@@ -87,11 +87,11 @@ export function NotificationsStep({ onNext }: Props) {
     ), { label: 'No, non è arrivata', onClick: () => onNext(false) })
   }
 
-  return shell('thirsty', 'Altrimenti non posso ricordartelo!', retryTest ? 'Riprova la prova' : 'Attiva le notifiche', () => void (retryTest ? sendTest() : enable()), (
+  return shell('thirsty', 'Altrimenti non posso ricordartelo!', retryTest ? 'Riprova' : 'Attiva le notifiche', () => void (retryTest ? sendTest() : enable()), (
     <>
       <h1 className="ob-title">Attiva le notifiche</h1>
       <p>Senza il tuo permesso i promemoria non possono arrivare.</p>
       {error && <p role="alert" className="error">{error}</p>}
     </>
-  ), { label: 'Salta', onClick: done })
+  ), { label: 'Salta', onClick: () => onNext(!retryTest) })
 }
