@@ -82,6 +82,14 @@ describe('LeaderboardPage', () => {
     expect(container.querySelector('img')?.getAttribute('src')).toContain('avatars/u2/foto.jpg')
   })
 
+  it('un utente con un avatar pronto mostra il disegno e nessuna foto', async () => {
+    fake.rpcResults.get_leaderboard = [entry('u2', 'Bruno', 3, 2, 'preset:glu-cuffie')]
+    const { container } = renderPage()
+    const row = (await screen.findByText('Bruno')).closest('li')!
+    expect(row.querySelector('.avatar svg')).not.toBeNull()
+    expect(container.querySelector('img')).toBeNull()
+  })
+
   it('a pari giorni e serie mostra la stessa posizione', async () => {
     fake.rpcResults.get_leaderboard = [entry('u1', 'Anna', 3, 2), entry('u2', 'Bruno', 3, 2), entry('u3', 'Carla', 1, 1)]
     renderPage()

@@ -2,13 +2,15 @@ import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile, type HomeStyle } from '../auth/ProfileProvider'
+import { Avatar } from '../avatars/Avatar'
+import { AvatarPicker } from '../avatars/AvatarPicker'
+import { PRESET_PREFIX } from '../avatars/presets'
 import type { Units } from '../domain/hydration'
 import { playSound, SOUNDS } from '../home/sounds'
 import { currentDeviceSettingsName } from '../lib/platform'
 import {
   AVATAR_SIDE,
   BACKGROUND_SIDE,
-  avatarUrl,
   prepareImage,
   removeImage,
   uploadImage,
@@ -50,7 +52,8 @@ function useImageReplace() {
       const column = bucket === 'avatars' ? 'avatar_path' : 'background_path'
       const previous = profile[column]
       await updateProfile({ [column]: path })
-      if (previous) await removeImage(bucket, previous)
+      // Un avatar pronto non è un file nello storage.
+      if (previous && !previous.startsWith(PRESET_PREFIX)) await removeImage(bucket, previous)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Caricamento non riuscito')
     }
@@ -86,17 +89,17 @@ export function ProfileHeader() {
   return (
     <section className="card profile-head" aria-label="Il tuo profilo">
       <div className="profile-id">
-        {profile.avatar_path ? (
-          <img className="avatar avatar-lg" src={avatarUrl(profile.avatar_path)} alt="" />
-        ) : (
-          <span className="avatar avatar-lg" aria-hidden="true">{profile.display_name.slice(0, 1).toUpperCase()}</span>
-        )}
+        <Avatar path={profile.avatar_path} name={profile.display_name} large />
         <label className="file-button">
           {busy ? 'Caricamento…' : 'Cambia foto'}
           <input aria-label="Foto del profilo" type="file" accept="image/*" disabled={busy} onChange={(e) => void replaceImage(e, 'avatars')} />
         </label>
       </div>
       {imageError && <p role="alert" className="error">{imageError}</p>}
+      <div className="field">
+        <h3>Oppure scegli un avatar</h3>
+        <AvatarPicker value={profile.avatar_path} onPick={(path) => void updateProfile({ avatar_path: path })} />
+      </div>
       <form className="stack" onSubmit={saveName} noValidate>
         <label>
           Nome

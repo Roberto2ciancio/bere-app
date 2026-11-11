@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider'
+import { Avatar } from '../avatars/Avatar'
 import { useProfile } from '../auth/ProfileProvider'
 import { addDays } from '../domain/time'
 import { levelOf } from '../levels/levels'
 import { useLevels } from '../levels/useLevels'
 import { supabase } from '../lib/supabase'
-import { avatarUrl } from '../profile/imageUpload'
 import { weekStart } from './weekStart'
 import { Stagger } from '../ui/motion/Stagger'
 
@@ -30,15 +30,6 @@ const days = (n: number) => (n === 1 ? '1 giorno' : `${n} giorni`)
 /** Pari punteggio, pari posizione: 1, 1, 3. */
 function ranks(entries: Entry[]): number[] {
   return entries.map((entry, index) => entries.findIndex((e) => e.days_met === entry.days_met && e.streak === entry.streak) + 1 || index + 1)
-}
-
-function Avatar({ entry, large = false }: { entry: Entry; large?: boolean }) {
-  const className = large ? 'avatar avatar-lg' : 'avatar'
-  return entry.avatar_path ? (
-    <img className={className} src={avatarUrl(entry.avatar_path)} alt="" />
-  ) : (
-    <span className={className} aria-hidden="true">{entry.display_name.slice(0, 1).toUpperCase()}</span>
-  )
 }
 
 function LevelBadge({ points }: { points: number }) {
@@ -164,7 +155,7 @@ export function LeaderboardPage() {
             return (
               <li key={entry.user_id} className={isMe ? 'board-row me' : 'board-row'}>
                 <span className="board-avatar">
-                  <Avatar entry={entry} />
+                  <Avatar path={entry.avatar_path} name={entry.display_name} />
                   <span className={`rank${podium}`} data-testid="rank">{rank}</span>
                 </span>
                 <div className="board-main">

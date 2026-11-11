@@ -239,8 +239,8 @@ function leaderboard(week: string): Row[] {
       days_met: daysMet,
       streak,
     },
-    { user_id: 'finto-1', display_name: 'Marta (finta)', avatar_path: null, days_met: 5, streak: 3 },
-    { user_id: 'finto-2', display_name: 'Luca (finto)', avatar_path: null, days_met: 3, streak: 2 },
+    { user_id: 'finto-1', display_name: 'Marta (finta)', avatar_path: 'preset:glu-cuffie', days_met: 5, streak: 3 },
+    { user_id: 'finto-2', display_name: 'Luca (finto)', avatar_path: 'preset:glu-rosso', days_met: 3, streak: 2 },
     { user_id: 'finto-3', display_name: 'Sara (finta)', avatar_path: null, days_met: 1, streak: 1 },
   ].sort((a, b) => b.days_met - a.days_met || b.streak - a.streak || a.display_name.localeCompare(b.display_name))
 }

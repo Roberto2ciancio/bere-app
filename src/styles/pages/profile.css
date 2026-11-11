@@ -85,3 +85,9 @@ input[type='file']::file-selector-button {
 /* Su schermi da 320 px i campi orario affiancati devono potersi restringere (in Chrome con AM/PM sono larghi). */
 .interval-window, .hours-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .interval-field input[type='time'], .hours-pair input, .hours-pair select { min-width: 0; }
+/* Avatar pronti: il disegno è ritagliato a cerchio, così il corpo di Glu può uscire dal fondo. */
+.avatar-preset { background: none; }
+.avatar-art { display: block; width: 100%; height: 100%; clip-path: circle(50%); }
+.avatar-picker { display: grid; grid-template-columns: repeat(4, minmax(44px, 64px)); gap: 10px; }
+.avatar-option { aspect-ratio: 1; min-height: 44px; padding: 3px; border: 3px solid transparent; border-radius: 50%; background: none; -webkit-tap-highlight-color: transparent; }
+.avatar-option[aria-checked='true'] { border-color: var(--brand); }
