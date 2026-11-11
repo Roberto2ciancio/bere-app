@@ -214,9 +214,10 @@ describe('l\'app intera sul database finto', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Iniziamo!' }))
     for (let i = 0; i < 3; i++) await userEvent.click(await screen.findByRole('button', { name: 'Salta' }))
     await screen.findByRole('heading', { name: 'Quando vuoi bere?' })
-    await userEvent.click(screen.getByRole('button', { name: 'Crea promemoria' }))
+    // Obiettivo 2 L in bicchieri da 200 ml: dieci promemoria, uno ogni 90 minuti.
+    await userEvent.click(screen.getByRole('button', { name: 'Crea i promemoria' }))
     await waitFor(async () => expect(await rows('schedules')).toHaveLength(1))
-    expect(await rows('schedule_times')).toHaveLength(15)
+    expect(await rows('schedule_times')).toHaveLength(10)
     expect(network).not.toHaveBeenCalled()
   })
 

@@ -24,7 +24,7 @@ const VERSION = (JSON.parse(readFileSync(new URL('../package.json', import.meta.
 const DB_KEY = 'dev.bere.dev.db'
 const DEV_USER = '00000000-0000-4000-8000-00000000de00'
 
-/** Prima configurazione già fatta: altrimenti l'app di prova si apre su «Passo 1 di 3». */
+/** Prima configurazione già fatta: altrimenti l'app di prova si apre su «Passo 1 di 7». */
 async function skipOnboarding(page: Page) {
   await page.addInitScript((user) => localStorage.setItem(`dev.bere.onboarded.${user}`, 'true'), DEV_USER)
 }
@@ -316,6 +316,34 @@ for (const [name, path, heading] of PAGES) {
     await expectNoHorizontalScroll(page)
   })
 }
+
+test('primo avvio: ogni passo sta nello schermo e con «Salta» si arriva alla Home', async ({ page }) => {
+  await page.addInitScript((version) => {
+    localStorage.setItem('bere.seenVersion', version)
+    localStorage.setItem('bere.newsRead', version)
+  }, VERSION)
+  await page.goto('./#/inizia')
+  const viewport = page.viewportSize()!
+  const seen: string[] = []
+  for (let guard = 0; guard < 10 && !page.url().endsWith('/home'); guard++) {
+    const bar = page.getByRole('progressbar')
+    await expect(bar.or(page.getByRole('button', { name: /Ho bevuto/ }))).toBeVisible()
+    if (!(await bar.isVisible())) break
+    seen.push((await bar.getAttribute('aria-label'))!)
+    await page.waitForTimeout(300)
+    await expectNoHorizontalScroll(page)
+    const primary = page.locator('.ob-actions .primary')
+    await expect(primary).toBeVisible()
+    const box = (await primary.boundingBox())!
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1)
+    expect(box.x).toBeGreaterThanOrEqual(0)
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1)
+    const skip = page.getByRole('button', { name: 'Salta', exact: true })
+    await (((await skip.count()) > 0 ? skip : primary).click())
+  }
+  expect(seen.length).toBeGreaterThanOrEqual(6)
+  await expect(page.getByRole('button', { name: /Ho bevuto/ })).toBeVisible()
+})
 
 test('il popup delle novità sta nello schermo', async ({ page }) => {
   await skipOnboarding(page)

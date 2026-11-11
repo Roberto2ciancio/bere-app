@@ -1,6 +1,6 @@
 # Bere: idee per le prossime versioni
 
-Ultimo aggiornamento: 11 novembre 2026 (app alla versione 1.9.1).
+Ultimo aggiornamento: 11 novembre 2026 (app alla versione 1.9.2).
 
 Legenda: 🟢 piccolo · 🟡 medio · 🔴 grande · 🗄️ tocca il server (database o funzioni) · 📦 serve un nuovo APK
 
@@ -26,7 +26,7 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 
 - [x] 🟡 **1.9.0 · Nuova grafica**: colori vivaci, bottoni e card morbidi, tema scuro automatico, animazioni (numeri e cambi pagina; i coriandoli arrivano con Glu nella 1.9.1) e «riduci movimento» rispettato.
 - [x] 🟡 **1.9.1 · Arriva Glu**: nuova schermata Oggi con Glu al centro nell'anello del progresso, Glu che si riempie e cambia espressione, azioni a portata di pollice e festa che sale dal basso quando raggiungi l'obiettivo.
-- [ ] 🟡 **1.9.2 · Glu nel resto dell'app**: Glu in Storico, classifica e popup.
+- [x] 🟡 **1.9.2 · Un primo avvio con Glu**: primo avvio guidato da Glu in sette passi (avatar, obiettivo valido da subito, bicchiere, orari, notifiche, primo sorso) e 12 avatar pronti, anche in Profilo › Aspetto.
 - [ ] 🟢 **1.9.3 · Rifiniture**: ultimi ritocchi, peso del pacchetto sotto i 60 KB gzip aggiunti.
 
 ## 2.0: social
@@ -63,7 +63,7 @@ Richiede di passare da TWA a Capacitor e rifare le notifiche con Firebase Cloud 
 
 ## Da dove partire
 
-1. Glu nella Home (1.9.1), poi nel resto dell'app (1.9.2).
+1. Glu nella Home (1.9.1), poi nel primo avvio (1.9.2).
 2. «Condividi la settimana», per chiudere la 1.8.
 3. Colore della barra di stato nell'APK (tema scuro), prima del Play Store.
 

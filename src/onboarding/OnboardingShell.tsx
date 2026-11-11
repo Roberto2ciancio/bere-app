@@ -13,12 +13,13 @@ interface Props {
   children?: ReactNode
   onNext: () => void
   onSkip?: () => void
+  skipLabel?: string
   nextLabel: string
   nextDisabled?: boolean
 }
 
 /** Cornice dei passi del primo avvio: barra a gocce, Glu col fumetto, azioni in basso. */
-export function OnboardingShell({ step, mood, say, children, onNext, onSkip, nextLabel, nextDisabled }: Props) {
+export function OnboardingShell({ step, mood, say, children, onNext, onSkip, skipLabel = 'Salta', nextLabel, nextDisabled }: Props) {
   const number = STEPS.indexOf(step) + 1
   const label = `Passo ${number} di ${STEPS.length}`
   return (
@@ -39,7 +40,7 @@ export function OnboardingShell({ step, mood, say, children, onNext, onSkip, nex
       <div className="ob-body">{children}</div>
       <div className="ob-actions">
         <button className="primary" disabled={nextDisabled} onClick={onNext}>{nextLabel}</button>
-        {onSkip && <button className="ghost" onClick={onSkip}>Salta</button>}
+        {onSkip && <button className="ghost" onClick={onSkip}>{skipLabel}</button>}
       </div>
     </main>
   )

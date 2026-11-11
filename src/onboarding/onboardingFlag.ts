@@ -27,3 +27,10 @@ export function pendingOnboardingStep(userId: string, scheduleCount: number): On
   }
   return pushSupportState() === 'prompt' ? 'notifications' : null
 }
+
+/** Chi ha già programmi e notifiche ma non ha finito riparte dopo l'ultimo passo concluso. */
+export function resumedOnboardingStep(userId: string): OnboardingStep | null {
+  if (readCache<boolean>(key(userId))) return null
+  const done = readCache<OnboardingStep>(progressKey(userId))
+  return done && STEPS.includes(done) ? nextOnboardingStep(done) : null
+}

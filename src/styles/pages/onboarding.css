@@ -61,6 +61,17 @@
 .ob-cup-icon { font-size: 1.75rem; line-height: 1.1; }
 .ob-cup-ml { font-size: 0.85rem; font-weight: 600; }
 
+.ob-title { font-size: 1.35rem; text-align: center; margin: 0; }
+.ob-first, .ob-schedule { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.ob-first p { text-align: center; margin: 0; }
+.ob-schedule input[type='range'] { width: 100%; accent-color: var(--brand); }
+.ob-sky { position: relative; height: 44px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); overflow: hidden; }
+.ob-sky-band { position: absolute; top: 0; bottom: 0; background: var(--track); opacity: 0.6; transition: left 0.15s, right 0.15s; }
+.ob-sky-icon { position: absolute; top: 50%; width: 28px; height: 28px; margin: -14px 0 0 -14px; display: grid; place-items: center; transition: left 0.15s; }
+.ob-sun, .ob-moon { width: 26px; height: 26px; }
+.ob-sun { fill: #FFC83D; stroke: #E69A00; stroke-width: 1.6; stroke-linecap: round; }
+.ob-moon { fill: #A9C0DA; stroke: #47607D; stroke-width: 1.4; stroke-linejoin: round; }
+
 @media (prefers-reduced-motion: reduce) {
-  .ob-progress svg, .ob-activity, .ob-cup { transition: none; }
+  .ob-progress svg, .ob-activity, .ob-cup, .ob-sky-band, .ob-sky-icon { transition: none; }
 }

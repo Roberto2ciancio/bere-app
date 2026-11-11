@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useAuth } from '../../auth/AuthProvider'
 import { useProfile } from '../../auth/ProfileProvider'
 import { formatLiters } from '../../domain/format'
@@ -41,6 +41,8 @@ export function GoalStep({ tz, onGoal, onNext }: Props) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [tomorrow, setTomorrow] = useState(false)
+  // Un obiettivo già salvato in questo primo avvio non si sovrascrive con «Salta».
+  const saved = useRef(false)
 
   // Ogni cambio di peso o attività rifà il calcolo: i ritocchi di ±100 ml valgono per l'ultimo.
   function recalc(nextKg: number, nextActivity: Activity) {
@@ -72,6 +74,7 @@ export function GoalStep({ tz, onGoal, onNext }: Props) {
     try {
       if (!(await saveProfile({ weight_kg: kg, activity }))) throw new Error('profilo')
       const when = await setInitialGoal(userId, goal, tz)
+      saved.current = true
       onGoal(goal)
       // Da domani: il fumetto lo dice e il prossimo tocco prosegue.
       if (when === 'tomorrow') setTomorrow(true)
@@ -83,7 +86,7 @@ export function GoalStep({ tz, onGoal, onNext }: Props) {
   }
 
   async function skip() {
-    if (userId) {
+    if (userId && !saved.current) {
       try {
         await setInitialGoal(userId, SKIP_GOAL_ML, tz)
         onGoal(SKIP_GOAL_ML)

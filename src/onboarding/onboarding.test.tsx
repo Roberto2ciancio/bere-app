@@ -17,6 +17,8 @@ const push = vi.hoisted(() => ({
 }))
 vi.mock('../push/subscribe', async (original) => ({ ...(await original<object>()), ...push }))
 
+vi.mock('../ui/motion/effects', async (original) => ({ ...(await original<object>()), confetti: vi.fn(), haptic: vi.fn() }))
+
 import App from '../App'
 import { formatLiters } from '../domain/format'
 import { goalChangeDate } from '../domain/goals'
@@ -115,56 +117,106 @@ describe('quando parte', () => {
 })
 
 describe('passo dei promemoria', () => {
-  it('dopo aver creato il programma passa alle notifiche', async () => {
+  it('propone un ritmo regolare nella fascia scelta e lo salva', async () => {
     render(<App />)
     await heading('Quando vuoi bere?')
-    await click('30 min')
-    await click('Crea promemoria')
+    fireEvent.change(screen.getByLabelText(/Mi sveglio/), { target: { value: '540' } })
+    expect(screen.getByLabelText(/Mi sveglio/)).toHaveAttribute('aria-valuetext', '9:00')
+    await click('Crea i promemoria')
     expect(await heading('Attiva le notifiche')).toBeInTheDocument()
-    expect(fake.tables.schedules[0].name).toBe('Ogni 30 min')
+    expect(fake.tables.schedules[0].weekdays).toEqual([1, 2, 3, 4, 5, 6, 7])
+    const minutes = fake.tables.schedule_times.map((t) => t.minutes as number)
+    expect(minutes[0]).toBe(540)
+    expect(Math.max(...minutes)).toBeLessThanOrEqual(22 * 60)
+  })
+
+  it("il sonno non può scendere sotto un'ora dalla sveglia", async () => {
+    render(<App />)
+    await heading('Quando vuoi bere?')
+    fireEvent.change(screen.getByLabelText(/Vado a dormire/), { target: { value: '0' } })
+    expect(screen.getByLabelText(/Vado a dormire/)).toHaveAttribute('aria-valuetext', '9:00')
   })
 
   it('si possono scegliere gli orari a mano e poi proseguire', async () => {
     render(<App />)
     await heading('Quando vuoi bere?')
-    await click('Preferisco scegliere gli orari a mano')
+    await click('Scelgo io gli orari')
     await userEvent.type(screen.getByLabelText('Nome del programma'), 'Mio')
-    const time = screen.getByLabelText('Nuovo orario')
-    await userEvent.type(time, '10:15')
+    await userEvent.type(screen.getByLabelText('Nuovo orario'), '10:15')
     await click('Aggiungi orario')
     await click('Salva programma')
     expect(await heading('Attiva le notifiche')).toBeInTheDocument()
   })
 
-  it('si può rimandare e non viene riproposto', async () => {
+  it('«Salta» non crea promemoria e passa avanti', async () => {
     render(<App />)
     await heading('Quando vuoi bere?')
-    await click('Più tardi')
-    expect(await screen.findByRole('button', { name: /ho bevuto/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Oggi' })).toBeInTheDocument()
-    await new Promise((resolve) => setTimeout(resolve, 50))
-    expect(window.location.hash).toBe('#/home')
+    await click('Salta')
+    expect(await heading('Attiva le notifiche')).toBeInTheDocument()
+    expect(fake.tables.schedules ?? []).toHaveLength(0)
   })
 })
 
 describe('passo delle notifiche', () => {
   beforeEach(seedSchedule)
 
-  it('attivate le notifiche passa alla prova', async () => {
+  it('attivate le notifiche parte la prova e Glu chiede se è arrivata', async () => {
     render(<App />)
     await heading('Attiva le notifiche')
     await click('Attiva le notifiche')
     expect(push.subscribePush).toHaveBeenCalledTimes(1)
-    expect(await heading('Prova la notifica')).toBeInTheDocument()
+    expect(push.syncPushSubscription).toHaveBeenCalled()
+    expect(await screen.findByText('Arrivata?')).toBeInTheDocument()
+    expect(fake.invocations.map((i) => i.name)).toContain('test-push')
   })
 
-  it('se l\'attivazione fallisce si può riprovare', async () => {
+  it('«Sì» porta al primo sorso', async () => {
+    render(<App />)
+    await heading('Attiva le notifiche')
+    await click('Attiva le notifiche')
+    await screen.findByText('Arrivata?')
+    await click('Sì, è arrivata')
+    expect(await heading('Primo sorso!')).toBeInTheDocument()
+  })
+
+  it('«No» porta al primo sorso e alla fine allo stato delle notifiche', async () => {
+    render(<App />)
+    await heading('Attiva le notifiche')
+    await click('Attiva le notifiche')
+    await screen.findByText('Arrivata?')
+    await click('No, non è arrivata')
+    await heading('Primo sorso!')
+    await click('Salta')
+    expect(await heading('Stato notifiche')).toBeInTheDocument()
+  })
+
+  it("se l'attivazione fallisce si può riprovare", async () => {
     push.subscribePush.mockRejectedValueOnce(new Error('no'))
     render(<App />)
     await heading('Attiva le notifiche')
     await click('Attiva le notifiche')
     expect(await screen.findByRole('alert')).toHaveTextContent(/non è stato possibile attivare/i)
     expect(screen.getByRole('button', { name: 'Attiva le notifiche' })).toBeEnabled()
+  })
+
+  it('se la prova non parte lo dice e lascia riprovare', async () => {
+    fake.setInvokeResult({ status: 'failed' })
+    render(<App />)
+    await heading('Attiva le notifiche')
+    await click('Attiva le notifiche')
+    expect(await screen.findByRole('alert')).toHaveTextContent(/non è partita/i)
+    fake.setInvokeResult({ status: 'sent' })
+    await click('Riprova la prova')
+    expect(await screen.findByText('Arrivata?')).toBeInTheDocument()
+  })
+
+  it('se la registrazione fallisce non invia una prova destinata a fallire', async () => {
+    render(<App />)
+    await heading('Attiva le notifiche')
+    push.syncPushSubscription.mockRejectedValueOnce(new Error('offline'))
+    await click('Attiva le notifiche')
+    expect(await screen.findByRole('alert')).toHaveTextContent(/controlla la connessione/i)
+    expect(fake.invocations).toHaveLength(0)
   })
 
   it('se il permesso viene negato spiega come riattivarlo e lascia proseguire', async () => {
@@ -175,9 +227,9 @@ describe('passo delle notifiche', () => {
     render(<App />)
     await heading('Attiva le notifiche')
     await click('Attiva le notifiche')
-    expect(await screen.findByText(/le notifiche sono bloccate/i)).toBeInTheDocument()
+    expect(await screen.findByText(/le notifiche sono bloccate\./i)).toBeInTheDocument()
     await click('Continua senza notifiche')
-    expect(await screen.findByRole('button', { name: /ho bevuto/i })).toBeInTheDocument()
+    expect(await heading('Primo sorso!')).toBeInTheDocument()
   })
 
   it('su iPhone senza installazione spiega come installare', async () => {
@@ -186,11 +238,11 @@ describe('passo delle notifiche', () => {
     push.pushSupportState.mockReturnValue('needs-install')
     render(<App />)
     await heading('Quando vuoi bere?')
-    await click('Crea promemoria')
+    await click('Salta')
     expect(await heading("Prima installa l'app")).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Attiva le notifiche' })).not.toBeInTheDocument()
     await click('Continua')
-    expect(await screen.findByRole('button', { name: /ho bevuto/i })).toBeInTheDocument()
+    expect(await heading('Primo sorso!')).toBeInTheDocument()
   })
 
   it('un browser che non supporta le notifiche lo dice e lascia proseguire', async () => {
@@ -199,93 +251,94 @@ describe('passo delle notifiche', () => {
     push.pushSupportState.mockReturnValue('unsupported')
     render(<App />)
     await heading('Quando vuoi bere?')
-    await click('Crea promemoria')
+    await click('Salta')
     expect(await screen.findByText(/non può ricevere notifiche/i)).toBeInTheDocument()
     await click('Continua')
-    expect(await screen.findByRole('button', { name: /ho bevuto/i })).toBeInTheDocument()
+    expect(await heading('Primo sorso!')).toBeInTheDocument()
   })
 
-  it('con il permesso già concesso salta alla prova', async () => {
+  it('con il permesso già concesso il passo non compare', async () => {
     fake.tables.schedules = []
     fake.tables.schedule_times = []
     push.pushSupportState.mockReturnValue('granted')
     render(<App />)
     await heading('Quando vuoi bere?')
-    await click('Crea promemoria')
-    expect(await heading('Prova la notifica')).toBeInTheDocument()
+    await click('Crea i promemoria')
+    expect(await heading('Primo sorso!')).toBeInTheDocument()
+    expect(screen.getByRole('progressbar', { name: 'Passo 7 di 7' })).toBeInTheDocument()
+  })
+
+  it('«Salta» non lo riproporrà', async () => {
+    render(<App />)
+    await heading('Attiva le notifiche')
+    await click('Salta')
+    await heading('Primo sorso!')
+    await click('Salta')
+    expect(await screen.findByRole('button', { name: /ho bevuto/i })).toBeInTheDocument()
+    expect(localStorage.getItem('bere.onboarded.u1')).not.toBeNull()
   })
 })
 
-describe('passo della prova', () => {
+describe('passo del primo sorso', () => {
   beforeEach(() => {
     seedSchedule()
+    saveOnboardingProgress('u1', 'notifications')
+    push.pushSupportState.mockReturnValue('granted')
   })
 
-  async function reachTest() {
+  it('registra una bevuta di drink_ml e porta alla Home', async () => {
+    fake.tables.profiles[0].drink_ml = 500
+    window.location.hash = '#/inizia'
     render(<App />)
-    await heading('Attiva le notifiche')
-    await click('Attiva le notifiche')
-    await heading('Prova la notifica')
-  }
-
-  it('invia la prova, registra il telefono e chiede se è arrivata', async () => {
-    await reachTest()
-    await click('Invia notifica di prova')
-    expect(push.syncPushSubscription).toHaveBeenCalled()
-    expect(fake.invocations.map((i) => i.name)).toContain('test-push')
-    expect(await screen.findByRole('status')).toHaveTextContent(/chiudi l'app/i)
-    await click('È arrivata')
+    await heading('Primo sorso!')
+    await click('Registra il primo bicchiere')
+    await waitFor(() => expect(fake.tables.drinks).toHaveLength(1))
+    expect(fake.tables.drinks[0].amount_ml).toBe(500)
+    expect(await screen.findByText('Evviva, il primo sorso è fatto!')).toBeInTheDocument()
+    await click('Vai alla Home')
     expect(await screen.findByRole('button', { name: /ho bevuto/i })).toBeInTheDocument()
-  })
-
-  it('finita la prova non viene più riproposto', async () => {
-    await reachTest()
-    await click('Invia notifica di prova')
-    await screen.findByRole('status')
-    await click('È arrivata')
-    await screen.findByRole('button', { name: /ho bevuto/i })
-    push.pushSupportState.mockReturnValue('prompt')
-    await new Promise((resolve) => setTimeout(resolve, 50))
-    expect(window.location.hash).toBe('#/home')
     expect(localStorage.getItem('bere.onboarded.u1')).not.toBeNull()
   })
 
-  it('se non arriva porta allo stato delle notifiche', async () => {
-    await reachTest()
-    await click('Invia notifica di prova')
-    await screen.findByRole('status')
-    await click('Non è arrivata')
-    expect(await heading('Stato notifiche')).toBeInTheDocument()
-  })
-
-  it('se la prova non parte lo dice e lascia riprovare', async () => {
-    fake.setInvokeResult({ status: 'failed' })
-    await reachTest()
-    await click('Invia notifica di prova')
-    expect(await screen.findByRole('alert')).toHaveTextContent(/non è partita/i)
-    expect(screen.queryByRole('button', { name: 'È arrivata' })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Invia notifica di prova' })).toBeEnabled()
-  })
-
-  it('se il telefono non risulta registrato lo dice', async () => {
-    fake.setInvokeResult({ status: 'no-device' })
-    await reachTest()
-    await click('Invia notifica di prova')
-    expect(await screen.findByRole('alert')).toHaveTextContent(/non risulta registrato/i)
-  })
-
-  it('se la registrazione fallisce non invia una prova destinata a fallire', async () => {
-    await reachTest()
-    push.syncPushSubscription.mockRejectedValueOnce(new Error('offline'))
-    await click('Invia notifica di prova')
-    expect(await screen.findByRole('alert')).toHaveTextContent(/controlla la connessione/i)
-    expect(fake.invocations).toHaveLength(0)
-  })
-
-  it('la prova si può saltare', async () => {
-    await reachTest()
-    await click('Salta la prova')
+  it('si può saltare senza registrare nulla', async () => {
+    window.location.hash = '#/inizia'
+    render(<App />)
+    await heading('Primo sorso!')
+    await click('Salta')
     expect(await screen.findByRole('button', { name: /ho bevuto/i })).toBeInTheDocument()
+    expect(fake.tables.drinks ?? []).toHaveLength(0)
+  })
+})
+
+describe('ingresso e ripresa', () => {
+  it('chiuso al passo 4 riparte dal passo 4 con il peso già salvato', async () => {
+    saveOnboardingProgress('u1', 'goal')
+    fake.tables.profiles[0].weight_kg = 82
+    window.location.hash = '#/inizia'
+    render(<App />)
+    expect(await screen.findByRole('progressbar', { name: 'Passo 4 di 7' })).toBeInTheDocument()
+    expect(fake.tables.profiles[0].weight_kg).toBe(82)
+  })
+
+  it("lo stato {step:'notifications'} apre il passo delle notifiche", async () => {
+    window.location.hash = '#/inizia'
+    window.history.replaceState({ usr: { step: 'notifications' }, key: 'k', idx: 0 }, '')
+    render(<App />)
+    expect(await heading('Attiva le notifiche')).toBeInTheDocument()
+  })
+
+  it('tutti i passi con «Salta» portano alla Home', async () => {
+    localStorage.clear()
+    push.pushSupportState.mockReturnValue('prompt')
+    render(<App />)
+    await screen.findByRole('progressbar', { name: 'Passo 1 di 7' })
+    await click('Iniziamo!')
+    for (const n of [2, 3, 4, 5, 6, 7]) {
+      await screen.findByRole('progressbar', { name: `Passo ${n} di 7` })
+      await click('Salta')
+    }
+    expect(await screen.findByRole('button', { name: /ho bevuto/i })).toBeInTheDocument()
+    expect(localStorage.getItem('bere.onboarded.u1')).not.toBeNull()
   })
 })
 
@@ -344,6 +397,18 @@ describe('passi 1-4', () => {
     expect(fake.tables.goal_changes).toContainEqual(expect.objectContaining({ user_id: 'u1', effective_from: goalChangeDate(new Date(), 'Europe/Rome'), goal_ml: goal }))
     await click('Avanti')
     expect(await screen.findByRole('progressbar', { name: 'Passo 4 di 7' })).toBeInTheDocument()
+  })
+
+  it("«Salta» dopo aver salvato l'obiettivo non lo sovrascrive con 2 L", async () => {
+    saveOnboardingProgress('u1', 'avatar')
+    render(<App />)
+    await screen.findByRole('progressbar', { name: 'Passo 3 di 7' })
+    vi.spyOn(fake.client, 'rpc').mockResolvedValue({ data: null, error: { message: 'has_drinks' } } as never)
+    await click('Avanti')
+    await screen.findByText(/Da domani/)
+    await click('Salta')
+    expect(await screen.findByRole('progressbar', { name: 'Passo 4 di 7' })).toBeInTheDocument()
+    expect(fake.tables.goal_changes.filter((g) => g.goal_ml === 2000)).toHaveLength(0)
   })
 
   it('il bicchiere scelto si salva e dice quanti ne servono', async () => {
