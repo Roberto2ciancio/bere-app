@@ -17,6 +17,8 @@ export function createFakeSupabase() {
     insert: null as string | null,
     upsert: null as string | null,
     update: null as string | null,
+    /** Codice dell'errore di update (per esempio 23514, violazione di un check). */
+    updateCode: null as string | null,
     invoke: null as string | null,
   }
   const invocations: { name: string; body: unknown }[] = []
@@ -37,7 +39,7 @@ export function createFakeSupabase() {
     const rows = () => (tables[table] ??= [])
     const run = (): Result => {
       if (failures.select && action.kind === 'select') return { data: null, error: { message: failures.select } }
-      if (failures.update && action.kind === 'update') return { data: null, error: { message: failures.update } }
+      if (failures.update && action.kind === 'update') return { data: null, error: { message: failures.update, ...(failures.updateCode ? { code: failures.updateCode } : {}) } }
       let matched = rows().filter((r) => filters.every((f) => f(r)))
       if (action.kind === 'delete') {
         tables[table] = rows().filter((r) => !matched.includes(r))

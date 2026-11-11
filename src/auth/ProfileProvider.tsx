@@ -6,6 +6,8 @@ import { useAuth } from './AuthProvider'
 
 const cacheKey = (userId: string) => `bere.profile.${userId}`
 // Se il server non conosce ancora «Glu» (migrazione mancante) la scelta resta su questo telefono.
+/** Postgres: violazione di un vincolo check (qui, lo stile «glu» non ancora ammesso). */
+const CHECK_VIOLATION = '23514'
 const homeStyleKey = (userId: string) => `bere.homeStyle.${userId}`
 
 export type HomeStyle = 'glu' | 'bottle' | 'ring' | 'drops' | 'drop-face' | 'cat' | 'fish' | 'can'
@@ -70,7 +72,16 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       const loaded = data as Profile | null
       if (loaded) {
         const next = { ...loaded }
-        if (readCache<string>(homeStyleKey(userId)) === 'glu') next.home_style = 'glu'
+        if (readCache<string>(homeStyleKey(userId)) === 'glu') {
+          if (loaded.home_style === 'glu') removeCache(homeStyleKey(userId))
+          else {
+            // Scelta fatta quando il server non conosceva ancora Glu: la Home usa Glu e si riprova a salvarla.
+            next.home_style = 'glu'
+            void Promise.resolve(supabase.from('profiles').update({ home_style: 'glu' }).eq('id', userId)).then(({ error }) => {
+              if (!error) removeCache(homeStyleKey(userId))
+            })
+          }
+        }
         const deviceTz = new Intl.DateTimeFormat().resolvedOptions().timeZone
         if (deviceTz && loaded.tz !== deviceTz) {
           next.tz = deviceTz
@@ -98,7 +109,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.from('profiles').update(patch).eq('id', userId)
       if (!patch.home_style) return
       if (!error) removeCache(homeStyleKey(userId))
-      else if (patch.home_style === 'glu') writeCache(homeStyleKey(userId), 'glu')
+      else if (patch.home_style === 'glu' && error.code === CHECK_VIOLATION) writeCache(homeStyleKey(userId), 'glu')
     },
     [userId],
   )

@@ -26,7 +26,9 @@ export function Celebration({ kind, title, detail, onClose }: Props) {
     document.addEventListener('keydown', onKey)
     return () => {
       document.removeEventListener('keydown', onKey)
-      before?.focus()
+      // Chi aveva il focus può non esserci più (o non averlo mai avuto): si torna al pulsante principale.
+      const target = before && before !== document.body && before.isConnected ? before : document.querySelector<HTMLElement>('button.drink')
+      target?.focus()
     }
   }, [])
 

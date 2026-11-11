@@ -22,6 +22,8 @@ interface Input {
   /** Obiettivi in vigore, per sapere se ieri è andata a buon fine. */
   goals: GoalChange[]
   levelUp?: boolean
+  /** Solo con lo stile Glu: altrimenti nessuna richiesta e nessun timer. */
+  enabled?: boolean
 }
 
 interface DayTotal {
@@ -30,15 +32,15 @@ interface DayTotal {
 }
 
 /** L'umore di Glu: i segnali del giorno (bevute, pause, ieri) messi in ordine da `pickMood`. */
-export function useGluMood({ userId, tz, totalMl, goalMl, expectedMl, todayMinutes, pulse, goals, levelUp = false }: Input): GluMood {
+export function useGluMood({ userId, tz, totalMl, goalMl, expectedMl, todayMinutes, pulse, goals, levelUp = false, enabled = true }: Input): GluMood {
   const [now, setNow] = useState(() => new Date())
   const [justDrank, setJustDrank] = useState(false)
   const [firstOpenToday, setFirstOpenToday] = useState(false)
-  const [sadShown, setSadShown] = useState(false)
+  const [sadShown, setSadShown] = useState(() => !!userId && readCache<string>(`bere.gluSad.${userId}`) === localParts(new Date(), tz).date)
   const [yesterday, setYesterday] = useState<{ day: string; totals: DayTotal[] } | null>(null)
 
   const { date: today, minutes: nowMinutes } = localParts(now, tz)
-  const { current: pause } = usePauses(userId, today)
+  const { current: pause } = usePauses(enabled ? userId : null, today)
 
   // Il fumetto e l'umore dipendono dall'ora: si ricalcola ogni minuto.
   useEffect(() => {
@@ -62,21 +64,20 @@ export function useGluMood({ userId, tz, totalMl, goalMl, expectedMl, todayMinut
   // e la seconda volta il giorno risulta già segnato.
   const greeted = useRef<string | null>(null)
   useEffect(() => {
-    if (!userId || greeted.current === userId) return
-    greeted.current = userId
+    if (!enabled || !userId || greeted.current === `${userId}:${today}`) return
+    greeted.current = `${userId}:${today}`
     const key = `bere.gluHello.${userId}`
     if (readCache<string>(key) !== today) {
       writeCache(key, today)
       setFirstOpenToday(true)
       setTimeout(() => setFirstOpenToday(false), HELLO_MS)
     }
-    setTimeout(() => setSadShown(true), SAD_MS)
-  }, [userId, today])
+  }, [enabled, userId, today])
 
   // Ieri: serve solo il totale di quel giorno. Dopo un errore l'umore triste semplicemente non c'è.
   const yesterdayDate = addDays(today, -1)
   useEffect(() => {
-    if (!userId) return
+    if (!enabled || !userId) return
     let active = true
     Promise.resolve(supabase.rpc('daily_totals')).then(({ data, error }) => {
       if (!active) return
@@ -85,9 +86,9 @@ export function useGluMood({ userId, tz, totalMl, goalMl, expectedMl, todayMinut
     return () => {
       active = false
     }
-  }, [userId, yesterdayDate])
+  }, [enabled, userId, yesterdayDate])
 
-  return pickMood({
+  const mood = pickMood({
     nowMinutes,
     totalMl,
     goalMl,
@@ -100,6 +101,18 @@ export function useGluMood({ userId, tz, totalMl, goalMl, expectedMl, todayMinut
     yesterdayMet: yesterdayMet(yesterday, goals),
     sadShown,
   })
+
+  // La tristezza dura 4 s e si vede una volta al giorno: il giorno si segna quando compare davvero
+  // (dopo il saluto, se c'è) e resta segnato anche se si cambia scheda.
+  const sad = enabled && mood === 'sad'
+  useEffect(() => {
+    if (!sad || !userId) return
+    writeCache(`bere.gluSad.${userId}`, today)
+    const timer = setTimeout(() => setSadShown(true), SAD_MS)
+    return () => clearTimeout(timer)
+  }, [sad, userId, today])
+
+  return mood
 }
 
 // Senza nessun giorno registrato prima di oggi (account nuovo) non c'è un «ieri» da rimpiangere.

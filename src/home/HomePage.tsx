@@ -189,7 +189,7 @@ export function HomePage() {
   const parts = localParts(now, tz)
   const todayMinutes = (reminders ?? []).filter((r) => r.weekdays.includes(weekdayOf(today))).map((r) => r.minutes)
   const expected = split ? null : expectedByNow(todayMinutes, goalMl, parts.minutes)
-  const mood = useGluMood({ userId, tz, totalMl, goalMl, expectedMl: expected, todayMinutes, pulse, goals })
+  const mood = useGluMood({ userId, tz, totalMl, goalMl, expectedMl: expected, todayMinutes, pulse, goals, enabled: !!profile && style === 'glu' })
 
   // La festa parte solo se una bevuta di questa sessione supera l'obiettivo, e una volta al giorno.
   const partyKey = userId ? `bere.goalParty.${userId}` : null

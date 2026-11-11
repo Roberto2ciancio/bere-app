@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -127,6 +127,7 @@ describe('Glu nella Home', () => {
   it('senza la migrazione la scelta di Glu resta sul telefono', async () => {
     seed('bottle')
     fake.failures.update = 'violates check constraint'
+    fake.failures.updateCode = '23514'
     renderIn(
       <>
         <AppearanceForm />
@@ -145,5 +146,78 @@ describe('Glu nella Home', () => {
     writeCache('bere.homeStyle.u1', 'glu')
     renderIn(<HomePage />)
     expect(await screen.findByTestId('glu')).toBeInTheDocument()
+  })
+})
+
+describe('Glu: tristezza, saluto e salvataggio dello stile', () => {
+  const sadSetup = () => {
+    fake.rpcResults.daily_totals = [{ day: addDays(today(), -1), total_ml: 500, drinks: 2 }]
+  }
+  const mood = () => screen.getByTestId('glu').getAttribute('data-mood')
+
+  it('dopo il saluto Glu è triste per 4 s, poi basta', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      sadSetup()
+      renderIn(<HomePage />)
+      await screen.findByTestId('glu')
+      await waitFor(() => expect(mood()).toBe('hello'))
+      await act(() => vi.advanceTimersByTimeAsync(3100))
+      expect(mood()).toBe('sad')
+      await act(() => vi.advanceTimersByTimeAsync(3500))
+      expect(mood()).toBe('sad')
+      await act(() => vi.advanceTimersByTimeAsync(700))
+      expect(mood()).not.toBe('sad')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('tornando alla Home lo stesso giorno non è più triste', async () => {
+    sadSetup()
+    writeCache('bere.gluHello.u1', today())
+    const first = renderIn(<HomePage />)
+    await waitFor(() => expect(mood()).toBe('sad'), { timeout: 4000 })
+    expect(readCache<string>('bere.gluSad.u1')).toBe(today())
+    first.unmount()
+    renderIn(<HomePage />)
+    await screen.findByTestId('glu')
+    await waitFor(() => expect(fake.rpcCalls.filter((c) => c.name === 'daily_totals')).toHaveLength(2), { timeout: 4000 })
+    expect(mood()).not.toBe('sad')
+  })
+
+  it('con un altro stile non chiede nulla per Glu', async () => {
+    seed('bottle')
+    renderIn(<HomePage />)
+    await screen.findByTestId('bottle-view')
+    expect(fake.rpcCalls.filter((c) => c.name === 'daily_totals')).toHaveLength(0)
+  })
+
+  it('l’override locale solo per il vincolo check; altri errori no', async () => {
+    seed('bottle')
+    fake.failures.update = 'rete'
+    renderIn(<AppearanceForm />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Glu' }))
+    await waitFor(() => expect(fake.client.from).toBeDefined())
+    expect(readCache<string>('bere.homeStyle.u1')).toBeNull()
+  })
+
+  it('con l’override e Glu non ancora sul server, si riprova in silenzio', async () => {
+    seed('bottle')
+    writeCache('bere.homeStyle.u1', 'glu')
+    renderIn(<HomePage />)
+    await waitFor(() => expect(fake.tables.profiles[0].home_style).toBe('glu'))
+    await waitFor(() => expect(readCache<string>('bere.homeStyle.u1')).toBeNull())
+  })
+
+  it('se il riprovo fallisce l’override resta', async () => {
+    seed('bottle')
+    writeCache('bere.homeStyle.u1', 'glu')
+    fake.failures.update = 'vincolo'
+    fake.failures.updateCode = '23514'
+    renderIn(<HomePage />)
+    expect(await screen.findByTestId('glu')).toBeInTheDocument()
+    expect(fake.tables.profiles[0].home_style).toBe('bottle')
+    expect(readCache<string>('bere.homeStyle.u1')).toBe('glu')
   })
 })
