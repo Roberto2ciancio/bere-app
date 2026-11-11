@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
@@ -29,8 +29,9 @@ import { DropsView } from './DropsView'
 import { GluView } from './GluView'
 import { RingView } from './RingView'
 import { playSound } from './sounds'
-import type { ViewProps } from './views'
-import { Stagger } from '../ui/motion/Stagger'
+import { fillRatio, type ViewProps } from './views'
+import { ProgressRing } from './ProgressRing'
+import { BellIcon, ChevronIcon, CoffeeIcon, PlusIcon, WorkoutIcon } from '../ui/icons'
 import { CountUp } from '../ui/motion/CountUp'
 
 const DAYS = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica']
@@ -74,6 +75,27 @@ function describePace(pace: Pace, hours: ActiveHours, units: Units | undefined):
   }
 }
 
+interface ReminderRow {
+  to: string
+  label: string
+  action?: string
+  /** Nome per gli screen reader quando il testo da solo non dice dove porta. */
+  name?: string
+}
+
+/**
+ * Promemoria e notifiche in una sola riga. Senza promemoria in arrivo si va a impostarli (quella pagina
+ * invita anche ad attivare le notifiche); con i promemoria ma senza notifiche si va alle notifiche;
+ * con tutto a posto si mostra il prossimo promemoria.
+ */
+function describeReminderRow(reminders: Reminder[] | null, nextText: string | null, pushOn: boolean): ReminderRow | null {
+  if (reminders && !nextText) return { to: '/promemoria', label: 'Promemoria e notifiche', action: 'Imposta', name: 'Imposta i promemoria' }
+  if (!pushOn) {
+    return { to: '/notifiche', label: nextText ?? 'Promemoria e notifiche', action: 'Imposta', name: nextText ? `${nextText}. Attiva le notifiche` : 'Attiva le notifiche' }
+  }
+  return nextText ? { to: '/promemoria', label: nextText } : null
+}
+
 export function HomePage() {
   const { user } = useAuth()
   const { profile, loading } = useProfile()
@@ -91,6 +113,7 @@ export function HomePage() {
   // Una bevuta di questa sessione è in attesa di rientrare nel totale: serve a riconoscere chi supera l'obiettivo.
   const [drankHere, setDrankHere] = useState(false)
   const [lastTotal, setLastTotal] = useState<number | null>(null)
+  const caffeineId = useId()
 
   // Tiene aggiornati giorno e prossimo promemoria anche se l'app resta aperta o torna in primo piano.
   useEffect(() => {
@@ -215,20 +238,38 @@ export function HomePage() {
   const units = profile.units
   const pace = split ? describePace(activePace({ goalMl, drunkMl: totalMl, nowMinutes: parts.minutes, hours }), hours, units) : null
   const behind = expected !== null && totalMl < goalMl ? expected - totalMl : 0
-  const percent = goalMl > 0 ? Math.min(100, Math.round((totalMl / goalMl) * 100)) : 0
+  // Un solo valore per l'acqua di Glu, l'anello e la percentuale scritta.
+  const fill = fillRatio(totalMl, goalMl)
+  const percent = Math.round(fill * 100)
+  const goalNote =
+    totalMl >= goalMl ? 'Obiettivo raggiunto' : expected !== null ? (behind > 0 ? `${formatVolume(behind, units)} per essere in pari` : 'Sei in pari') : null
+  const reminderRow = describeReminderRow(reminders, next ? `Prossimo promemoria ${describeNext(next, today)}` : null, pushSupportState() === 'granted')
 
   return (
-    <Stagger as="main" className="home">
-      <NewsIcon />
+    <main className="home">
       <header className="home-head">
-        <p className="home-total" aria-live="polite"><CountUp value={totalMl} format={(n) => formatVolume(n, units)} /></p>
-        <div className="progress home-progress" aria-hidden="true">
-          <span style={{ width: `${percent}%` }} />
-        </div>
-        <p className="home-goal">
-          {totalMl >= goalMl ? `Obiettivo raggiunto: su ${formatVolume(goalMl, units)}` : `su ${formatVolume(goalMl, units)}`}
-          {expected !== null && totalMl < goalMl && (behind > 0 ? ` · ${formatVolume(behind, units)} per essere in pari` : ' · sei in pari')}
+        <h1>Oggi</h1>
+        <NewsIcon />
+      </header>
+
+      <div className="home-view">
+        {View ? (
+          <div className="ring-slot">
+            <ProgressRing fill={fill}>
+              <View totalMl={totalMl} goalMl={goalMl} drinkMl={drinkMl} pulse={pulse} />
+            </ProgressRing>
+          </div>
+        ) : (
+          <GluView fill={fill} now={now.getTime()} mood={mood} name={profile.display_name.trim().split(/\s+/)[0] ?? ''} />
+        )}
+      </div>
+
+      <div className="home-stats">
+        <p className="home-total" aria-live="polite">
+          <span className="home-total-value"><CountUp value={totalMl} format={(n) => formatVolume(n, units)} /></span>{' '}
+          <span className="home-total-goal">su {formatVolume(goalMl, units)} · {percent}%</span>
         </p>
+        {goalNote && <p className="home-goal">{goalNote}</p>}
         {(boosts.heat || boosts.workout) && (
           <p className="home-boost">
             {[
@@ -249,61 +290,70 @@ export function HomePage() {
         {totalMl >= HIGH_INTAKE_ML && (
           <p className="error">Oggi hai bevuto molto: bere troppo in poco tempo può far male. Se non stai bene, chiedi a un medico.</p>
         )}
-      </header>
-
-      <div className="home-view">
-        {View ? (
-          <View totalMl={totalMl} goalMl={goalMl} drinkMl={drinkMl} pulse={pulse} />
-        ) : (
-          <GluView totalMl={totalMl} goalMl={goalMl} drinkMl={drinkMl} pulse={pulse} now={now.getTime()} mood={mood} name={profile.display_name.trim().split(/\s+/)[0] ?? ''} />
-        )}
       </div>
+
+      <div className="home-tiles">
+        <button className="home-tile caffeine-tile" aria-label={`Caffè, ${caffeine.coffees} oggi. Aggiungi`} aria-describedby={caffeineId} onClick={() => caffeine.add()}>
+          <span className="home-tile-icon"><CoffeeIcon /></span>
+          <span className="home-tile-text">
+            <span className="home-tile-title">
+              Caffè <span key={caffeine.coffees} className="caffeine-count">{caffeine.coffees}</span>
+            </span>
+            <span id={caffeineId} className={caffeine.overLimit ? 'caffeine-total error' : 'caffeine-total'}>
+              {caffeine.overLimit
+                ? `${caffeine.totalMg} mg di caffeina: oltre i ${CAFFEINE_LIMIT_MG} di riferimento`
+                : `${caffeine.totalMg} mg di caffeina su ${CAFFEINE_LIMIT_MG}`}
+            </span>
+          </span>
+        </button>
+        <button
+          className={boosts.workout ? 'home-tile workout-tile on' : 'home-tile workout-tile'}
+          aria-pressed={!!boosts.workout}
+          aria-label={
+            boosts.workout
+              ? `Allenamento segnato: +${formatAmount(boosts.workout.extra_ml, units)} oggi`
+              : `Ho fatto allenamento: +${formatAmount(WORKOUT_BOOST_ML, units)} all'obiettivo`
+          }
+          onClick={() => void boosts.setWorkout(today, !boosts.workout)}
+        >
+          <span className="home-tile-icon"><WorkoutIcon /></span>
+          <span className="home-tile-text">
+            <span className="home-tile-title">{boosts.workout ? 'Allenamento segnato' : 'Ho fatto allenamento'}</span>
+            <span className="home-tile-sub">
+              {boosts.workout ? `+${formatAmount(boosts.workout.extra_ml, units)} oggi` : `+${formatAmount(WORKOUT_BOOST_ML, units)} all'obiettivo`}
+            </span>
+          </span>
+        </button>
+      </div>
+
+      {reminderRow && (
+        <Link className="home-reminders" to={reminderRow.to} aria-label={reminderRow.name}>
+          <BellIcon />
+          <span className="home-reminders-label">{reminderRow.label}</span>
+          {reminderRow.action && <span className="home-reminders-action">{reminderRow.action}</span>}
+          <ChevronIcon />
+        </Link>
+      )}
+
+      <div className="home-spacer" />
 
       <footer className="home-actions">
         {shortcutNote && <p role="status" className="board-toast shortcut-note">{shortcutNote}</p>}
         {(pending || caffeine.pending) && <p className="hint" role="status">Salvata sul telefono: la invio appena torna la rete.</p>}
-        <div className="home-info">
-          {next && <p className="home-next home-bell">Prossimo promemoria {describeNext(next, today)}</p>}
-          {reminders && !next && <Link className="home-next" to="/promemoria">Imposta i promemoria</Link>}
-          {pushSupportState() !== 'granted' && <Link className="home-next" to="/notifiche">Attiva le notifiche</Link>}
-        </div>
-        <div className="drink-row">
-          <button className="primary drink" onClick={() => onDrink()}>Ho bevuto · {formatAmount(drinkMl, units)}</button>
-          <button className="secondary drink-more" aria-label="Altra bevanda" onClick={() => setSheetOpen(true)}>+</button>
-        </div>
-
-        <section className="caffeine" aria-label="Caffeina">
-          <button className="caffeine-tile" aria-label={`Caffè, ${caffeine.coffees} oggi. Aggiungi`} onClick={() => caffeine.add()}>
-            <span aria-hidden="true">☕</span>
-            <span>Caffè</span>
-            <span key={caffeine.coffees} className="caffeine-count">{caffeine.coffees}</span>
-          </button>
-          <p className={caffeine.overLimit ? 'caffeine-total error' : 'caffeine-total'}>
-            {caffeine.overLimit
-              ? `${caffeine.totalMg} mg di caffeina: oltre i ${CAFFEINE_LIMIT_MG} di riferimento`
-              : `${caffeine.totalMg} mg di caffeina su ${CAFFEINE_LIMIT_MG}`}
-          </p>
-        </section>
-
-        <button
-          className={boosts.workout ? 'workout-tile on' : 'workout-tile'}
-          aria-pressed={!!boosts.workout}
-          onClick={() => void boosts.setWorkout(today, !boosts.workout)}
-        >
-          <span aria-hidden="true">🏃</span>
-          {boosts.workout ? `Allenamento segnato: +${formatAmount(boosts.workout.extra_ml, units)} oggi` : `Ho fatto allenamento: +${formatAmount(WORKOUT_BOOST_ML, units)} all'obiettivo`}
-        </button>
-
         {(canUndo || caffeine.canUndo) && (
           <div className="home-undos">
             {canUndo && <button className="ghost" onClick={() => void undoLast()}>Annulla l'ultima</button>}
             {caffeine.canUndo && <button className="ghost" onClick={() => void caffeine.undoLast()}>Annulla caffeina</button>}
           </div>
         )}
+        <div className="drink-row">
+          <button className="primary drink" onClick={() => onDrink()}>Ho bevuto · {formatAmount(drinkMl, units)}</button>
+          <button className="secondary drink-more" aria-label="Altra bevanda" onClick={() => setSheetOpen(true)}><PlusIcon /></button>
+        </div>
       </footer>
 
       {party && <Celebration kind="goal" title="Obiettivo raggiunto!" detail={`Hai bevuto ${formatVolume(totalMl, units)}: oggi hai fatto centro.`} onClose={() => setParty(false)} />}
       {sheetOpen && <DrinkSheet userId={userId} units={units} defaultMl={drinkMl} onDrink={onDrink} onClose={() => setSheetOpen(false)} />}
-    </Stagger>
+    </main>
   )
 }

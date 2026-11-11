@@ -16,10 +16,10 @@ export const CHANGELOG: Release[] = [
     date: '2026-11-11',
     title: 'Arriva Glu',
     notes: [
-      'Glu, una goccia d’acqua, ti tiene compagnia nella Home: cambia umore durante la giornata e dice la sua nel fumetto.',
-      'Glu si riempie d’acqua man mano che bevi.',
-      'Quando raggiungi l’obiettivo c’è la festa, con i coriandoli (se hai «riduci movimento», niente coriandoli).',
-      'Puoi sceglierlo, o tornare agli stili di prima, in Profilo › Aspetto.',
+      'Nuova schermata Oggi: Glu, una goccia d’acqua, sta al centro dentro l’anello che segna quanto hai bevuto, con litri, obiettivo e percentuale sotto.',
+      'Glu si riempie d’acqua man mano che bevi e cambia espressione durante la giornata, dicendo la sua nel fumetto.',
+      '«Ho bevuto» e «+» sono in basso, a portata di pollice; caffè, allenamento e promemoria stanno in riquadri più ordinati.',
+      'Quando raggiungi l’obiettivo la festa sale dal basso, con i coriandoli (niente coriandoli con «riduci movimento»). Glu si sceglie, o si torna agli stili di prima, in Profilo › Aspetto.',
     ],
   },
   {

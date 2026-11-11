@@ -92,14 +92,14 @@ describe('Glu', () => {
   it.each([
     [0, 186],
     [0.5, 101],
-    [1, 16],
+    [1, -10],
   ])('con fill=%s l’onda sta a y=%s', (fill, y) => {
     renderGlu({ mood: 'idle', fill })
     expect(waveY()).toBe(y)
   })
 
   it.each([
-    [1.7, 16],
+    [1.7, -10],
     [Number.NaN, 186],
     [-3, 186],
   ])('fill=%s viene limitato (y=%s)', (fill, y) => {

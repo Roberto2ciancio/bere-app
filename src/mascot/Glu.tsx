@@ -17,9 +17,10 @@ const SWEAT = 'M160 52c6 8 8 12 8 16a8 8 0 0 1-16 0c0-4 2-8 8-16z'
 const SPARKLE = 'M0 -9 Q1.4 -1.4 9 0 Q1.4 1.4 0 9 Q-1.4 1.4 -9 0 Q-1.4 -1.4 0 -9 Z'
 const ZED = 'M-5 -5.5 H5 L-5 5.5 H5'
 
-// Livello: y = 186 a corpo vuoto, 16 a corpo pieno.
+// Livello: y = 186 a corpo vuoto, 16 a corpo pieno; all'obiettivo sale a -10 e riempie anche il ciuffo.
 const WATER_EMPTY = 186
 const WATER_SPAN = 170
+const WATER_BRIM = -10
 
 // Onda larga 250: scorrendo di 50 (un'onda) a sinistra copre sempre tutto il corpo.
 const wavePath = (y: number) => `M0 ${y}q25-9 50 0t50 0 50 0 50 0 50 0V200H0z`
@@ -140,7 +141,7 @@ export function Glu({ mood, fill, size = 160, onTap }: GluProps) {
   const lastTap = useRef(-Infinity)
 
   const level = Number.isNaN(fill) ? 0 : Math.min(1, Math.max(0, fill))
-  const waterY = Math.round((WATER_EMPTY - WATER_SPAN * level) * 100) / 100
+  const waterY = level >= 1 ? WATER_BRIM : Math.round((WATER_EMPTY - WATER_SPAN * level) * 100) / 100
 
   // Braccia: una molla per lato; il saluto la fa oscillare.
   const leftLift = useSpring(LIFT[mood][0], ARM_SPRING)

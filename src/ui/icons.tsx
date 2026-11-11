@@ -50,3 +50,34 @@ export const ProfileIcon = () => (
     <path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" />
   </Icon>
 )
+
+// Icone della schermata Oggi (dalla proposta della nuova Home), più piccole.
+export const CoffeeIcon = () => (
+  <Icon width="22" height="22">
+    <path d="M5 8h11v6a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5zM16 10h2a2 2 0 0 1 0 5h-2M8 3v2M12 3v2" />
+  </Icon>
+)
+
+export const WorkoutIcon = () => (
+  <Icon width="22" height="22">
+    <path d="M3 12h4l3-7 4 14 3-7h4" />
+  </Icon>
+)
+
+export const BellIcon = () => (
+  <Icon width="20" height="20">
+    <path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0" />
+  </Icon>
+)
+
+export const ChevronIcon = () => (
+  <Icon width="18" height="18">
+    <path d="M9 6l6 6-6 6" />
+  </Icon>
+)
+
+export const PlusIcon = () => (
+  <Icon width="26" height="26" strokeWidth="2.6">
+    <path d="M12 5v14M5 12h14" />
+  </Icon>
+)

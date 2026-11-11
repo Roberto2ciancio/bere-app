@@ -1,4 +1,6 @@
-import { useEffect, useId, useRef } from 'react'
+import { m } from 'motion/react'
+import { useEffect, useId, useRef, useState } from 'react'
+import { prefersReducedMotion } from '../ui/motion/effects'
 import { Glu } from './Glu'
 
 interface Props {
@@ -8,18 +10,23 @@ interface Props {
   onClose: () => void
 }
 
-/** La festa: Glu grande e un solo pulsante. Il focus va lì e, alla chiusura, torna dov'era. */
+/**
+ * La festa: un pannello che sale dal basso con Glu e un solo pulsante. Il focus va lì e, alla chiusura,
+ * torna dov'era. Si chiude subito (senza animazione d'uscita), come gli altri pannelli.
+ */
 export function Celebration({ kind, title, detail, onClose }: Props) {
   const titleId = useId()
   const button = useRef<HTMLButtonElement>(null)
   const close = useRef(onClose)
+  const [still] = useState(prefersReducedMotion)
   useEffect(() => {
     close.current = onClose
   })
 
   useEffect(() => {
     const before = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    button.current?.focus()
+    // Il pannello sta ancora salendo: senza preventScroll il browser proverebbe a portarlo in vista.
+    button.current?.focus({ preventScroll: true })
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') close.current()
     }
@@ -33,15 +40,29 @@ export function Celebration({ kind, title, detail, onClose }: Props) {
   }, [])
 
   return (
-    <div className="sheet-overlay celebration-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="sheet celebration" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+    <m.div
+      className="sheet-overlay celebration-overlay"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+      initial={still ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+    >
+      <m.div
+        className="sheet celebration"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        initial={still ? false : { y: '100%' }}
+        animate={{ y: 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+      >
         <div className="celebration-glu">
-          <Glu mood={kind === 'goal' ? 'goal' : 'levelup'} fill={1} size={150} />
+          <Glu mood={kind === 'goal' ? 'goal' : 'levelup'} fill={1} size={180} />
         </div>
         <h2 id={titleId}>{title}</h2>
         {detail && <p>{detail}</p>}
         <button ref={button} className="primary" onClick={onClose}>Evviva!</button>
-      </div>
-    </div>
+      </m.div>
+    </m.div>
   )
 }

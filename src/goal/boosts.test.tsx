@@ -77,13 +77,13 @@ describe('aumenti', () => {
 describe('home: obiettivo che si adatta', () => {
   it("l'allenamento aggiunge 500 ml all'obiettivo di oggi e si può togliere", async () => {
     wrap(<HomePage />)
-    expect(await screen.findByText('su 2 L')).toBeInTheDocument()
+    expect(await screen.findByText(/^su 2 L · \d+%$/)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: "Ho fatto allenamento: +500 ml all'obiettivo" }))
-    expect(await screen.findByText('su 2,5 L')).toBeInTheDocument()
+    expect(await screen.findByText(/^su 2,5 L · \d+%$/)).toBeInTheDocument()
     expect(screen.getByText("+500 ml per l'allenamento")).toBeInTheDocument()
     expect(fake.tables.goal_boosts).toMatchObject([{ user_id: 'u1', local_date: today(), kind: 'workout', extra_ml: 500 }])
     await userEvent.click(screen.getByRole('button', { name: /Allenamento segnato/ }))
-    expect(await screen.findByText('su 2 L')).toBeInTheDocument()
+    expect(await screen.findByText(/^su 2 L · \d+%$/)).toBeInTheDocument()
     expect(fake.tables.goal_boosts).toEqual([])
   })
 
@@ -92,12 +92,12 @@ describe('home: obiettivo che si adatta', () => {
     const fetcher = vi.fn(async () => jsonResponse({ daily: { temperature_2m_max: [31.2] } }))
     vi.stubGlobal('fetch', fetcher)
     const { unmount } = wrap(<HomePage />)
-    expect(await screen.findByText('su 2,5 L')).toBeInTheDocument()
+    expect(await screen.findByText(/^su 2,5 L · \d+%$/)).toBeInTheDocument()
     expect(screen.getByText('+500 ml per il caldo (31 °C)')).toBeInTheDocument()
     expect(fake.tables.goal_boosts).toMatchObject([{ kind: 'heat', extra_ml: 500, note: '31 °C' }])
     unmount()
     wrap(<HomePage />)
-    expect(await screen.findByText('su 2,5 L')).toBeInTheDocument()
+    expect(await screen.findByText(/^su 2,5 L · \d+%$/)).toBeInTheDocument()
     expect(fetcher).toHaveBeenCalledTimes(1)
   })
 
@@ -106,7 +106,7 @@ describe('home: obiettivo che si adatta', () => {
     const fetcher = vi.fn()
     vi.stubGlobal('fetch', fetcher)
     wrap(<HomePage />)
-    expect(await screen.findByText('su 2,5 L')).toBeInTheDocument()
+    expect(await screen.findByText(/^su 2,5 L · \d+%$/)).toBeInTheDocument()
     await new Promise((r) => setTimeout(r, 50))
     expect(fake.tables.goal_boosts).toHaveLength(1)
     expect(fetcher).not.toHaveBeenCalled()
@@ -117,14 +117,14 @@ describe('home: obiettivo che si adatta', () => {
     fake.tables.goal_boosts = [{ user_id: 'u1', local_date: today(), kind: 'heat', extra_ml: 500, note: '31 °C' }]
     wrap(<HomePage />)
     await waitFor(() => expect(fake.tables.goal_boosts).toEqual([]))
-    expect(await screen.findByText('su 2 L')).toBeInTheDocument()
+    expect(await screen.findByText(/^su 2 L · \d+%$/)).toBeInTheDocument()
   })
 
   it('con il caldo spento non legge il meteo', async () => {
     const fetcher = vi.fn()
     vi.stubGlobal('fetch', fetcher)
     wrap(<HomePage />)
-    expect(await screen.findByText('su 2 L')).toBeInTheDocument()
+    expect(await screen.findByText(/^su 2 L · \d+%$/)).toBeInTheDocument()
     expect(fetcher).not.toHaveBeenCalled()
   })
 })

@@ -146,17 +146,49 @@ async function expectNoHorizontalScroll(page: Page) {
   expect(outside, 'elementi oltre il bordo destro').toEqual([])
 }
 
-/** I blocchi della schermata Oggi, dall'alto in basso, non si sovrappongono e l'illustrazione resta nel suo spazio. */
+/** In alto, senza scorrere: «Ho bevuto» e «+» si vedono interi, sopra la barra in basso. */
+async function expectActionsAboveTabs(page: Page) {
+  await page.locator('.shell-body').evaluate((el) => (el.scrollTop = 0))
+  const tabs = (await box(page, 'nav.tabs'))!
+  for (const selector of ['button.drink', 'button.drink-more']) {
+    const b = (await box(page, selector))!
+    expect(b.top, `${selector} esce sopra lo schermo`).toBeGreaterThanOrEqual(0)
+    expect(b.bottom, `${selector} finisce sotto la barra`).toBeLessThanOrEqual(tabs.top + 1)
+  }
+}
+
+/** Aree di tocco di almeno 44 px per tutto ciò che si tocca nella schermata Oggi. */
+async function expectTouchTargets(page: Page) {
+  const small = await page.evaluate(() =>
+    [...document.querySelectorAll('.home a, .home button')]
+      .map((el) => ({ el, r: el.getBoundingClientRect() }))
+      .filter(({ r }) => r.width > 0 && (r.width < 43.5 || r.height < 43.5))
+      .map(({ el, r }) => `${el.getAttribute('class')} ${Math.round(r.width)}×${Math.round(r.height)}`),
+  )
+  expect(small, 'aree di tocco sotto i 44 px').toEqual([])
+}
+
+/**
+ * I blocchi della schermata Oggi, dall'alto in basso, non si sovrappongono e il disegno resta nel suo spazio.
+ * Le azioni sono ancorate in basso: si misura a pagina scorsa fino in fondo, dove tornano al loro posto.
+ */
 async function expectHomeInOrder(page: Page) {
   await waitForSettled(page)
+  await expectActionsAboveTabs(page)
+  await expectTouchTargets(page)
+  await page.locator('.shell-body').evaluate((el) => (el.scrollTop = el.scrollHeight))
   const view = await box(page, '.home-view')
   const art = await box(page, '.glu-box, .bottle-box, .ring-box, .character-box, .drops')
+  const ring = await box(page, '.progress-ring')
   expect(view, 'manca lo spazio della vista').not.toBeNull()
   expect(art, "manca l'illustrazione").not.toBeNull()
+  expect(ring, "manca l'anello").not.toBeNull()
   expect(art!.top, "l'illustrazione esce sopra il suo spazio").toBeGreaterThanOrEqual(view!.top - 1)
   expect(art!.bottom, "l'illustrazione esce sotto il suo spazio").toBeLessThanOrEqual(view!.bottom + 1)
+  expect(ring!.top, "l'anello esce sopra il suo spazio").toBeGreaterThanOrEqual(view!.top - 1)
+  expect(ring!.bottom, "l'anello esce sotto il suo spazio").toBeLessThanOrEqual(view!.bottom + 1)
 
-  const order = ['.home-head', '.home-view', '.home-info', '.drink-row', '.caffeine', '.workout-tile', '.home-undos']
+  const order = ['.home-head', '.glu-bubble', '.progress-ring', '.home-stats', '.home-tiles', '.home-reminders', '.home-undos', '.drink-row']
   let previous: { selector: string; bottom: number } | null = null
   for (const selector of order) {
     const b = await box(page, selector)
@@ -164,18 +196,16 @@ async function expectHomeInOrder(page: Page) {
     if (previous) expect(b.top, `${selector} si sovrappone a ${previous.selector}`).toBeGreaterThanOrEqual(previous.bottom - 1)
     previous = { selector, bottom: b.bottom }
   }
+  // In fondo alla pagina l'ultima azione resta sopra la barra.
+  const tabs = (await box(page, 'nav.tabs'))!
+  expect(previous!.bottom, 'le azioni finiscono sotto la barra').toBeLessThanOrEqual(tabs.top + 1)
 
-  // L'icona della Newsletter non deve coprire il numero del totale.
+  // Il pulsante della Newsletter non copre il titolo.
   const icon = await box(page, '.news-icon')
-  const total = await page.locator('.home-total').evaluate((el) => {
-    const range = document.createRange()
-    range.selectNodeContents(el)
-    const r = range.getBoundingClientRect()
-    return { top: r.top, bottom: r.bottom, left: r.left, right: r.right }
-  })
-  if (icon) {
-    const overlaps = icon.right > total.left && icon.left < total.right && icon.bottom > total.top && icon.top < total.bottom
-    expect(overlaps, "l'icona della Newsletter copre il totale").toBe(false)
+  const title = await box(page, '.home-head h1')
+  if (icon && title) {
+    const overlaps = icon.right > title.left && icon.left < title.right && icon.bottom > title.top && icon.top < title.bottom
+    expect(overlaps, 'la Newsletter copre il titolo').toBe(false)
   }
 }
 
@@ -184,6 +214,8 @@ const ALL_DAY = { active_split: true, active_start_min: 0, active_end_min: 1440 
 test.describe('Oggi', () => {
   test('così come si apre', async ({ page }) => {
     await openApp(page, '/home')
+    await expect(page.getByRole('heading', { level: 1, name: 'Oggi' })).toBeVisible()
+    await expect(page.getByRole('button', { name: "Annulla l'ultima" })).toHaveCount(0)
     await expectHomeInOrder(page)
     await expectNoHorizontalScroll(page)
   })
@@ -212,15 +244,23 @@ test('la festa dell’obiettivo sta nello schermo', async ({ page }) => {
   await page.getByRole('button', { name: /Ho bevuto/ }).click()
   const dialog = page.getByRole('dialog', { name: 'Obiettivo raggiunto!' })
   await expect(dialog).toBeVisible()
-  await waitForSettled(page)
-  const b = (await dialog.boundingBox())!
+  await expect(dialog).toHaveAttribute('aria-modal', 'true')
+  await expect(page.getByRole('button', { name: 'Evviva!' })).toBeFocused()
   const viewport = page.viewportSize()!
+  // Il pannello sale dal basso: si misura quando è arrivato.
+  await expect.poll(async () => {
+    const b = (await dialog.boundingBox())!
+    return Math.round(b.y + b.height)
+  }).toBeLessThanOrEqual(viewport.height + 1)
+  const b = (await dialog.boundingBox())!
   expect(b.y).toBeGreaterThanOrEqual(0)
-  expect(b.y + b.height).toBeLessThanOrEqual(viewport.height + 1)
   expect(b.x).toBeGreaterThanOrEqual(0)
   expect(b.x + b.width).toBeLessThanOrEqual(viewport.width + 1)
+  // Ancorato in basso: tocca il fondo dello schermo.
+  expect(b.y + b.height).toBeGreaterThanOrEqual(viewport.height - 1)
   await page.getByRole('button', { name: 'Evviva!' }).click()
   await expect(dialog).toBeHidden()
+  await expect(page.getByRole('button', { name: /Ho bevuto/ })).toBeFocused()
 })
 
 const PAGES = [

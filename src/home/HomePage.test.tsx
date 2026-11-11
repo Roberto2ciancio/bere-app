@@ -215,3 +215,57 @@ describe('HomePage', () => {
     expect(await screen.findByRole('link', { name: /imposta i promemoria/i })).toBeInTheDocument()
   })
 })
+
+describe('HomePage «Oggi»', () => {
+  const before = (a: Element, b: Element) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
+
+  it('dall’alto in basso: intestazione, fumetto, Glu, litri con %, Caffè e Allenamento, promemoria, «Ho bevuto»', async () => {
+    seed('glu')
+    renderHome()
+    const drink = await drinkButton()
+    const parts = [
+      screen.getByRole('heading', { level: 1, name: 'Oggi' }),
+      document.querySelector('.glu-bubble')!,
+      screen.getByTestId('glu'),
+      screen.getByText('su 3 L · 0%'),
+      screen.getByRole('button', { name: /^Caffè/ }),
+      screen.getByRole('button', { name: /allenamento/i }),
+      screen.getByRole('link', { name: /imposta i promemoria/i }),
+      drink,
+    ]
+    parts.forEach((el, i) => expect(el, `elemento ${i}`).toBeTruthy())
+    for (let i = 1; i < parts.length; i++) expect(before(parts[i - 1], parts[i]), `elemento ${i - 1} prima di ${i}`).toBe(true)
+    // La Newsletter resta nell'intestazione, accanto al titolo.
+    expect(screen.getByRole('link', { name: /^Newsletter/ }).closest('.home-head')).not.toBeNull()
+  })
+
+  it('«Annulla l’ultima» compare solo dopo una bevuta', async () => {
+    renderHome()
+    const drink = await drinkButton()
+    expect(screen.queryByRole('button', { name: "Annulla l'ultima" })).not.toBeInTheDocument()
+    tapLater(drink)
+    expect(await screen.findByRole('button', { name: "Annulla l'ultima" })).toBeInTheDocument()
+  })
+
+  it('la percentuale della riga è il livello dell’acqua di Glu e dell’anello', async () => {
+    seed('glu')
+    fake.tables.drinks = [{ user_id: 'u1', client_id: 'x', amount_ml: 1400, local_date: today(), drunk_at: new Date().toISOString() }]
+    renderHome()
+    const row = await screen.findByText(/su 3 L · \d+%/)
+    const percent = Number(/(\d+)%/.exec(row.textContent ?? '')![1])
+    expect(percent).toBe(47)
+    // Onda di Glu: y = 186 a corpo vuoto, 16 a corpo pieno.
+    const wave = document.querySelector('.glu-water')!.getAttribute('d')!
+    const y = Number(/^M0 (-?[\d.]+)/.exec(wave)![1])
+    expect(Math.round(((186 - y) / 170) * 100)).toBe(percent)
+    // Anello: la parte piena sulla circonferenza intera.
+    const [dash, length] = screen.getByTestId('progress-ring-bar').getAttribute('stroke-dasharray')!.split(' ').map(Number)
+    expect(Math.round((dash / length) * 100)).toBe(percent)
+  })
+
+  it('l’anello del progresso c’è anche con gli altri stili', async () => {
+    renderHome()
+    await screen.findByTestId('bottle-view')
+    expect(screen.getByTestId('bottle-view').closest('.progress-ring')).not.toBeNull()
+  })
+})

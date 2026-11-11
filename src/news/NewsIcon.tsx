@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { hasUnreadNews } from '../profile/whatsNew'
 
-/** In alto a sinistra nella schermata Oggi: apre la Newsletter, con un pallino se ci sono novità da leggere. */
+/** In alto a destra nella schermata Oggi: apre la Newsletter, con un pallino se ci sono novità da leggere. */
 export function NewsIcon() {
   const [unread] = useState(() => hasUnreadNews())
   return (
