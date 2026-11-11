@@ -30,3 +30,43 @@
 .glu-bubble-live {
   max-width: 100%;
 }
+
+/* Glu: guscio chiaro anche in tema scuro, così faccia e acqua si leggono sempre. */
+.glu {
+  --glu-shell: color-mix(in srgb, var(--water) 16%, #fff);
+  --glu-line: color-mix(in srgb, var(--water-deep) 45%, #0b2a4a);
+  --glu-face: #0d2b4c;
+  display: block;
+  overflow: visible;
+  -webkit-tap-highlight-color: transparent;
+}
+.glu[data-tappable] { cursor: pointer; }
+.glu-pose, .glu-arm, .glu-eye, .glu-star, .glu-tongue, .glu-tear, .glu-sparkle, .glu-zzz path { transform-box: fill-box; }
+.glu-shadow { fill: #04223a; opacity: 0.13; }
+.glu-body { fill: var(--glu-shell); }
+.glu-outline { fill: none; stroke: var(--glu-line); stroke-width: 4.5; stroke-linejoin: round; }
+.glu-arm { fill: var(--glu-shell); stroke: var(--glu-line); stroke-width: 4; stroke-linejoin: round; }
+.glu-water, .glu-wave-fill { fill: var(--water); }
+.glu-water { transition: y 0.9s var(--ease-out), height 0.9s var(--ease-out); }
+.glu-wave-level { transition: transform 0.9s var(--ease-out); }
+.glu-wave { animation: glu-wave 3.2s linear infinite; }
+.glu-lively .glu-wave { animation-duration: 1.7s; }
+.glu-wave-line { fill: none; stroke: #fff; stroke-opacity: 0.5; stroke-width: 2.5; stroke-linecap: round; }
+.glu-gloss { fill: none; stroke: #fff; stroke-opacity: 0.85; stroke-width: 7; stroke-linecap: round; }
+.glu-gloss-dot { fill: #fff; opacity: 0.85; }
+.glu-shine { fill: #fff; animation: glu-twinkle 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.glu-eye-ball { fill: var(--glu-face); }
+.glu-eye-shine { fill: #fff; }
+.glu-lid { fill: none; stroke: var(--glu-face); stroke-width: 3.5; stroke-linecap: round; }
+.glu-mouth { fill: var(--glu-face); }
+.glu-cheek { fill: #ff8fab; }
+.glu-tongue path { fill: #ff7d98; stroke: var(--glu-face); stroke-width: 2.5; stroke-linejoin: round; }
+.glu-tongue .glu-tongue-line { fill: none; stroke: #d14a6a; stroke-width: 2; stroke-linecap: round; }
+.glu-tear { fill: color-mix(in srgb, var(--water) 40%, #fff); stroke: var(--glu-line); stroke-width: 2; }
+.glu-star { fill: var(--streak); stroke: var(--glu-face); stroke-width: 2.5; stroke-linejoin: round; }
+.glu-sparkle { fill: var(--streak); }
+.glu-splash { fill: var(--water); }
+.glu-zzz { fill: none; stroke: var(--brand); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+
+@keyframes glu-wave { to { transform: translateX(-50px); } }
+@keyframes glu-twinkle { 50% { transform: scale(0.5); opacity: 0.6; } }

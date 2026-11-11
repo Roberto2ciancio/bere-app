@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { HashRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './auth/AuthProvider'
 import { CatchAllRoute } from './auth/CatchAllRoute'
@@ -18,6 +19,9 @@ import { NotificationStatusPage } from './push/NotificationStatusPage'
 import { ProfilePage } from './profile/ProfilePage'
 import { SchedulesPage } from './schedules/SchedulesPage'
 import { TabsLayout } from './ui/tabs'
+
+// Galleria di Glu: solo nell'app di prova, fuori dal bundle di produzione.
+const GluGallery = import.meta.env.MODE === 'devapp' ? lazy(() => import('./dev/GluGallery')) : null
 
 function RequireAuth() {
   const { user, loading, recovering } = useAuth()
@@ -62,6 +66,16 @@ export default function App() {
                 <Route path="/novita" element={<NewsPage />} />
               </Route>
             </Route>
+            {GluGallery && (
+              <Route
+                path="/dev-glu"
+                element={
+                  <Suspense fallback={null}>
+                    <GluGallery />
+                  </Suspense>
+                }
+              />
+            )}
             <Route path="*" element={<CatchAllRoute />} />
           </Routes>
         </HashRouter>
