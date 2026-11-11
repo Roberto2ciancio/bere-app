@@ -46,6 +46,16 @@ const light = vars(block(tokens, ':root'))
 const darkMedia = tokens.slice(tokens.indexOf('@media (prefers-color-scheme: dark)'))
 const darkVars = vars(darkMedia)
 
+const proposal: Record<string, [string, string]> = {
+  '--bg': ['#f2faff', '#071a33'],
+  '--surface': ['#ffffff', '#0f2747'],
+  '--ink': ['#0b2545', '#f2faff'],
+  '--ink-soft': ['#47607d', '#a9c0da'],
+  '--line': ['#d5e8f4', '#1e3d66'],
+  '--brand': ['#0872b0', '#38bdf8'],
+  '--on-brand': ['#ffffff', '#071a33'],
+}
+
 const pairs: [string, string][] = [
   ['--ink', '--bg'],
   ['--ink', '--surface'],
@@ -72,6 +82,18 @@ describe('tokens.css', () => {
       expect(light[name], `${name} (chiaro)`).toBeTruthy()
     }
     expect(Object.keys(darkVars)).toEqual(expect.arrayContaining(['--bg', '--surface', '--ink', '--brand']))
+  })
+
+  for (const [name, [l, d]] of Object.entries(proposal)) {
+    it(`${name} ha i valori della proposta`, () => {
+      expect(light[name].toLowerCase()).toBe(l)
+      expect(darkVars[name].toLowerCase()).toBe(d)
+    })
+  }
+
+  it('usa Baloo 2 e Nunito', () => {
+    expect(light['--display']).toMatch(/^'Baloo 2'/)
+    expect(light['--body']).toMatch(/^'Nunito'/)
   })
 
   for (const [theme, set] of [['chiaro', light], ['scuro', darkVars]] as const) {
