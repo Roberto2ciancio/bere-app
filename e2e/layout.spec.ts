@@ -80,6 +80,23 @@ async function openApp(page: Page, path: string, setup: Setup = {}) {
   // Dopo il ricaricamento l'app si disegna un attimo dopo: si misura solo quando c'è.
   await expect(page.getByRole('navigation', { name: 'Sezioni' })).toBeVisible()
   if (path === '/home') await expect(page.locator('.home-view')).toBeVisible()
+  await waitForSettled(page)
+}
+
+/**
+ * Aspetta la fine delle animazioni di ingresso (Stagger e PageTransition): finché girano, i riquadri
+ * misurati includono lo spostamento e sulle macchine lente le posizioni sono sfalsate di qualche pixel.
+ * Quelle infinite (onde, Glu) si ignorano; la pagina che entra usa Motion (non sempre visibile a getAnimations), quindi si controlla anche il suo transform (non quello dei discendenti: l'anello, per esempio, è ruotato di proposito).
+ */
+async function waitForSettled(page: Page) {
+  await page.waitForFunction(() => {
+    const running = document.getAnimations().some((a) => a.playState === 'running' && a.effect?.getComputedTiming().iterations !== Infinity)
+    const moved = [...document.querySelectorAll('.page-transition')].some((el) => {
+      const t = getComputedStyle(el).transform
+      return t !== 'none' && t !== 'matrix(1, 0, 0, 1, 0, 0)'
+    })
+    return !running && !moved
+  })
 }
 
 type Box = { top: number; bottom: number; left: number; right: number }
@@ -94,6 +111,7 @@ async function box(page: Page, selector: string): Promise<Box | null> {
 }
 
 async function expectNoHorizontalScroll(page: Page) {
+  await waitForSettled(page)
   const overflow = await page.evaluate(() => {
     const body = document.querySelector('.shell-body')
     return {
@@ -125,6 +143,7 @@ async function expectNoHorizontalScroll(page: Page) {
 
 /** I blocchi della schermata Oggi, dall'alto in basso, non si sovrappongono e l'illustrazione resta nel suo spazio. */
 async function expectHomeInOrder(page: Page) {
+  await waitForSettled(page)
   const view = await box(page, '.home-view')
   const art = await box(page, '.bottle-box, .ring-box, .character-box, .drops')
   expect(view, 'manca lo spazio della vista').not.toBeNull()
