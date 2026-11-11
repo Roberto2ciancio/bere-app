@@ -6,10 +6,14 @@ export function useLevels(): Map<string, number> | null {
   const [points, setPoints] = useState<Map<string, number> | null>(null)
   useEffect(() => {
     let active = true
-    Promise.resolve(supabase.rpc('get_levels')).then(({ data, error }) => {
-      if (!active || error || !Array.isArray(data)) return
-      setPoints(new Map((data as { user_id: string; points: number }[]).map((r) => [r.user_id, r.points])))
-    })
+    Promise.resolve(supabase.rpc('get_levels'))
+      .then(({ data, error }) => {
+        if (!active || error || !Array.isArray(data)) return
+        setPoints(new Map((data as { user_id: string; points: number }[]).map((r) => [r.user_id, r.points])))
+      })
+      .catch(() => {
+        // Senza rete i livelli restano nascosti.
+      })
     return () => {
       active = false
     }

@@ -40,6 +40,8 @@ interface Setup {
   boosts?: Record<string, number>
   /** Obiettivo giornaliero in ml. */
   goalMl?: number
+  /** Nessun promemoria salvato. */
+  noSchedules?: boolean
 }
 
 /** Apre l'app di prova senza popup delle novità, dopo aver preparato il finto database. */
@@ -66,6 +68,7 @@ async function openApp(page: Page, path: string, setup: Setup = {}) {
         Object.assign(profile, { heat_boost: true, city_name: 'Roma (Lazio)', city_lat: 41.9, city_lon: 12.5 })
         localStorage.setItem(`bere.heatChecked.${profile.id}`, `${today}:41.9,12.5`)
       }
+      if (setup.noSchedules) db.tables.schedules = []
       if (setup.goalMl) db.tables.goal_changes.forEach((g) => (g.goal_ml = setup.goalMl))
       db.tables.goal_boosts = Object.entries(setup.boosts ?? {}).map(([kind, ml]) => ({
         user_id: profile.id,
@@ -316,6 +319,17 @@ for (const [name, path, heading] of PAGES) {
     await expectNoHorizontalScroll(page)
   })
 }
+
+test('senza promemoria Glu è compatto e gli orari del modulo restano sopra la barra', async ({ page }) => {
+  await openApp(page, '/promemoria', { noSchedules: true })
+  await expect(page.getByTestId('glu')).toBeVisible()
+  // Il modulo è lungo di suo: Glu non deve portare gli orari (Dalle/Alle) sotto la barra delle sezioni.
+  const field = page.locator('.hours-pair input, .interval-window input').first()
+  await expect(field).toBeVisible()
+  const fieldBox = (await field.boundingBox())!
+  const nav = (await box(page, 'nav[aria-label="Sezioni"]'))!
+  expect(fieldBox.y + fieldBox.height).toBeLessThanOrEqual(nav.top)
+})
 
 test('primo avvio: ogni passo sta nello schermo e con «Salta» si arriva alla Home', async ({ page }) => {
   await page.addInitScript((version) => {
