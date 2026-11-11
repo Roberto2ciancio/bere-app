@@ -80,7 +80,8 @@ input[type='file']::file-selector-button {
 .whats-new { border-radius: var(--radius); padding-bottom: 20px; max-height: 80%; }
 .whats-new h2 { margin: 0; }
 .whats-new h3 { margin: 4px 0 0; font-size: 0.95rem; }
-.whats-new-badge { margin: 0; font-size: 2rem; text-align: center; }
+.whats-new-glu { display: flex; justify-content: center; }
+.whats-new-glu .glu { width: 96px; height: auto; }
 .whats-new .primary { margin-top: 4px; }
 /* Su schermi da 320 px i campi orario affiancati devono potersi restringere (in Chrome con AM/PM sono larghi). */
 .interval-window, .hours-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Glu } from '../mascot/Glu'
 import { readSeen, releasesToShow, startedWithData, writeSeen } from './whatsNew'
 
 /** Al primo avvio dopo un aggiornamento: la versione e cosa è cambiato. */
@@ -23,7 +24,7 @@ export function WhatsNew() {
   return (
     <div className="sheet-overlay whats-new-overlay" onClick={(e) => e.target === e.currentTarget && close()}>
       <div className="sheet whats-new" role="dialog" aria-modal="true" aria-labelledby="whats-new-title">
-        <p className="whats-new-badge" aria-hidden="true">✨</p>
+        <div className="whats-new-glu"><Glu mood="hello" fill={0.6} size={96} /></div>
         <h2 id="whats-new-title">Novità della versione {__APP_VERSION__}</h2>
         {releases.map((release, index) => (
           <section key={release.version}>

@@ -1,6 +1,6 @@
 # Bere: idee per le prossime versioni
 
-Ultimo aggiornamento: 11 novembre 2026 (app alla versione 1.9.2).
+Ultimo aggiornamento: 11 novembre 2026 (app alla versione 1.9.3).
 
 Legenda: 🟢 piccolo · 🟡 medio · 🔴 grande · 🗄️ tocca il server (database o funzioni) · 📦 serve un nuovo APK
 
@@ -27,8 +27,9 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 - [x] 🟡 **1.9.0 · Nuova grafica**: colori vivaci, bottoni e card morbidi, tema scuro automatico, animazioni (numeri e cambi pagina; i coriandoli arrivano con Glu nella 1.9.1) e «riduci movimento» rispettato.
 - [x] 🟡 **1.9.1 · Arriva Glu**: nuova schermata Oggi con Glu al centro nell'anello del progresso, Glu che si riempie e cambia espressione, azioni a portata di pollice e festa che sale dal basso quando raggiungi l'obiettivo.
 - [x] 🟡 **1.9.2 · Un primo avvio con Glu**: primo avvio guidato da Glu in sette passi (avatar, obiettivo che per chi si è appena registrato vale da subito, bicchiere, orari, notifiche, primo sorso) e 12 avatar pronti, anche in Profilo › Aspetto.
-- [ ] 🟡 **1.9.3 · Glu nel resto dell'app**: Glu in Storico, Classifica e popup delle novità.
-- [ ] 🟢 **1.9.3 · Rifiniture**: ultimi ritocchi, peso del pacchetto sotto i 60 KB gzip aggiunti.
+- [x] 🟡 **1.9.3 · Glu nel resto dell'app**: festa con coriandoli quando sali di livello, Glu nelle pagine vuote (Storico, Classifica, Promemoria) e nel popup delle novità.
+- [x] 🟢 **1.9.3 · Rifiniture**: ultimi ritocchi, peso del pacchetto sotto i 60 KB gzip aggiunti.
+- [ ] 🟡 **1.9.4 · Glu reagisce**: sete crescente (da 2 a 4 ore senza bere), caffè (20 minuti dopo), allenamento, serie di giorni (corona a 7, 14 e 30 giorni) e notte (fuori dall'orario dei promemoria); il telefono inclinato per ultimo.
 
 ## 2.0: social
 
@@ -44,6 +45,10 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 - [x] 🟢 🗄️ **Avviso se il job delle notifiche si ferma** (fatto: workflow «Controllo notifiche» ogni 10 minuti, apre e chiude da solo una issue su GitHub, che manda l'email): un'email se `send-reminders` non gira per 10 minuti.
 - [x] 🟢 📦 **Tema scuro** automatico, che segue il telefono (fatto in 1.9.0 nell'app; resta da fare il colore della barra di stato nell'APK, che richiede un nuovo APK).
 - [ ] 🟢 **Esporta in CSV** per aprire i dati in Excel.
+
+## Più avanti: Glu in 3D
+
+- [ ] 🔴 **Glu 3D**: Glu in tre dimensioni, che si muove e si guarda da ogni lato.
 
 ## Verso il Play Store (2.1)
 
@@ -64,7 +69,7 @@ Richiede di passare da TWA a Capacitor e rifare le notifiche con Firebase Cloud 
 
 ## Da dove partire
 
-1. Glu nella Home (1.9.1), poi nel primo avvio (1.9.2).
+1. Glu che reagisce (1.9.4), dopo la Home (1.9.1), il primo avvio (1.9.2) e il resto dell'app (1.9.3).
 2. «Condividi la settimana», per chiudere la 1.8.
 3. Colore della barra di stato nell'APK (tema scuro), prima del Play Store.
 

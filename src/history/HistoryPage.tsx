@@ -14,6 +14,7 @@ import { weekStart } from '../leaderboard/weekStart'
 import { pausedDays } from '../pause/pauses'
 import { usePauses } from '../pause/usePauses'
 import { supabase } from '../lib/supabase'
+import { EmptyState } from '../mascot/EmptyState'
 import { achievements, challenges, computeStats, dayResults, jollyThisWeek, type CaffeineByDay, type DayTotal } from './stats'
 import { CountUp } from '../ui/motion/CountUp'
 import { Stagger } from '../ui/motion/Stagger'
@@ -221,7 +222,7 @@ export function HistoryPage() {
             <span style={{ width: `${pickPct}%` }} />
           </div>
         )}
-        {entries.length === 0 && <p className="hint">Nessuna bevuta segnata in questo giorno.</p>}
+        {entries.length === 0 && <EmptyState mood="idle" title="Nessuna bevuta segnata in questo giorno." />}
         {entries.length > 0 && (
           <ul className="entry-list">
             {entries.map((entry) => (

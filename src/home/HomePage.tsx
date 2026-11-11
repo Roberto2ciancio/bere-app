@@ -18,6 +18,8 @@ import { NewsIcon } from '../news/NewsIcon'
 import { pendingOnboardingStep } from '../onboarding/onboardingFlag'
 import { pushSupportState } from '../push/subscribe'
 import { readCache, writeCache } from '../lib/cache'
+import { useLevels } from '../levels/useLevels'
+import { useLevelUp } from '../levels/useLevelUp'
 import { Celebration } from '../mascot/Celebration'
 import { useGluMood } from '../mascot/useGluMood'
 import { confetti, haptic } from '../ui/motion/effects'
@@ -114,6 +116,9 @@ export function HomePage() {
   const [drankHere, setDrankHere] = useState(false)
   const [lastTotal, setLastTotal] = useState<number | null>(null)
   const caffeineId = useId()
+  const levelUp = useLevelUp(userId ?? '', useLevels()?.get(userId ?? '') ?? null)
+  // Prima la festa del livello; quella dell'obiettivo (se c'è) arriva alla chiusura.
+  const levelParty = !!userId && !!levelUp?.isNew
   // Altezza delle azioni ancorate: chi arriva col tastiera su un controllo non deve finirci sotto (scroll-margin).
   const measureActions = useCallback((footer: HTMLElement | null) => {
     const home = footer?.parentElement
@@ -220,7 +225,7 @@ export function HomePage() {
   const parts = localParts(now, tz)
   const todayMinutes = (reminders ?? []).filter((r) => r.weekdays.includes(weekdayOf(today))).map((r) => r.minutes)
   const expected = split ? null : expectedByNow(todayMinutes, goalMl, parts.minutes)
-  const mood = useGluMood({ userId, tz, totalMl, goalMl, expectedMl: expected, todayMinutes, pulse, goals, enabled: !!profile && style === 'glu' })
+  const mood = useGluMood({ userId, tz, totalMl, goalMl, expectedMl: expected, todayMinutes, pulse, goals, levelUp: levelParty, enabled: !!profile && style === 'glu' })
 
   // La festa parte solo se una bevuta di questa sessione supera l'obiettivo, e una volta al giorno.
   const partyKey = userId ? `bere.goalParty.${userId}` : null
@@ -232,11 +237,16 @@ export function HomePage() {
     if (drankHere && partyKey && goalMl > 0 && lastTotal < goalMl && totalMl >= goalMl && readCache<string>(partyKey) !== today) setParty(true)
   }
   useEffect(() => {
-    if (!party || !partyKey) return
+    if (!party || !partyKey || levelParty) return
     writeCache(partyKey, today)
     confetti('goal')
     haptic()
-  }, [party, partyKey, today])
+  }, [party, partyKey, today, levelParty])
+  useEffect(() => {
+    if (!levelParty) return
+    confetti('level')
+    haptic()
+  }, [levelParty])
 
   // La quantità viene dal profilo: non si segna nulla finché non è disponibile.
   if (!profile) {
@@ -365,7 +375,10 @@ export function HomePage() {
         </div>
       </footer>
 
-      {party && <Celebration kind="goal" title="Obiettivo raggiunto!" detail={`Hai bevuto ${formatVolume(totalMl, units)}: oggi hai fatto centro.`} onClose={() => setParty(false)} />}
+      {levelParty && levelUp && (
+        <Celebration kind="level" title={`Livello ${levelUp.level.level} · ${levelUp.level.name}`} detail="Sei salito di livello: continua così." onClose={levelUp.dismiss} />
+      )}
+      {party && !levelParty && <Celebration kind="goal" title="Obiettivo raggiunto!" detail={`Hai bevuto ${formatVolume(totalMl, units)}: oggi hai fatto centro.`} onClose={() => setParty(false)} />}
       {sheetOpen && <DrinkSheet userId={userId} units={units} defaultMl={drinkMl} onDrink={onDrink} onClose={() => setSheetOpen(false)} />}
     </main>
   )

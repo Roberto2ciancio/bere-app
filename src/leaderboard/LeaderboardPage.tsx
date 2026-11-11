@@ -6,6 +6,7 @@ import { addDays } from '../domain/time'
 import { levelOf } from '../levels/levels'
 import { useLevels } from '../levels/useLevels'
 import { supabase } from '../lib/supabase'
+import { EmptyState } from '../mascot/EmptyState'
 import { weekStart } from './weekStart'
 import { Stagger } from '../ui/motion/Stagger'
 
@@ -142,7 +143,10 @@ export function LeaderboardPage() {
         </section>
       )}
 
-      {entries && !started && <p className="hint">Nessuno ha ancora raggiunto l'obiettivo questa settimana. Il primo posto è libero.</p>}
+      {entries && entries.length <= 1 && (
+        <EmptyState mood="idle" title={started ? 'Per ora ci sei solo tu.' : "Nessuno ha ancora raggiunto l'obiettivo questa settimana. Il primo posto è libero."} />
+      )}
+      {entries && entries.length > 1 && !started && <p className="hint">Nessuno ha ancora raggiunto l'obiettivo questa settimana. Il primo posto è libero.</p>}
 
       {pokeMessage && <p role="status" className="board-toast">{pokeMessage}</p>}
 

@@ -12,6 +12,16 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '1.9.3',
+    date: '2026-11-11',
+    title: 'Glu ti fa festa',
+    notes: [
+      'Quando sali di livello, Glu fa festa con i coriandoli e ti dice il nuovo livello.',
+      'Glu compare anche nelle pagine vuote (Storico, Classifica, Promemoria) e nel popup delle novità.',
+      'Rifiniture qua e là, per un’app più leggera e più coerente.',
+    ],
+  },
+  {
     version: '1.9.2',
     date: '2026-11-11',
     title: 'Un primo avvio con Glu',

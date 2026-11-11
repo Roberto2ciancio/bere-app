@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
 import { formatTime } from '../domain/format'
 import { pushSupportState } from '../push/subscribe'
+import { EmptyState } from '../mascot/EmptyState'
 import { IntervalCreator } from './IntervalCreator'
 import { LearnedTimes } from './LearnedTimes'
 import { ScheduleCard } from './ScheduleCard'
@@ -124,6 +125,7 @@ export function SchedulesPage() {
       {error && <p role="alert" className="error">{error}</p>}
       {message && <p role="status" className="hint">{message}</p>}
       {!schedules && !error && <p className="center-note">Caricamento…</p>}
+      {empty && <EmptyState mood="sleep" title="Nessun promemoria, per ora." />}
       {pushSupportState() !== 'granted' && <Link to="/notifiche">Attiva le notifiche</Link>}
 
       {schedules && hasDuplicateReminders(schedules) && (
