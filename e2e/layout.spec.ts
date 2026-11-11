@@ -177,18 +177,27 @@ async function expectHomeInOrder(page: Page) {
   await expectActionsAboveTabs(page)
   await expectTouchTargets(page)
   await page.locator('.shell-body').evaluate((el) => (el.scrollTop = el.scrollHeight))
-  const view = await box(page, '.home-view')
-  const art = await box(page, '.glu-box, .bottle-box, .ring-box, .character-box, .drops')
-  const ring = await box(page, '.progress-ring')
+  // Tutto nello stesso istante: dopo una bevuta il fumetto cambia frase (e altezza) da solo.
+  const { view, art, ring } = await page.evaluate(() => {
+    const measure = (selector: string) => {
+      const el = document.querySelector(selector)
+      if (!el) return null
+      const r = el.getBoundingClientRect()
+      return { top: r.top, bottom: r.bottom, left: r.left, right: r.right }
+    }
+    return { view: measure('.home-view'), art: measure('.glu-box, .bottle-box, .ring-box, .character-box, .drops'), ring: measure('.progress-ring') }
+  })
   expect(view, 'manca lo spazio della vista').not.toBeNull()
   expect(art, "manca l'illustrazione").not.toBeNull()
-  expect(ring, "manca l'anello").not.toBeNull()
   expect(art!.top, "l'illustrazione esce sopra il suo spazio").toBeGreaterThanOrEqual(view!.top - 1)
   expect(art!.bottom, "l'illustrazione esce sotto il suo spazio").toBeLessThanOrEqual(view!.bottom + 1)
-  expect(ring!.top, "l'anello esce sopra il suo spazio").toBeGreaterThanOrEqual(view!.top - 1)
-  expect(ring!.bottom, "l'anello esce sotto il suo spazio").toBeLessThanOrEqual(view!.bottom + 1)
+  // Lo stile Anello è già un anello: lì non c'è quello del progresso.
+  if (ring) {
+    expect(ring.top, "l'anello esce sopra il suo spazio").toBeGreaterThanOrEqual(view!.top - 1)
+    expect(ring.bottom, "l'anello esce sotto il suo spazio").toBeLessThanOrEqual(view!.bottom + 1)
+  }
 
-  const order = ['.home-head', '.glu-bubble', '.progress-ring', '.home-stats', '.home-tiles', '.home-reminders', '.home-undos', '.drink-row']
+  const order = ['.home-head', '.glu-bubble', '.progress-ring, .ring-box', '.home-stats', '.home-tiles', '.home-reminders', '.home-undos', '.drink-row']
   let previous: { selector: string; bottom: number } | null = null
   for (const selector of order) {
     const b = await box(page, selector)
@@ -209,23 +218,46 @@ async function expectHomeInOrder(page: Page) {
   }
 }
 
+/** Con la tastiera (Tab) il controllo raggiunto non finisce sotto le azioni ancorate in basso (WCAG 2.4.11). */
+async function expectFocusNotCovered(page: Page, browserName: string) {
+  // Safari con Tab salta i pulsanti, e WebKit dei test non simula Opzione+Tab: si prova sui progetti Chromium
+  // (tra cui 320×640 al 130%); scroll-margin vale uguale in tutti i motori.
+  if (browserName === 'webkit') return
+  await page.locator('.shell-body').evaluate((el) => (el.scrollTop = 0))
+  await page.locator('.caffeine-tile').focus()
+  for (const selector of ['.workout-tile', '.home-reminders']) {
+    await page.keyboard.press('Tab')
+    await expect(page.locator(selector)).toBeFocused()
+    // Lo scorrimento dovuto al focus può essere animato: si misura quando si è fermato.
+    await expect
+      .poll(async () => {
+        const target = (await box(page, selector))!
+        const actions = (await box(page, '.home-actions'))!
+        return Math.round(target.bottom - actions.top)
+      }, { message: `${selector} finisce sotto le azioni` })
+      .toBeLessThanOrEqual(1)
+  }
+}
+
 const ALL_DAY = { active_split: true, active_start_min: 0, active_end_min: 1440 }
 
 test.describe('Oggi', () => {
-  test('così come si apre', async ({ page }) => {
+  test('così come si apre', async ({ page, browserName }) => {
     await openApp(page, '/home')
     await expect(page.getByRole('heading', { level: 1, name: 'Oggi' })).toBeVisible()
     await expect(page.getByRole('button', { name: "Annulla l'ultima" })).toHaveCount(0)
+    await expectFocusNotCovered(page, browserName)
     await expectHomeInOrder(page)
     await expectNoHorizontalScroll(page)
   })
 
-  test('con tutto acceso: fascia attiva, caldo, allenamento e «Annulla»', async ({ page }) => {
+  test('con tutto acceso: fascia attiva, caldo, allenamento e «Annulla»', async ({ page, browserName }) => {
     await openApp(page, '/home', { profile: ALL_DAY, boosts: { heat: 500, workout: 500 } })
     await page.getByRole('button', { name: /Ho bevuto/ }).click()
     await page.getByRole('button', { name: /^Caffè/ }).click()
     await expect(page.getByText(/per il caldo/)).toBeVisible()
     await expect(page.getByRole('button', { name: "Annulla l'ultima" })).toBeVisible()
+    await expectFocusNotCovered(page, browserName)
     await expectHomeInOrder(page)
     await expectNoHorizontalScroll(page)
   })

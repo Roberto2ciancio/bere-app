@@ -18,7 +18,7 @@ export const CHANGELOG: Release[] = [
     notes: [
       'Nuova schermata Oggi: Glu, una goccia d’acqua, sta al centro dentro l’anello che segna quanto hai bevuto, con litri, obiettivo e percentuale sotto.',
       'Glu si riempie d’acqua man mano che bevi e cambia espressione durante la giornata, dicendo la sua nel fumetto.',
-      '«Ho bevuto» e «+» sono in basso, a portata di pollice; caffè, allenamento e promemoria stanno in riquadri più ordinati.',
+      '«Ho bevuto» e «+» sono in basso, a portata di pollice; caffè e allenamento in due riquadri, i promemoria in una riga.',
       'Quando raggiungi l’obiettivo la festa sale dal basso, con i coriandoli (niente coriandoli con «riduci movimento»). Glu si sceglie, o si torna agli stili di prima, in Profilo › Aspetto.',
     ],
   },

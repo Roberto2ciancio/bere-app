@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
@@ -114,6 +114,14 @@ export function HomePage() {
   const [drankHere, setDrankHere] = useState(false)
   const [lastTotal, setLastTotal] = useState<number | null>(null)
   const caffeineId = useId()
+  // Altezza delle azioni ancorate: chi arriva col tastiera su un controllo non deve finirci sotto (scroll-margin).
+  const measureActions = useCallback((footer: HTMLElement | null) => {
+    const home = footer?.parentElement
+    if (!footer || !home || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => home.style.setProperty('--home-actions-h', `${Math.ceil(footer.getBoundingClientRect().height)}px`))
+    observer.observe(footer)
+    return () => observer.disconnect()
+  }, [])
 
   // Tiene aggiornati giorno e prossimo promemoria anche se l'app resta aperta o torna in primo piano.
   useEffect(() => {
@@ -255,9 +263,14 @@ export function HomePage() {
       <div className="home-view">
         {View ? (
           <div className="ring-slot">
-            <ProgressRing fill={fill}>
+            {/* Lo stile Anello è già un anello: non se ne mette un secondo attorno. */}
+            {style === 'ring' ? (
               <View totalMl={totalMl} goalMl={goalMl} drinkMl={drinkMl} pulse={pulse} />
-            </ProgressRing>
+            ) : (
+              <ProgressRing fill={fill}>
+                <View totalMl={totalMl} goalMl={goalMl} drinkMl={drinkMl} pulse={pulse} />
+              </ProgressRing>
+            )}
           </div>
         ) : (
           <GluView fill={fill} now={now.getTime()} mood={mood} name={profile.display_name.trim().split(/\s+/)[0] ?? ''} />
@@ -337,7 +350,7 @@ export function HomePage() {
 
       <div className="home-spacer" />
 
-      <footer className="home-actions">
+      <footer className="home-actions" ref={measureActions}>
         {shortcutNote && <p role="status" className="board-toast shortcut-note">{shortcutNote}</p>}
         {(pending || caffeine.pending) && <p className="hint" role="status">Salvata sul telefono: la invio appena torna la rete.</p>}
         {(canUndo || caffeine.canUndo) && (

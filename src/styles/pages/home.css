@@ -15,11 +15,12 @@
 .home-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .home-head h1 { font-size: 1.75rem; font-weight: 800; line-height: 1; }
 
-/* Centro: fumetto e anello. L'anello è grande quanto lo spazio che resta (cqh), tra un minimo e 264 px. */
-.home-view { flex: 2 1 auto; min-height: 0; display: flex; flex-direction: column; }
+/* Centro: fumetto e anello. L'anello è grande quanto lo spazio che resta (cqh), tra un minimo e 264 px;
+   il blocco non si stringe sotto il suo contenuto: con poco spazio scorre la pagina. */
+.home-view { flex: 2 0 auto; display: flex; flex-direction: column; }
 .glu-box { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .ring-slot { flex: 1 1 0; width: 100%; min-height: 168px; container-type: size; display: grid; place-items: center; }
-.progress-ring { position: relative; width: min(100cqw, 100cqh, 264px); aspect-ratio: 1; display: grid; place-items: center; }
+.progress-ring { position: relative; width: 240px; width: min(100cqw, 100cqh, 264px); aspect-ratio: 1; display: grid; place-items: center; }
 .progress-ring-svg { grid-area: 1 / 1; width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
 .progress-ring-track, .progress-ring-bar { fill: none; stroke-width: 3.5; }
 .progress-ring-track { stroke: var(--track); }
@@ -101,18 +102,22 @@
 /* Azioni ancorate in basso, sopra la barra: restano in vista mentre si scorre e in fondo alla pagina
    tornano al loro posto, così non coprono mai l'ultima riga. */
 .home-spacer { flex: 1 1 0; }
+/* Con la tastiera il controllo raggiunto si ferma sopra le azioni ancorate, non sotto (altezza misurata). */
+.home :is(a, button) { scroll-margin-bottom: calc(var(--home-actions-h, 140px) + 8px); }
+.home .home-actions :is(a, button) { scroll-margin-bottom: 0; }
 .home-actions {
   position: sticky;
   bottom: 0;
   z-index: 3;
   margin: 0 -20px;
-  padding: 12px 20px 16px;
+  padding: 20px 20px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   text-align: center;
-  background: linear-gradient(color-mix(in srgb, var(--bg) 0%, transparent), var(--bg) 12px);
+  /* La sfumatura in alto fa capire che sotto le azioni c'è altro da scorrere. */
+  background: linear-gradient(color-mix(in srgb, var(--bg) 0%, transparent), var(--bg) 20px);
 }
 .home-undos { display: flex; flex-wrap: wrap; justify-content: center; }
 .drink-row { --press: 5px; width: 100%; display: flex; gap: 10px; }
@@ -128,7 +133,7 @@
   .home-total-value { font-size: 2.5rem; }
   .home-total-goal { font-size: 1rem; }
   .home-tile { min-height: 48px; padding: 6px 12px; }
-  .home-actions { margin: 0 -16px; padding: 8px 16px 12px; }
+  .home-actions { margin: 0 -16px; padding: 18px 16px 12px; }
   .drink-row .drink { min-height: 56px; font-size: 1.125rem; }
   .drink-more { width: 56px; min-height: 56px; }
 }
@@ -187,7 +192,7 @@
 /* Stili alternativi al centro dell'anello: si adattano al riquadro del disegno (cqh). */
 
 /* Personaggi */
-.character-box { position: relative; height: min(100cqh, 280px); aspect-ratio: 1; }
+.character-box { position: relative; height: min(100%, 280px); height: min(100cqh, 280px); min-height: 110px; min-height: min(110px, 100cqh); aspect-ratio: 1; }
 .character-box.slosh { animation: slosh 0.7s var(--ease-out); }
 .character-box svg { width: 100%; height: 100%; }
 .character-body { fill: var(--surface); }
@@ -203,7 +208,7 @@
 .can-pattern path { fill: #ffffff; opacity: 0.16; }
 
 /* Bottiglia */
-.bottle-box { position: relative; height: min(100cqh, 300px); aspect-ratio: 104 / 220; }
+.bottle-box { position: relative; height: min(100%, 300px); height: min(100cqh, 300px); min-height: 110px; min-height: min(110px, 100cqh); aspect-ratio: 104 / 220; }
 .bottle-cap {
   position: absolute;
   top: 0;
@@ -245,7 +250,8 @@
 @keyframes rise { from { opacity: 0.85; transform: translateY(0); } to { opacity: 0; transform: translateY(-180px); } }
 
 /* Anello */
-.ring-box { position: relative; height: min(100cqh, 280px); aspect-ratio: 1; }
+/* Da solo al centro (senza l'anello del progresso) è grande quanto l'anello che sostituisce. */
+.ring-box { position: relative; height: 240px; height: min(100cqh, 100cqw, 264px); min-height: 110px; min-height: min(110px, 100cqh); aspect-ratio: 1; }
 .ring-box svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .ring-track, .ring-fill { fill: none; stroke-width: 14; }
 .ring-track { stroke: var(--line); }
@@ -265,10 +271,14 @@
 .drops {
   --row-gap: 8px;
   --col-gap: 6px;
-  --cell: min(34px, calc((100cqh - (var(--rows, 3) - 1) * var(--row-gap)) / var(--rows, 3)), calc((100cqw - 4 * var(--col-gap)) / 5));
+  --cell: 22px;
   display: grid;
   grid-template-columns: repeat(5, var(--cell));
   gap: var(--row-gap) var(--col-gap);
+}
+/* Le variabili non ricadono sul valore precedente: le unità cq solo dove ci sono. */
+@supports (width: 1cqh) {
+  .drops { --cell: min(34px, calc((100cqh - (var(--rows, 3) - 1) * var(--row-gap)) / var(--rows, 3)), calc((100cqw - 4 * var(--col-gap)) / 5)); }
 }
 .drop {
   width: calc(var(--cell, 34px) - 6px);

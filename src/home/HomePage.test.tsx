@@ -263,9 +263,20 @@ describe('HomePage «Oggi»', () => {
     expect(Math.round((dash / length) * 100)).toBe(percent)
   })
 
-  it('l’anello del progresso c’è anche con gli altri stili', async () => {
+  it.each([
+    ['bottle', 'bottle-view'],
+    ['drops', 'drops-view'],
+    ['cat', 'character-cat'],
+  ])('l’anello del progresso c’è anche con lo stile %s', async (style, testId) => {
+    seed(style)
     renderHome()
-    await screen.findByTestId('bottle-view')
-    expect(screen.getByTestId('bottle-view').closest('.progress-ring')).not.toBeNull()
+    expect((await screen.findByTestId(testId)).closest('.progress-ring')).not.toBeNull()
+  })
+
+  it('lo stile Anello non ha un secondo anello attorno', async () => {
+    seed('ring')
+    renderHome()
+    await screen.findByTestId('ring-view')
+    expect(screen.queryByTestId('progress-ring')).not.toBeInTheDocument()
   })
 })
