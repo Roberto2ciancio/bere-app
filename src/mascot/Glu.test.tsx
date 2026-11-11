@@ -12,7 +12,7 @@ function renderGlu(props: Parameters<typeof Glu>[0]) {
   )
 }
 
-const MOODS: GluMood[] = ['hello', 'idle', 'thirsty', 'drink', 'almost', 'goal', 'sad', 'sleep', 'levelup']
+const MOODS: GluMood[] = ['hello', 'idle', 'thirsty', 'drink', 'almost', 'goal', 'sad', 'sleep', 'levelup', 'coffee', 'workout']
 
 // Parti che solo quell'umore ha (o che lo distinguono dagli altri).
 const DISTINCTIVE: Record<GluMood, string[]> = {
@@ -25,13 +25,44 @@ const DISTINCTIVE: Record<GluMood, string[]> = {
   sad: ['.glu-brow', '.glu-eye-open', '.glu-mouth-sad'],
   sleep: ['.glu-zzz', '.glu-eye-sleep', '.glu-mouth-calm'],
   levelup: ['.glu-sparkle', '.glu-eye-happy', '.glu-mouth-grin'],
-  coffee: ['.glu-eye-open', '.glu-mouth-smile'],
-  workout: ['.glu-eye-open', '.glu-mouth-smile'],
+  coffee: ['.glu-eye-wide', '.glu-mouth-surprised'],
+  workout: ['.glu-eye-effort', '.glu-mouth-effort', '.glu-sweat-drops'],
 }
 
-const EXTRAS = ['.glu-sweat', '.glu-bubbles', '.glu-zzz', '.glu-sparkle', '.glu-brow', '.glu-arm-waving']
+const EXTRAS = [
+  '.glu-sweat',
+  '.glu-bubbles',
+  '.glu-zzz',
+  '.glu-sparkle',
+  '.glu-brow',
+  '.glu-arm-waving',
+  '.glu-sweat-drops',
+  '.glu-headband',
+  '.glu-crown',
+  '.glu-cape',
+  '.glu-fan',
+]
 
 const svg = () => screen.getByTestId('glu')
+
+function reduceMotion() {
+  vi.spyOn(window, 'matchMedia').mockImplementation(
+    (q: string) => ({ matches: q.includes('reduce'), media: q, addEventListener() {}, removeEventListener() {} }) as unknown as MediaQueryList,
+  )
+}
+
+// Scala verticale dell'afflosciamento (1 se non c'è).
+function droopScale(): number {
+  const t = svg().querySelector('.glu-droop')?.getAttribute('transform') ?? ''
+  const match = /scale\(1 ([\d.]+)\)/.exec(t)
+  return match ? Number(match[1]) : 1
+}
+
+function waterRotation(): number {
+  const t = svg().querySelector('.glu-tilt')?.getAttribute('transform') ?? ''
+  const match = /rotate\((-?[\d.]+) 100 105\)/.exec(t)
+  return match ? Number(match[1]) : 0
+}
 
 // Il livello dell'acqua è il primo numero dopo «M0» nel tracciato dell'onda.
 function waveY(): number {
@@ -137,9 +168,7 @@ describe('Glu', () => {
   })
 
   it('con «Riduci movimento» non parte nessun timer', () => {
-    vi.spyOn(window, 'matchMedia').mockImplementation(
-      (q: string) => ({ matches: q.includes('reduce'), media: q, addEventListener() {}, removeEventListener() {} }) as unknown as MediaQueryList,
-    )
+    reduceMotion()
     const timeout = vi.spyOn(window, 'setTimeout')
     const interval = vi.spyOn(window, 'setInterval')
     const { unmount } = renderGlu({ mood: 'hello', fill: 0.5 })
@@ -157,5 +186,95 @@ describe('Glu', () => {
     act(() => vi.advanceTimersByTime(7000))
     unmount()
     expect(clear.mock.calls.length + clearInt.mock.calls.length).toBeGreaterThan(0)
+  })
+})
+
+describe('Glu: extras delle reazioni', () => {
+  it('senza extras Glu non cambia: niente accessori, corpo dritto, acqua orizzontale', () => {
+    renderGlu({ mood: 'idle', fill: 0.5, extras: {} })
+    expect(droopScale()).toBe(1)
+    expect(waterRotation()).toBe(0)
+    expect(svg().querySelector('.glu-body')?.getAttribute('style') ?? '').not.toContain('color-mix')
+    expect(svg().querySelectorAll('.glu-eye-droopy')).toHaveLength(0)
+  })
+
+  it('sete 1: corpo afflosciato (scala Y ≤ 0,92) e colore diverso da --glu-body', () => {
+    renderGlu({ mood: 'thirsty', fill: 0.3, extras: { thirst: 1 } })
+    expect(droopScale()).toBeLessThanOrEqual(0.92)
+    const style = svg().querySelector('.glu-body')?.getAttribute('style') ?? ''
+    expect(style).toMatch(/fill: color-mix\(/)
+  })
+
+  it('sete a metà: afflosciato a metà, palpebre che scendono', () => {
+    renderGlu({ mood: 'idle', fill: 0.3, extras: { thirst: 0.5 } })
+    expect(droopScale()).toBeCloseTo(0.96, 2)
+    expect(svg().querySelectorAll('.glu-eye-droopy')).toHaveLength(2)
+  })
+
+  it('sete fuori scala viene limitata', () => {
+    renderGlu({ mood: 'idle', fill: 0.3, extras: { thirst: 4 } })
+    expect(droopScale()).toBeCloseTo(0.92, 2)
+  })
+
+  it.each([
+    [7, ['.glu-crown'], ['.glu-crown-gem', '.glu-cape']],
+    [14, ['.glu-crown', '.glu-crown-gem'], ['.glu-cape']],
+    [30, ['.glu-crown', '.glu-crown-gem', '.glu-cape'], []],
+    [0, [], ['.glu-crown', '.glu-crown-gem', '.glu-cape']],
+  ] as const)('corona %s', (crown, present, absent) => {
+    renderGlu({ mood: 'idle', fill: 0.5, extras: { crown } })
+    for (const part of present) expect(svg().querySelector(part), part).not.toBeNull()
+    for (const part of absent) expect(svg().querySelector(part), part).toBeNull()
+  })
+
+  it('fascia, gocce e ventaglio', () => {
+    renderGlu({ mood: 'thirsty', fill: 0.5, extras: { headband: true, sweat: true, fan: true } })
+    expect(svg().querySelector('.glu-headband')).not.toBeNull()
+    expect(svg().querySelector('.glu-sweat-drops')).not.toBeNull()
+    expect(svg().querySelector('.glu-fan')).not.toBeNull()
+  })
+
+  it.each([
+    [20, -20],
+    [-20, 20],
+    [40, -25],
+    [-40, 25],
+  ])('tilt %s ruota solo l’acqua di %s°', (tilt, deg) => {
+    renderGlu({ mood: 'idle', fill: 0.5, extras: { tilt } })
+    expect(waterRotation()).toBe(deg)
+    // L'acqua ruota dentro la sagoma: il gruppo inclinato sta sotto il clip, il corpo no.
+    const tilted = svg().querySelector('.glu-tilt')
+    expect(tilted?.closest('[clip-path]')).not.toBeNull()
+    expect(tilted?.querySelector('.glu-water')).not.toBeNull()
+    expect(tilted?.querySelector('.glu-body')).toBeNull()
+  })
+
+  it('tremarella, sventolata e gocce si animano senza «Riduci movimento»', () => {
+    renderGlu({ mood: 'workout', fill: 0.5, extras: { jitter: true, fan: true, sweat: true } })
+    expect(svg().querySelector('.glu-jitter')).not.toBeNull()
+    expect(svg().querySelector('.glu-fan-waving')).not.toBeNull()
+    expect(svg().querySelector('.glu-sweat-drops-falling')).not.toBeNull()
+  })
+
+  it('con «Riduci movimento» nessuna animazione ripetuta, ma l’aspetto resta', () => {
+    reduceMotion()
+    renderGlu({ mood: 'workout', fill: 0.5, extras: { jitter: true, fan: true, sweat: true, crown: 30, crownDrop: true, thirst: 1 } })
+    expect(svg().querySelector('.glu-jitter')).toBeNull()
+    expect(svg().querySelector('.glu-fan-waving')).toBeNull()
+    expect(svg().querySelector('.glu-sweat-drops-falling')).toBeNull()
+    for (const part of ['.glu-fan', '.glu-sweat-drops', '.glu-crown', '.glu-cape']) {
+      expect(svg().querySelector(part), part).not.toBeNull()
+    }
+    // La corona è già in testa, senza caduta.
+    expect(svg().querySelector('.glu-crown-drop')).toBeNull()
+    expect(droopScale()).toBeLessThanOrEqual(0.92)
+  })
+
+  it('la corona cade solo con crownDrop', () => {
+    const { unmount } = renderGlu({ mood: 'idle', fill: 0.5, extras: { crown: 7, crownDrop: true } })
+    expect(svg().querySelector('.glu-crown-drop')).not.toBeNull()
+    unmount()
+    renderGlu({ mood: 'idle', fill: 0.5, extras: { crown: 7 } })
+    expect(svg().querySelector('.glu-crown-drop')).toBeNull()
   })
 })

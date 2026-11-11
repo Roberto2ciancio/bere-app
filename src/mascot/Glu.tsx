@@ -2,12 +2,26 @@ import { m, useSpring, useTransform, type Transition } from 'motion/react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { prefersReducedMotion } from '../ui/motion/effects'
 import type { GluMood } from './mood'
+import type { CrownTier } from './reactions'
+
+/** Reazioni che si sommano all'umore: sete (0..1), accessori, inclinazione dell'acqua in gradi. */
+export interface GluExtras {
+  thirst?: number
+  jitter?: boolean
+  headband?: boolean
+  sweat?: boolean
+  crown?: CrownTier
+  crownDrop?: boolean
+  fan?: boolean
+  tilt?: number
+}
 
 export interface GluProps {
   mood: GluMood
   fill: number
   size?: number
   onTap?: () => void
+  extras?: GluExtras
 }
 
 // Forme della «bolla» (docs/superpowers/specs/glu-proposta/03-glu-svg): niente contorni, tutto si riempie d'acqua.
@@ -16,14 +30,36 @@ const TUFT = 'M96 36C88 14 104 2 118 12c-9 2-11 11-7 22z'
 const SWEAT = 'M160 52c6 8 8 12 8 16a8 8 0 0 1-16 0c0-4 2-8 8-16z'
 const SPARKLE = 'M0 -9 Q1.4 -1.4 9 0 Q1.4 1.4 0 9 Q-1.4 1.4 -9 0 Q-1.4 -1.4 0 -9 Z'
 const ZED = 'M-5 -5.5 H5 L-5 5.5 H5'
+const DROP = 'M0 -9c5 7 7 10 7 13a7 7 0 0 1-14 0c0-3 2-6 7-13z'
+const CROWN = 'M79 34L76 14l12 9 12-13 12 13 12-9-3 20z'
+// Mantellina dietro il corpo: si vede solo ai lati, sotto le braccia.
+const CAPE = 'M64 60Q34 104 20 164q20 10 40 2 20 8 40 0 20 8 40 0 20 8 40-2Q166 104 136 60z'
+// Ventaglio di carta aperto verso il viso, col manico nell'origine (la mano sinistra alzata).
+const FAN = 'M0 0L-15.4-18.4A24 24 0 0 1 23.6-4.2z'
+const FAN_PLEATS = 'M0 0L-5.4-23.4M0 0L5.6-23.3M0 0L15.4-18.4'
+const SWEAT_DROPS: [number, number, number][] = [
+  [152, 34, 0.8],
+  [46, 42, 0.65],
+]
+
+// Sete: Glu si abbassa fino a -8% (dai piedi) e il corpo sbiadisce verso un azzurro grigio.
+const DROOP = 0.08
+const FEET_Y = 192
+const DULL = '#98abb8'
+const DULL_MAX = 55
+// Inclinazione: l'acqua ruota attorno al centro del corpo, al massimo di 25 gradi.
+const TILT_MAX = 25
 
 // Livello: y = 186 a corpo vuoto, 16 a corpo pieno; all'obiettivo sale a -10 e riempie anche il ciuffo.
 const WATER_EMPTY = 186
 const WATER_SPAN = 170
 const WATER_BRIM = -10
 
-// Onda larga 250: scorrendo di 50 (un'onda) a sinistra copre sempre tutto il corpo.
-const wavePath = (y: number) => `M0 ${y}q25-9 50 0t50 0 50 0 50 0 50 0V200H0z`
+// Onda larga 400 e alta fin sotto i piedi, spostata di 100 a sinistra: anche inclinata di 25° e scorrendo di 50
+// (un'onda) copre sempre tutto il corpo.
+const wavePath = (y: number) => `M0 ${y}q25-9 50 0t50 0 50 0 50 0 50 0 50 0 50 0 50 0V320H0z`
+const clamp01 = (n: number | undefined) => (n === undefined || Number.isNaN(n) ? 0 : Math.min(1, Math.max(0, n)))
+const round = (n: number, digits = 2) => Math.round(n * 10 ** digits) / 10 ** digits
 
 // Braccio: lift 0 = abbassato lungo il fianco, 1 = alzato come nei disegni.
 // swing (gradi) lo fa ruotare attorno alla spalla, l'estremo attaccato al corpo: serve al saluto.
@@ -49,7 +85,7 @@ function armPath(side: 'left' | 'right', lift: number, swing = 0): string {
   return `M${p1}A10 19 ${r(deg)} 1 1 ${p2}A10 19 ${r(deg)} 1 1 ${p1}Z`
 }
 
-type Eye = 'open' | 'happy' | 'sleep'
+type Eye = 'open' | 'happy' | 'sleep' | 'wide' | 'effort'
 const EYES: Record<GluMood, [Eye, Eye]> = {
   thirsty: ['open', 'open'],
   idle: ['open', 'open'],
@@ -60,8 +96,8 @@ const EYES: Record<GluMood, [Eye, Eye]> = {
   goal: ['happy', 'happy'],
   levelup: ['happy', 'happy'],
   sleep: ['sleep', 'sleep'],
-  coffee: ['open', 'open'], // aspetto provvisorio come idle, nuovo in G3
-  workout: ['open', 'open'],
+  coffee: ['wide', 'wide'],
+  workout: ['effort', 'effort'],
 }
 
 // [sinistro, destro]
@@ -75,8 +111,8 @@ const LIFT: Record<GluMood, [number, number]> = {
   drink: [1, 1],
   goal: [1, 1],
   levelup: [1, 1],
-  coffee: [0, 1],
-  workout: [0, 1],
+  coffee: [0.5, 0.5],
+  workout: [1, 1],
 }
 
 type Mouth = { kind: 'line' | 'fill'; name: string; d: string }
@@ -91,8 +127,8 @@ const MOUTH: Record<Exclude<GluMood, 'drink'>, Mouth> = {
   levelup: GRIN,
   sad: { kind: 'line', name: 'sad', d: 'M89 131q11-9 22 0' },
   sleep: { kind: 'line', name: 'calm', d: 'M94 126q6 4 12 0' },
-  coffee: SMILE,
-  workout: SMILE,
+  coffee: { kind: 'fill', name: 'surprised', d: 'M96 128a4 5 0 1 0 8 0a4 5 0 1 0-8 0z' },
+  workout: { kind: 'fill', name: 'effort', d: 'M87 121h26q-2 12-13 12t-13-12z' },
 }
 
 type Move = Record<string, number | number[]>
@@ -107,12 +143,16 @@ const breathe = (depth: number, duration: number) => ({
 const POSE: Record<GluMood, { move: Move; transition: Transition }> = {
   idle: breathe(0.025, 3.2),
   hello: breathe(0.025, 3.2),
-  coffee: breathe(0.025, 3.2),
-  workout: breathe(0.025, 3.2),
+  coffee: breathe(0.02, 2.2),
   almost: breathe(0.03, 2.6),
   thirsty: breathe(0.02, 3.6),
   sad: breathe(0.015, 4),
-  sleep: breathe(0.035, 4.5),
+  sleep: breathe(0.035, 6),
+  // Due saltelli, poi una pausa.
+  workout: {
+    move: { ...STILL, y: [0, -12, 0, -12, 0], scaleY: [1, 1.04, 0.94, 1.04, 1], scaleX: [1, 0.98, 1.04, 0.98, 1] },
+    transition: loop(1.1, { repeatDelay: 0.9 }),
+  },
   drink: {
     move: { ...STILL, y: [0, -18, 0, 0], scaleY: [0.9, 1.06, 0.92, 1], scaleX: [1.06, 0.96, 1.05, 1] },
     transition: { duration: 0.6, times: [0, 0.4, 0.75, 1], ease: 'easeOut' },
@@ -141,7 +181,7 @@ const SPARKLES: [number, number, number][] = [
   [190, 150, 1],
 ]
 
-export function Glu({ mood, fill, size = 160, onTap }: GluProps) {
+export function Glu({ mood, fill, size = 160, onTap, extras = {} }: GluProps) {
   const clip = useId()
   const [reduced] = useState(prefersReducedMotion)
   const [blink, setBlink] = useState(false)
@@ -151,21 +191,30 @@ export function Glu({ mood, fill, size = 160, onTap }: GluProps) {
   const level = Number.isNaN(fill) ? 0 : Math.min(1, Math.max(0, fill))
   const waterY = level >= 1 ? WATER_BRIM : Math.round((WATER_EMPTY - WATER_SPAN * level) * 100) / 100
 
-  // Braccia: una molla per lato; il saluto la fa oscillare.
-  const leftLift = useSpring(LIFT[mood][0], ARM_SPRING)
-  const rightLift = useSpring(LIFT[mood][1], ARM_SPRING)
+  const thirst = clamp01(extras.thirst)
+  const droop = round(1 - DROOP * thirst, 3)
+  const bodyStyle = thirst > 0 ? { fill: `color-mix(in srgb, var(--glu-body, #cfebfb), ${DULL} ${Math.round(DULL_MAX * thirst)}%)` } : undefined
+  const rawTilt = extras.tilt === undefined || Number.isNaN(extras.tilt) ? 0 : extras.tilt
+  const tilt = round(-Math.min(TILT_MAX, Math.max(-TILT_MAX, rawTilt))) || 0
+  const sweat = extras.sweat || mood === 'workout'
+  const crown = extras.crown ?? 0
+
+  // Braccia: una molla per lato; il saluto la fa oscillare. Col ventaglio il braccio sinistro resta alzato.
+  const leftTarget = extras.fan ? 1 : LIFT[mood][0]
+  const rightTarget = LIFT[mood][1]
+  const leftLift = useSpring(leftTarget, ARM_SPRING)
+  const rightLift = useSpring(rightTarget, ARM_SPRING)
   const leftArm = useTransform(leftLift, (l) => armPath('left', l))
   const swing = useSpring(0, ARM_SPRING)
   const rightArm = useTransform(() => armPath('right', rightLift.get(), swing.get()))
   useEffect(() => {
-    const [l, r] = LIFT[mood]
     if (reduced) {
-      leftLift.jump(l)
-      rightLift.jump(r)
+      leftLift.jump(leftTarget)
+      rightLift.jump(rightTarget)
       return
     }
-    leftLift.set(l)
-    rightLift.set(r)
+    leftLift.set(leftTarget)
+    rightLift.set(rightTarget)
     if (mood !== 'hello') return
     let up = false
     const timer = window.setInterval(() => {
@@ -176,11 +225,11 @@ export function Glu({ mood, fill, size = 160, onTap }: GluProps) {
       window.clearInterval(timer)
       swing.set(0)
     }
-  }, [mood, reduced, leftLift, rightLift, swing])
+  }, [mood, leftTarget, rightTarget, reduced, leftLift, rightLift, swing])
 
   // Sbatte le palpebre a intervalli casuali (3-6 s), mai con «Riduci movimento».
   const eyes = EYES[mood]
-  const canBlink = !reduced && eyes.includes('open')
+  const canBlink = !reduced && (eyes.includes('open') || eyes.includes('wide'))
   useEffect(() => {
     if (!canBlink) return
     let timer = 0
@@ -221,20 +270,64 @@ export function Glu({ mood, fill, size = 160, onTap }: GluProps) {
     if (kind === 'sleep') {
       return <path key={cx} className="glu-eye glu-eye-sleep glu-line" d={`M${cx - 10} 104q10 9 20 0`} />
     }
+    if (kind === 'effort') {
+      // «> <»: occhi strizzati dallo sforzo.
+      const d = cx < 100 ? `M${cx - 8} 97l14 7-14 7` : `M${cx + 8} 97l-14 7 14 7`
+      return <path key={cx} className="glu-eye glu-eye-effort glu-line" d={d} />
+    }
+    let shape
+    if (kind === 'wide') {
+      shape = (
+        <>
+          <ellipse className="glu-ink" cx={cx} cy="102" rx="11" ry="14" />
+          <circle className="glu-eye-shine" cx={cx + 4} cy="96" r="4" />
+          <circle className="glu-eye-shine" cx={cx - 4} cy="108" r="1.8" />
+        </>
+      )
+    } else if (thirst > 0) {
+      // Palpebra che scende con la sete: l'occhio perde la parte alta, fino a quasi metà.
+      const lid = round(92 + 24 * 0.45 * thirst)
+      const w = round(9 * Math.sqrt(1 - ((lid - 104) / 12) ** 2))
+      shape = (
+        <>
+          <path className="glu-ink" d={`M${round(cx - w)} ${lid}A9 12 0 1 0 ${round(cx + w)} ${lid}z`} />
+          <path className="glu-lid glu-line" d={`M${round(cx - w - 2)} ${lid}h${round(2 * w + 4)}`} />
+          <circle className="glu-eye-shine" cx={cx + 3} cy={Math.max(99, lid + 4)} r="3" />
+        </>
+      )
+    } else {
+      shape = (
+        <>
+          <ellipse className="glu-ink" cx={cx} cy="104" rx="9" ry="12" />
+          <circle className="glu-eye-shine" cx={cx + 3} cy="99" r="3.2" />
+        </>
+      )
+    }
+    const cls = kind === 'wide' ? 'glu-eye glu-eye-wide' : thirst > 0 ? 'glu-eye glu-eye-open glu-eye-droopy' : 'glu-eye glu-eye-open'
     return (
       <m.g
         key={cx}
-        className="glu-eye glu-eye-open"
+        className={cls}
         style={{ originX: 0.5, originY: 0.5 }}
         initial={false}
         animate={{ scaleY: blink ? 0.1 : 1 }}
         transition={{ duration: 0.07 }}
       >
-        <ellipse className="glu-ink" cx={cx} cy="104" rx="9" ry="12" />
-        <circle className="glu-eye-shine" cx={cx + 3} cy="99" r="3.2" />
+        {shape}
       </m.g>
     )
   }
+
+  const crownShape = crown > 0 && (
+    <g className="glu-crown">
+      <path className="glu-crown-gold" d={CROWN} />
+      <path className="glu-crown-band" d="M78.6 29h42.8l-.6 5H79.2z" />
+      {[76, 100, 124].map((x, i) => (
+        <circle key={x} className="glu-crown-gold" cx={x} cy={i === 1 ? 10 : 14} r="3" />
+      ))}
+      {crown >= 14 && <path className="glu-crown-gem" d="M100 17l4.5 5.5-4.5 5.5-4.5-5.5z" />}
+    </g>
+  )
 
   const mouth = () => {
     if (mood === 'drink') {
@@ -286,41 +379,88 @@ export function Glu({ mood, fill, size = 160, onTap }: GluProps) {
         animate={taps === 0 ? 'rest' : taps % 2 ? 'hopA' : 'hopB'}
         transition={reduced ? instant : { duration: 0.4, ease: 'easeOut' }}
       >
-        <m.g
-          className="glu-pose"
-          style={{ originX: 0.5, originY: 1 }}
-          initial={false}
-          animate={reduced ? STILL : pose.move}
-          transition={reduced ? instant : pose.transition}
-        >
-          <g clipPath={`url(#${clip})`}>
-            <rect className="glu-body" width="200" height="200" />
-            <g className="glu-wave">
-              <m.path
-                className="glu-water"
-                initial={false}
-                animate={{ d: wavePath(waterY) }}
-                transition={reduced ? instant : { duration: 0.9, ease: 'easeOut' }}
-              />
-            </g>
-            <ellipse className="glu-highlight" cx="62" cy="70" rx="9" ry="20" transform="rotate(28 62 70)" />
-          </g>
-
-          {eye(eyes[0], 74)}
-          {eye(eyes[1], 126)}
-          {(mood === 'thirsty' || mood === 'sad') && <path className="glu-brow glu-line" d="M62 88l20-6M118 82l20 6" />}
-          {mouth()}
-
-          {mood === 'thirsty' && (
-            <m.path
-              className="glu-sweat"
-              d={SWEAT}
+        <g className="glu-droop" transform={droop < 1 ? `translate(0 ${round(FEET_Y * (1 - droop))}) scale(1 ${droop})` : undefined}>
+          <g className={extras.jitter && !reduced ? 'glu-jitter' : undefined}>
+            <m.g
+              className="glu-pose"
+              style={{ originX: 0.5, originY: 1 }}
               initial={false}
-              animate={reduced ? { y: 0, opacity: 1 } : { y: [0, 0, 8], opacity: [1, 1, 0] }}
-              transition={reduced ? instant : loop(2.2, { times: [0, 0.6, 1], ease: 'easeIn', repeatDelay: 0.4 })}
-            />
-          )}
-        </m.g>
+              animate={reduced ? STILL : pose.move}
+              transition={reduced ? instant : pose.transition}
+            >
+              {crown >= 30 && <path className="glu-cape" d={CAPE} />}
+              <g clipPath={`url(#${clip})`}>
+                <rect className="glu-body" width="200" height="200" style={bodyStyle} />
+                <g className="glu-tilt" transform={tilt ? `rotate(${tilt} 100 105)` : undefined}>
+                  <g transform="translate(-100 0)">
+                    <g className="glu-wave">
+                      <m.path
+                        className="glu-water"
+                        initial={false}
+                        animate={{ d: wavePath(waterY) }}
+                        transition={reduced ? instant : { duration: 0.9, ease: 'easeOut' }}
+                      />
+                    </g>
+                  </g>
+                </g>
+                <ellipse className="glu-highlight" cx="62" cy="70" rx="9" ry="20" transform="rotate(28 62 70)" />
+              </g>
+              {extras.headband && (
+                <g className="glu-headband">
+                  <path d="M37 77Q100 88 163 77" />
+                  <path className="glu-headband-knot" d="M38 78q-9 3-12 11M38 78q-11-2-15 4" />
+                </g>
+              )}
+
+              {eye(eyes[0], 74)}
+              {eye(eyes[1], 126)}
+              {(mood === 'thirsty' || mood === 'sad') && <path className="glu-brow glu-line" d="M62 88l20-6M118 82l20 6" />}
+              {mouth()}
+
+              {mood === 'thirsty' && (
+                <m.path
+                  className="glu-sweat"
+                  d={SWEAT}
+                  initial={false}
+                  animate={reduced ? { y: 0, opacity: 1 } : { y: [0, 0, 8], opacity: [1, 1, 0] }}
+                  transition={reduced ? instant : loop(2.2, { times: [0, 0.6, 1], ease: 'easeIn', repeatDelay: 0.4 })}
+                />
+              )}
+              {sweat && (
+                <g className={reduced ? 'glu-sweat-drops' : 'glu-sweat-drops glu-sweat-drops-falling'}>
+                  {SWEAT_DROPS.map(([x, y, s]) => (
+                    <g key={x} transform={`translate(${x} ${y}) scale(${s})`}>
+                      <path d={DROP} />
+                    </g>
+                  ))}
+                </g>
+              )}
+              {extras.fan && (
+                <g transform="translate(13 72) scale(1.2)">
+                  <g className={reduced ? 'glu-fan' : 'glu-fan glu-fan-waving'}>
+                    <path className="glu-fan-handle" d="M0 0l-3 7" />
+                    <path className="glu-fan-paper" d={FAN} />
+                    <path className="glu-fan-pleats" d={FAN_PLEATS} />
+                  </g>
+                </g>
+              )}
+              {crownShape &&
+                (extras.crownDrop && !reduced ? (
+                  // Cade dall'alto e rimbalza una volta, poi resta in testa.
+                  <m.g
+                    className="glu-crown-drop"
+                    initial={{ y: -80, opacity: 0 }}
+                    animate={{ y: [-80, 0, -10, 0], opacity: [0, 1, 1, 1] }}
+                    transition={{ duration: 0.8, times: [0, 0.5, 0.75, 1], ease: 'easeOut' }}
+                  >
+                    {crownShape}
+                  </m.g>
+                ) : (
+                  crownShape
+                ))}
+            </m.g>
+          </g>
+        </g>
       </m.g>
 
       {mood === 'drink' && (

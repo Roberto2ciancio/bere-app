@@ -63,6 +63,37 @@
 /* L'onda scorre di una lunghezza d'onda e ricomincia: il giro non si vede. */
 @keyframes glu-wave { to { transform: translateX(-50px); } }
 
+/* Reazioni: accessori e scenette, stessa bolla senza contorni. */
+.glu-lid { stroke-width: 3.5; }
+.glu-eye-effort { stroke-width: 4.5; stroke-linejoin: round; }
+.glu-mouth-surprised { stroke-width: 3; }
+.glu-sweat-drops path { fill: var(--glu-water, #19a0e8); stroke: #fff; stroke-width: 3; paint-order: stroke; }
+.glu-headband path { fill: none; stroke: #ff8a3d; stroke-width: 9; stroke-linecap: round; }
+.glu-headband .glu-headband-knot { stroke-width: 5; }
+.glu-crown-gold { fill: #ffc21a; stroke: #ffc21a; stroke-width: 3; stroke-linejoin: round; }
+.glu-crown-band { fill: #f2a50c; }
+.glu-crown-gem { fill: #e8466b; }
+.glu-cape { fill: #7cc4ef; }
+.glu-fan-paper { fill: #ffe1a8; }
+.glu-fan-pleats { fill: none; stroke: #f0a640; stroke-width: 2; stroke-linecap: round; }
+.glu-fan-handle { fill: none; stroke: #c97a2b; stroke-width: 4; stroke-linecap: round; }
+/* Le animazioni ripetute ruotano o spostano attorno all'origine del gruppo (la mano, il punto della goccia). */
+.glu-jitter { animation: glu-jitter 0.2s linear infinite; }
+.glu-fan-waving { animation: glu-fan 0.45s ease-in-out infinite alternate; }
+.glu-sweat-drops-falling path { animation: glu-drop 1.4s ease-in infinite; }
+.glu-sweat-drops-falling g + g path { animation-delay: 0.7s; }
+@keyframes glu-jitter {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-1.5px, 0.5px); }
+  50% { transform: translate(1.5px, -0.5px); }
+  75% { transform: translate(-1px, 0); }
+}
+@keyframes glu-fan { from { transform: rotate(-12deg); } to { transform: rotate(18deg); } }
+@keyframes glu-drop {
+  0%, 30% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(12px); opacity: 0; }
+}
+
 /* Glu in cima a Storico, Classifica e Profilo: piccolo, a sinistra, col fumetto accanto. */
 .glu-corner { display: flex; align-items: center; gap: 14px; }
 .glu-corner .glu { flex: none; width: 64px; height: auto; }
