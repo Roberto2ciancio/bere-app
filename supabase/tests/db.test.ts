@@ -12,6 +12,7 @@ const TODAY_ROME = `(now() at time zone 'Europe/Rome')::date`
 
 let db: PGlite
 let preMigration: { id: string; home_style: string }[] = []
+let pre24: { id: string; home_style: string }[] = []
 
 const STUBS = `
   create role anon nologin;
@@ -75,6 +76,10 @@ beforeAll(async () => {
   }
   await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0023_glu.sql'), 'utf8'))
   preMigration = (await db.query<{ id: string; home_style: string }>(`select id, home_style from profiles`)).rows
+  // Prima della 0024: un profilo con uno stile qualsiasi e uno con 'ring'.
+  await db.query(`update profiles set home_style = 'cat' where id = $1`, [A])
+  pre24 = (await db.query<{ id: string; home_style: string }>(`select id, home_style from profiles`)).rows
+  await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0024_only_glu.sql'), 'utf8'))
 }, 60_000)
 
 beforeEach(async () => {
@@ -333,11 +338,6 @@ describe('spronare un amico', () => {
 })
 
 describe('profilo esteso', () => {
-  it('accetta i nuovi personaggi e rifiuta quelli inesistenti', async () => {
-    await db.query(`update profiles set home_style = 'cat' where id = $1`, [A])
-    await db.query(`update profiles set home_style = 'can' where id = $1`, [A])
-    await expect(db.query(`update profiles set home_style = 'drago' where id = $1`, [A])).rejects.toThrow(/check/)
-  })
   it('rifiuta un peso impossibile', async () => {
     await expect(db.query(`update profiles set weight_kg = 5 where id = $1`, [A])).rejects.toThrow(/check/)
   })
@@ -1089,5 +1089,15 @@ describe('migrazione 0023: Glu', () => {
     expect(def).toContain("'glu'")
     expect(preMigration.find((r) => r.id === A)?.home_style).toBe('glu')
     expect(preMigration.find((r) => r.id === B)?.home_style).toBe('ring')
+  })
+})
+
+describe('solo Glu (0024)', () => {
+  it('porta tutti i profili a glu e rifiuta ogni altro stile', async () => {
+    expect(pre24.map((r) => r.home_style).sort()).toEqual(['cat', 'ring'])
+    expect((await db.query<{ home_style: string }>(`select home_style from profiles`)).rows.every((r) => r.home_style === 'glu')).toBe(true)
+    await expect(db.query(`update profiles set home_style = 'cat' where id = $1`, [A])).rejects.toThrow(/check/)
+    await expect(db.query(`update profiles set home_style = 'bottle' where id = $1`, [B])).rejects.toThrow(/check/)
+    await db.query(`update profiles set home_style = 'glu' where id = $1`, [A])
   })
 })

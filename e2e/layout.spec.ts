@@ -188,7 +188,7 @@ async function expectHomeInOrder(page: Page) {
       const r = el.getBoundingClientRect()
       return { top: r.top, bottom: r.bottom, left: r.left, right: r.right }
     }
-    return { view: measure('.home-view'), art: measure('.glu-box, .bottle-box, .ring-box, .character-box, .drops'), ring: measure('.progress-ring') }
+    return { view: measure('.home-view'), art: measure('.glu-box'), ring: measure('.progress-ring') }
   })
   expect(view, 'manca lo spazio della vista').not.toBeNull()
   expect(art, "manca l'illustrazione").not.toBeNull()
@@ -200,7 +200,7 @@ async function expectHomeInOrder(page: Page) {
     expect(ring.bottom, "l'anello esce sotto il suo spazio").toBeLessThanOrEqual(view!.bottom + 1)
   }
 
-  const order = ['.home-head', '.glu-bubble', '.progress-ring, .ring-box', '.home-stats', '.home-tiles', '.home-reminders', '.home-undos', '.drink-row']
+  const order = ['.home-head', '.glu-bubble', '.progress-ring', '.home-stats', '.home-tiles', '.home-reminders', '.home-undos', '.drink-row']
   let previous: { selector: string; bottom: number } | null = null
   for (const selector of order) {
     const b = await box(page, selector)
@@ -264,14 +264,6 @@ test.describe('Oggi', () => {
     await expectHomeInOrder(page)
     await expectNoHorizontalScroll(page)
   })
-
-  for (const style of ['bottle', 'ring', 'character', 'drops']) {
-    test(`stile ${style} con la fascia attiva`, async ({ page }) => {
-      await openApp(page, '/home', { profile: { ...ALL_DAY, home_style: style } })
-      await expectHomeInOrder(page)
-      await expectNoHorizontalScroll(page)
-    })
-  }
 })
 
 test('la festa dell’obiettivo sta nello schermo', async ({ page }) => {

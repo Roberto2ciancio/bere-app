@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { useProfile, type HomeStyle } from '../auth/ProfileProvider'
+import { useProfile } from '../auth/ProfileProvider'
 import { Avatar } from '../avatars/Avatar'
 import { AvatarPicker } from '../avatars/AvatarPicker'
 import type { Units } from '../domain/hydration'
@@ -9,16 +9,6 @@ import { currentDeviceSettingsName } from '../lib/platform'
 import { removeImage, removeUploadedAvatar } from './imageUpload'
 import { useImageReplace } from './useImageReplace'
 
-const STYLES: { id: HomeStyle; label: string }[] = [
-  { id: 'glu', label: 'Glu' },
-  { id: 'bottle', label: 'Bottiglia' },
-  { id: 'ring', label: 'Anello' },
-  { id: 'drops', label: 'Gocce' },
-  { id: 'drop-face', label: 'Gocciolina' },
-  { id: 'cat', label: 'Gatto' },
-  { id: 'fish', label: 'Pesce' },
-  { id: 'can', label: 'Lattina Red Bull' },
-]
 const UNITS: { id: Units; label: string }[] = [
   { id: 'ml', label: 'Litri' },
   { id: 'oz', label: 'Once' },
@@ -148,7 +138,7 @@ export function DrinkPrefs() {
   )
 }
 
-/** Stile della home e sfondo dell'app. */
+/** Sfondo dell'app. */
 export function AppearanceForm() {
   const { profile, updateProfile } = useProfile()
   const { error, busy, replaceImage } = useImageReplace()
@@ -164,21 +154,6 @@ export function AppearanceForm() {
   return (
     <section className="card">
       <h2>Aspetto</h2>
-      <div className="field">
-        <h3>Stile della home</h3>
-        <div className="choices" role="group" aria-label="Stile della home">
-          {STYLES.map((style) => (
-            <button
-              key={style.id}
-              className="choice"
-              aria-pressed={profile.home_style === style.id}
-              onClick={() => void updateProfile({ home_style: style.id })}
-            >
-              {style.label}
-            </button>
-          ))}
-        </div>
-      </div>
       <div className="field">
         <h3>Sfondo dell'app</h3>
         <div className="choices">

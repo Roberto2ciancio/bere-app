@@ -1,5 +1,4 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createFakeSupabase, type FakeSupabase } from '../test/fakeSupabase'
@@ -20,7 +19,6 @@ import { AuthProvider } from '../auth/AuthProvider'
 import { ProfileProvider } from '../auth/ProfileProvider'
 import { addDays, localParts } from '../domain/time'
 import { HomePage } from '../home/HomePage'
-import { AppearanceForm } from '../profile/AppearanceForm'
 import { readCache, writeCache } from '../lib/cache'
 
 const tz = new Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -124,32 +122,22 @@ describe('Glu nella Home', () => {
     await waitFor(() => expect(screen.getByTestId('glu')).toHaveAttribute('data-mood', 'sad'))
   })
 
-  it('senza la migrazione la scelta di Glu resta sul telefono', async () => {
+  it('un profilo in cache con uno stile vecchio mostra Glu', async () => {
     seed('bottle')
-    fake.failures.update = 'violates check constraint'
-    fake.failures.updateCode = '23514'
-    renderIn(
-      <>
-        <AppearanceForm />
-        <HomePage />
-      </>,
-    )
-    expect(await screen.findByTestId('bottle-view')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: 'Glu' }))
-    expect(await screen.findByTestId('glu')).toBeInTheDocument()
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-    await waitFor(() => expect(readCache<string>('bere.homeStyle.u1')).toBe('glu'))
-  })
-
-  it('il profilo che dice bottiglia usa Glu se la scelta è locale', async () => {
-    seed('bottle')
-    writeCache('bere.homeStyle.u1', 'glu')
     renderIn(<HomePage />)
     expect(await screen.findByTestId('glu')).toBeInTheDocument()
   })
+
+  it('la chiave bere.homeStyle rimasta si toglie al caricamento del profilo', async () => {
+    seed('glu')
+    writeCache('bere.homeStyle.u1', 'glu')
+    renderIn(<HomePage />)
+    await screen.findByTestId('glu')
+    await waitFor(() => expect(readCache<string>('bere.homeStyle.u1')).toBeNull())
+  })
 })
 
-describe('Glu: tristezza, saluto e salvataggio dello stile', () => {
+describe('Glu: tristezza e saluto', () => {
   const sadSetup = () => {
     fake.rpcResults.daily_totals = [{ day: addDays(today(), -1), total_ml: 500, drinks: 2 }]
   }
@@ -185,40 +173,5 @@ describe('Glu: tristezza, saluto e salvataggio dello stile', () => {
     await screen.findByTestId('glu')
     await waitFor(() => expect(fake.rpcCalls.filter((c) => c.name === 'daily_totals')).toHaveLength(2), { timeout: 4000 })
     expect(mood()).not.toBe('sad')
-  })
-
-  it('con un altro stile non chiede nulla per Glu', async () => {
-    seed('bottle')
-    renderIn(<HomePage />)
-    await screen.findByTestId('bottle-view')
-    expect(fake.rpcCalls.filter((c) => c.name === 'daily_totals')).toHaveLength(0)
-  })
-
-  it('l’override locale solo per il vincolo check; altri errori no', async () => {
-    seed('bottle')
-    fake.failures.update = 'rete'
-    renderIn(<AppearanceForm />)
-    await userEvent.click(await screen.findByRole('button', { name: 'Glu' }))
-    await waitFor(() => expect(fake.client.from).toBeDefined())
-    expect(readCache<string>('bere.homeStyle.u1')).toBeNull()
-  })
-
-  it('con l’override e Glu non ancora sul server, si riprova in silenzio', async () => {
-    seed('bottle')
-    writeCache('bere.homeStyle.u1', 'glu')
-    renderIn(<HomePage />)
-    await waitFor(() => expect(fake.tables.profiles[0].home_style).toBe('glu'))
-    await waitFor(() => expect(readCache<string>('bere.homeStyle.u1')).toBeNull())
-  })
-
-  it('se il riprovo fallisce l’override resta', async () => {
-    seed('bottle')
-    writeCache('bere.homeStyle.u1', 'glu')
-    fake.failures.update = 'vincolo'
-    fake.failures.updateCode = '23514'
-    renderIn(<HomePage />)
-    expect(await screen.findByTestId('glu')).toBeInTheDocument()
-    expect(fake.tables.profiles[0].home_style).toBe('bottle')
-    expect(readCache<string>('bere.homeStyle.u1')).toBe('glu')
   })
 })

@@ -94,10 +94,11 @@ describe('ProfilePage', () => {
     expect(await screen.findByText(/prendono il posto di «Bevuto ✓»/)).toBeInTheDocument()
   })
 
-  it('cambiare stile aggiorna subito app e profilo', async () => {
+  it('in Aspetto non c’è più la scelta dello stile della home', async () => {
     render(<App />)
-    await userEvent.click(await screen.findByRole('button', { name: 'Anello' }))
-    await waitFor(() => expect(fake.tables.profiles[0].home_style).toBe('ring'))
+    await screen.findByDisplayValue('Anna')
+    expect(screen.queryByRole('group', { name: 'Stile della home' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Anello' })).not.toBeInTheDocument()
   })
 
   it('cambia nome, suono e quantità', async () => {

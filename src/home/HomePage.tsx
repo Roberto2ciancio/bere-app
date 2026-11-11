@@ -25,28 +25,13 @@ import { useGluMood } from '../mascot/useGluMood'
 import { confetti, haptic } from '../ui/motion/effects'
 import { supabase } from '../lib/supabase'
 import { listSchedules, toReminders } from '../schedules/schedulesApi'
-import { BottleView } from './BottleView'
-import { CharacterView } from './CharacterView'
-import { DropsView } from './DropsView'
 import { GluView } from './GluView'
-import { RingView } from './RingView'
 import { playSound } from './sounds'
-import { fillRatio, type ViewProps } from './views'
-import { ProgressRing } from './ProgressRing'
+import { fillRatio } from './views'
 import { BellIcon, ChevronIcon, CoffeeIcon, PlusIcon, WorkoutIcon } from '../ui/icons'
 import { CountUp } from '../ui/motion/CountUp'
 
 const DAYS = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica']
-const VIEWS = {
-  bottle: BottleView,
-  ring: RingView,
-  drops: DropsView,
-  'drop-face': (props: ViewProps) => <CharacterView shape="drop-face" {...props} />,
-  cat: (props: ViewProps) => <CharacterView shape="cat" {...props} />,
-  fish: (props: ViewProps) => <CharacterView shape="fish" {...props} />,
-  can: (props: ViewProps) => <CharacterView shape="can" {...props} />,
-}
-
 function describeNext(next: { date: string; minutes: number }, today: string): string {
   const time = formatTime(next.minutes)
   if (next.date === today) return `alle ${time}`
@@ -186,8 +171,6 @@ export function HomePage() {
   // Con la fascia attiva i promemoria fuori fascia non partono: non vanno annunciati.
   const activeReminders = reminders && split ? reminders.filter((r) => inActiveHours(r.minutes, hours)) : reminders
   const next = activeReminders ? nextReminder(activeReminders, now, tz) : null
-  const style = profile?.home_style ?? 'glu'
-  const View = style === 'glu' ? null : (VIEWS[style] ?? BottleView)
 
   function onDrink(input?: DrinkInput) {
     if (!drink(input)) return
@@ -230,7 +213,7 @@ export function HomePage() {
   const parts = localParts(now, tz)
   const todayMinutes = (reminders ?? []).filter((r) => r.weekdays.includes(weekdayOf(today))).map((r) => r.minutes)
   const expected = split ? null : expectedByNow(todayMinutes, goalMl, parts.minutes)
-  const mood = useGluMood({ userId, tz, totalMl, goalMl, expectedMl: expected, todayMinutes, pulse, goals, levelUp: levelParty, enabled: !!profile && style === 'glu' })
+  const mood = useGluMood({ userId, tz, totalMl, goalMl, expectedMl: expected, todayMinutes, pulse, goals, levelUp: levelParty, enabled: !!profile })
 
   // La festa parte solo se una bevuta di questa sessione supera l'obiettivo, e una volta al giorno.
   const partyKey = userId ? `bere.goalParty.${userId}` : null
@@ -276,20 +259,7 @@ export function HomePage() {
       </header>
 
       <div className="home-view">
-        {View ? (
-          <div className="ring-slot">
-            {/* Lo stile Anello è già un anello: non se ne mette un secondo attorno. */}
-            {style === 'ring' ? (
-              <View totalMl={totalMl} goalMl={goalMl} drinkMl={drinkMl} pulse={pulse} />
-            ) : (
-              <ProgressRing fill={fill}>
-                <View totalMl={totalMl} goalMl={goalMl} drinkMl={drinkMl} pulse={pulse} />
-              </ProgressRing>
-            )}
-          </div>
-        ) : (
-          <GluView fill={fill} now={now.getTime()} mood={mood} name={profile.display_name.trim().split(/\s+/)[0] ?? ''} />
-        )}
+        <GluView fill={fill} now={now.getTime()} mood={mood} name={profile.display_name.trim().split(/\s+/)[0] ?? ''} />
       </div>
 
       <div className="home-stats">

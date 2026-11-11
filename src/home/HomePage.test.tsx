@@ -162,22 +162,19 @@ describe('HomePage', () => {
     expect(pendingDrinks('u1')).toEqual([])
   })
 
-  it.each([
-    ['bottle', 'bottle-view'],
-    ['ring', 'ring-view'],
-    ['drops', 'drops-view'],
-  ])('home_style %s mostra la vista giusta', async (style, testId) => {
-    seed(style)
+  it('un profilo con uno stile vecchio (bottiglia) mostra comunque Glu', async () => {
+    seed('bottle')
     renderHome()
-    expect(await screen.findByTestId(testId)).toBeInTheDocument()
+    expect(await screen.findByTestId('glu')).toBeInTheDocument()
   })
 
-  it('obiettivo superato: la bottiglia resta piena e il testo mostra il totale reale', async () => {
+  it('obiettivo superato: Glu resta pieno e il testo mostra il totale reale', async () => {
     fake.tables.drinks = [{ user_id: 'u1', client_id: 'x', amount_ml: 3400, local_date: today(), drunk_at: new Date().toISOString() }]
     renderHome()
     expect((await screen.findAllByText('3,4 L')).length).toBeGreaterThan(0)
-    expect(screen.getByTestId('bottle-water').style.height).toBe('100%')
-    expect(screen.getByText(/obiettivo raggiunto/i)).toBeInTheDocument()
+    const [dash, length] = screen.getByTestId('progress-ring-bar').getAttribute('stroke-dasharray')!.split(' ').map(Number)
+    expect(dash).toBe(length)
+    expect(screen.getAllByText(/obiettivo raggiunto/i).length).toBeGreaterThan(0)
   })
 
   it('riaperta senza rete usa profilo e obiettivo salvati', async () => {
@@ -261,22 +258,5 @@ describe('HomePage «Oggi»', () => {
     // Anello: la parte piena sulla circonferenza intera.
     const [dash, length] = screen.getByTestId('progress-ring-bar').getAttribute('stroke-dasharray')!.split(' ').map(Number)
     expect(Math.round((dash / length) * 100)).toBe(percent)
-  })
-
-  it.each([
-    ['bottle', 'bottle-view'],
-    ['drops', 'drops-view'],
-    ['cat', 'character-cat'],
-  ])('l’anello del progresso c’è anche con lo stile %s', async (style, testId) => {
-    seed(style)
-    renderHome()
-    expect((await screen.findByTestId(testId)).closest('.progress-ring')).not.toBeNull()
-  })
-
-  it('lo stile Anello non ha un secondo anello attorno', async () => {
-    seed('ring')
-    renderHome()
-    await screen.findByTestId('ring-view')
-    expect(screen.queryByTestId('progress-ring')).not.toBeInTheDocument()
   })
 })

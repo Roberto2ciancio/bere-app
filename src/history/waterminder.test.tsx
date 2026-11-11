@@ -302,36 +302,11 @@ describe('preferenze nel profilo', () => {
     await waitFor(() => expect(fake.tables.profiles[0].allow_pokes).toBe(false))
   })
 
-  it('si scelgono unità, personaggio e suono', async () => {
+  it('si scelgono unità e suono', async () => {
     render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: 'Once' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Gatto' }))
     await userEvent.click(screen.getByRole('button', { name: 'Bolla' }))
-    await waitFor(() => expect(fake.tables.profiles[0]).toMatchObject({ units: 'oz', home_style: 'cat', sound: 'bolla' }))
-  })
-
-  it('si può scegliere la lattina di Red Bull', async () => {
-    render(<App />)
-    await userEvent.click(await screen.findByRole('button', { name: 'Lattina Red Bull' }))
-    await waitFor(() => expect(fake.tables.profiles[0].home_style).toBe('can'))
-  })
-
-  it('la lattina si riempie e non ha la faccia degli altri personaggi', async () => {
-    fake.tables.profiles[0].home_style = 'can'
-    fake.tables.drinks = [{ user_id: 'u1', client_id: 'x', amount_ml: 1500, hydration_pct: 100, drink_type: 'water', local_date: today(), drunk_at: new Date().toISOString() }]
-    window.location.hash = '#/home'
-    render(<App />)
-    await screen.findAllByText('1,5 L')
-    const can = await screen.findByTestId('character-can')
-    expect(can.querySelector('.character-water')?.getAttribute('height')).toBe('50')
-    expect(can.querySelector('.character-face')).toBeNull()
-  })
-
-  it.each([['drop-face', 'character-drop-face'], ['cat', 'character-cat'], ['fish', 'character-fish'], ['can', 'character-can']])('il personaggio %s appare in home', async (style, id) => {
-    fake.tables.profiles[0].home_style = style
-    window.location.hash = '#/home'
-    render(<App />)
-    expect(await screen.findByTestId(id)).toBeInTheDocument()
+    await waitFor(() => expect(fake.tables.profiles[0]).toMatchObject({ units: 'oz', sound: 'bolla' }))
   })
 })
 
