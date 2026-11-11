@@ -11,7 +11,7 @@ describe('Bubble', () => {
       </LazyMotion>,
     )
     const el = screen.getByText('Ciao Anna!')
-    expect(el).toHaveAttribute('aria-live', 'polite')
+    expect(el.parentElement).toHaveAttribute('aria-live', 'polite')
     expect(el).toHaveClass('glu-bubble')
   })
 })

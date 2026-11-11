@@ -26,3 +26,7 @@
   border-radius: 0 0 4px 0;
   transform: rotate(45deg);
 }
+
+.glu-bubble-live {
+  max-width: 100%;
+}

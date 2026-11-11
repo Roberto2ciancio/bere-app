@@ -17,6 +17,13 @@ describe('PHRASES', () => {
   })
 })
 
+describe('PHRASES: lingua neutra', () => {
+  it('nessuna forma al maschile/femminile rivolta a chi usa l’app', () => {
+    const vietate = /(bravo|brava|salito|salita|stanco|stanca|pronto a|pronta a|pronto per|pronta per|contento|contenta|solo|sola)/i
+    for (const mood of moods) for (const p of PHRASES[mood]) expect(p).not.toMatch(vietate)
+  })
+})
+
 describe('phraseFor', () => {
   it('sostituisce {nome} e non lo lascia mai', () => {
     for (const mood of moods) {

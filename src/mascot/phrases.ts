@@ -4,15 +4,15 @@ import type { GluMood } from './mood'
 export const PHRASES: Record<GluMood, string[]> = {
   hello: [
     'Ciao {nome}! Che bello rivederti!',
-    'Eccomi! Pronto per una giornata fresca?',
+    'Eccomi! Si parte con una giornata fresca?',
     'Buongiorno {nome}! Iniziamo con un sorso?',
     'Ehi, ci sei! Io ci sono sempre.',
     'Ciao ciao! Oggi si va a gonfie onde.',
   ],
   idle: [
-    'Io sono qui, a goccia di fare il tifo!',
+    'Io sono qui, a fare il tifo goccia dopo goccia!',
     'Un sorso quando vuoi, senza fretta.',
-    'Che bella giornata per sentirsi freschi!',
+    'Che bella giornata per un sorso fresco!',
     'Ti tengo compagnia mentre fai le tue cose.',
     'Tutto tranquillo qui, ondeggio un po’.',
   ],
@@ -24,7 +24,7 @@ export const PHRASES: Record<GluMood, string[]> = {
   ],
   drink: [
     'Glu glu! Che buono!',
-    'Glu glu! Eccone un altro, bravo!',
+    'Glu glu! Eccone un altro, che forza!',
     'Glu glu glu! Mi sento già meglio!',
     'Fresco fresco! Glu glu!',
     'Glu glu! Un altro passo verso l’obiettivo.',
@@ -42,14 +42,14 @@ export const PHRASES: Record<GluMood, string[]> = {
     'Ci sono io con te, {nome}. Piano piano.',
   ],
   sleep: [
-    'Zzz… ci vediamo domani',
+    'Zzz… ci vediamo domani!',
     'Shh, sto sognando un lago.',
     'Zzz… buonanotte, goccia dopo goccia.',
     'Riposo un po’, a domani!',
   ],
   levelup: [
     'Nuovo livello, {nome}! Che salto!',
-    'Sei salito di livello! Facciamo festa!',
+    'Nuovo livello raggiunto! Facciamo festa!',
     'Livello su! Hai un talento che sprizza, {nome}.',
     'Wow, che crescita! Sono con te, {nome}.',
   ],
