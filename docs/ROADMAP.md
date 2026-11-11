@@ -1,6 +1,6 @@
 # Bere: idee per le prossime versioni
 
-Ultimo aggiornamento: 10 novembre 2026 (app alla versione 1.9.0).
+Ultimo aggiornamento: 11 novembre 2026 (app alla versione 1.9.1).
 
 Legenda: 🟢 piccolo · 🟡 medio · 🔴 grande · 🗄️ tocca il server (database o funzioni) · 📦 serve un nuovo APK
 
@@ -25,7 +25,7 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 ## 1.9: nuova grafica e Glu
 
 - [x] 🟡 **1.9.0 · Nuova grafica**: colori vivaci, bottoni e card morbidi, tema scuro automatico, animazioni (numeri e cambi pagina; i coriandoli arrivano con Glu nella 1.9.1) e «riduci movimento» rispettato.
-- [ ] 🟡 **1.9.1 · Glu nella Home**: la mascotte, una goccia d'acqua, accompagna la giornata.
+- [x] 🟡 **1.9.1 · Glu nella Home**: la mascotte, una goccia d'acqua, accompagna la giornata.
 - [ ] 🟡 **1.9.2 · Glu nel resto dell'app**: Glu in Storico, classifica e popup.
 - [ ] 🟢 **1.9.3 · Rifiniture**: ultimi ritocchi, peso del pacchetto sotto i 60 KB gzip aggiunti.
 

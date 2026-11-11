@@ -12,6 +12,17 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '1.9.1',
+    date: '2026-11-11',
+    title: 'Arriva Glu',
+    notes: [
+      'Glu, una goccia d’acqua, ti tiene compagnia nella Home: cambia umore durante la giornata e dice la sua nel fumetto.',
+      'Glu si riempie d’acqua man mano che bevi.',
+      'Quando raggiungi l’obiettivo c’è la festa, con i coriandoli (se hai «riduci movimento», niente coriandoli).',
+      'Puoi sceglierlo, o tornare agli stili di prima, in Profilo › Aspetto.',
+    ],
+  },
+  {
     version: '1.9.0',
     date: '2026-11-10',
     title: 'Nuova grafica',
