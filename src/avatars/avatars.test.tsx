@@ -80,6 +80,10 @@ describe('AvatarPicker', () => {
     expect(radios[1]).toHaveFocus()
     await userEvent.keyboard('{ArrowLeft}{ArrowLeft}')
     expect(radios[11]).toHaveFocus()
+    await userEvent.keyboard('{Home}')
+    expect(radios[0]).toHaveFocus()
+    await userEvent.keyboard('{End}')
+    expect(radios[11]).toHaveFocus()
   })
 })
 
@@ -98,6 +102,22 @@ describe('Profilo', () => {
     expect(screen.getByRole('radio', { name: 'Goccia rossa' })).toHaveAttribute('aria-checked', 'true')
     expect(container.querySelector('.profile-id img')).toBeNull()
     expect(fake.removed).toEqual([])
+  })
+
+  it('il gruppo prende il nome dal titolo visibile', async () => {
+    render(<App />)
+    expect(await screen.findByRole('radiogroup', { name: 'Oppure scegli un avatar' })).toBeInTheDocument()
+  })
+
+  it("se il salvataggio non riesce lo dice e resta scelto l'avatar di prima", async () => {
+    fake.tables.profiles[0].avatar_path = 'preset:glu-blu'
+    fake.failures.update = 'rete assente'
+    render(<App />)
+    await userEvent.click(await screen.findByRole('radio', { name: 'Goccia rossa' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Salvataggio non riuscito. Controlla la connessione e riprova.')
+    expect(screen.getByRole('radio', { name: 'Goccia rossa' })).toHaveAttribute('aria-checked', 'false')
+    expect(screen.getByRole('radio', { name: 'Goccia blu' })).toHaveAttribute('aria-checked', 'true')
+    expect(fake.tables.profiles[0].avatar_path).toBe('preset:glu-blu')
   })
 
   it('caricare una foto al posto di un preset non chiede allo storage di cancellare il preset', async () => {

@@ -65,11 +65,12 @@ function useImageReplace() {
 
 /** Foto e nome: come ti vedono gli altri in classifica. */
 export function ProfileHeader() {
-  const { profile, updateProfile } = useProfile()
+  const { profile, updateProfile, saveProfile } = useProfile()
   const { error: imageError, busy, replaceImage } = useImageReplace()
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const [avatarError, setAvatarError] = useState(false)
 
   const currentName = profile?.display_name ?? ''
   useEffect(() => {
@@ -77,6 +78,12 @@ export function ProfileHeader() {
   }, [currentName])
 
   if (!profile) return null
+
+  // Prima il server: se il salvataggio non riesce resta scelto l'avatar di prima.
+  async function pickAvatar(path: string) {
+    setAvatarError(false)
+    if (!(await saveProfile({ avatar_path: path }))) setAvatarError(true)
+  }
 
   function saveName(event: FormEvent) {
     event.preventDefault()
@@ -97,8 +104,9 @@ export function ProfileHeader() {
       </div>
       {imageError && <p role="alert" className="error">{imageError}</p>}
       <div className="field">
-        <h3>Oppure scegli un avatar</h3>
-        <AvatarPicker value={profile.avatar_path} onPick={(path) => void updateProfile({ avatar_path: path })} />
+        <h3 id="avatar-picker-title">Oppure scegli un avatar</h3>
+        <AvatarPicker value={profile.avatar_path} labelledBy="avatar-picker-title" onPick={(path) => void pickAvatar(path)} />
+        {avatarError && <p role="alert" className="error">Salvataggio non riuscito. Controlla la connessione e riprova.</p>}
       </div>
       <form className="stack" onSubmit={saveName} noValidate>
         <label>

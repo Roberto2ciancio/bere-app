@@ -91,3 +91,5 @@ input[type='file']::file-selector-button {
 .avatar-picker { display: grid; grid-template-columns: repeat(4, minmax(44px, 64px)); gap: 10px; }
 .avatar-option { aspect-ratio: 1; min-height: 44px; padding: 3px; border: 3px solid transparent; border-radius: 50%; background: none; -webkit-tap-highlight-color: transparent; }
 .avatar-option[aria-checked='true'] { border-color: var(--brand); }
+/* Focus distinto dalla scelta: anello esterno, fuori dal bordo. */
+.avatar-option:focus-visible { outline: 3px dashed var(--ink); outline-offset: 2px; }
