@@ -4,7 +4,7 @@ import { useProfile } from '../../auth/ProfileProvider'
 import { formatLiters } from '../../domain/format'
 import { suggestGoal, type Activity } from '../../domain/hydration'
 import { CountUp } from '../../ui/motion/CountUp'
-import { setInitialGoal } from '../initialGoal'
+import { setInitialGoal, setInitialGoalToday } from '../initialGoal'
 import { OnboardingShell } from '../OnboardingShell'
 
 const ACTIVITY_CHOICES: { id: Activity; icon: string; label: string }[] = [
@@ -87,12 +87,8 @@ export function GoalStep({ tz, onGoal, onNext }: Props) {
 
   async function skip() {
     if (userId && !saved.current) {
-      try {
-        await setInitialGoal(userId, SKIP_GOAL_ML, tz)
-        onGoal(SKIP_GOAL_ML)
-      } catch {
-        // Resta l'obiettivo di partenza: si cambia dal Profilo.
-      }
+      // Solo da oggi e solo per chi è nuovo: se il server rifiuta, l'obiettivo di chi usa già l'app non cambia.
+      if (await setInitialGoalToday(SKIP_GOAL_ML)) onGoal(SKIP_GOAL_ML)
     }
     onNext()
   }
@@ -105,7 +101,7 @@ export function GoalStep({ tz, onGoal, onNext }: Props) {
 
   return (
     <OnboardingShell
-      step="goal"
+      step="goal" title="Il tuo obiettivo giornaliero"
       mood={validWeight ? 'almost' : 'idle'}
       say={say}
       onNext={() => void next()}

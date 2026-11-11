@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { PRESET_PREFIX } from '../avatars/presets'
 
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 export const AVATAR_SIDE = 512
@@ -50,6 +51,16 @@ export async function uploadImage(bucket: ImageBucket, userId: string, blob: Blo
 
 export async function removeImage(bucket: ImageBucket, path: string): Promise<void> {
   await supabase.storage.from(bucket).remove([path])
+}
+
+/** Dopo aver scelto un avatar pronto la foto caricata prima non serve più: il bucket è pubblico. */
+export async function removeUploadedAvatar(previous: string | null | undefined): Promise<void> {
+  if (!previous || previous.startsWith(PRESET_PREFIX)) return
+  try {
+    await removeImage('avatars', previous)
+  } catch {
+    // L'avatar è già salvato: un file rimasto non deve annullare la scelta.
+  }
 }
 
 export function avatarUrl(path: string): string {

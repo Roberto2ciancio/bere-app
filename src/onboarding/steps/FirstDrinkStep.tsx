@@ -57,7 +57,7 @@ export function FirstDrinkStep({ tz, drinkMl, toNotifications = false, onNext }:
       nextDisabled={phase === 'drinking'}
     >
       <div className="ob-first">
-        <h1 className="ob-title">Primo sorso!</h1>
+        <h1 className="ob-title" tabIndex={-1}>Primo sorso!</h1>
         <p>{phase === 'ready' ? `Un tocco registra ${drinkMl} ml d'acqua.` : `Registrati ${drinkMl} ml d'acqua. ${toNotifications ? 'Ora sistemiamo le notifiche.' : 'Ci vediamo nella Home!'}`}</p>
       </div>
     </OnboardingShell>

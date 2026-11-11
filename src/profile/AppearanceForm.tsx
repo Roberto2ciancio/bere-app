@@ -6,7 +6,7 @@ import { AvatarPicker } from '../avatars/AvatarPicker'
 import type { Units } from '../domain/hydration'
 import { playSound, SOUNDS } from '../home/sounds'
 import { currentDeviceSettingsName } from '../lib/platform'
-import { removeImage } from './imageUpload'
+import { removeImage, removeUploadedAvatar } from './imageUpload'
 import { useImageReplace } from './useImageReplace'
 
 const STYLES: { id: HomeStyle; label: string }[] = [
@@ -44,7 +44,9 @@ export function ProfileHeader() {
   // Prima il server: se il salvataggio non riesce resta scelto l'avatar di prima.
   async function pickAvatar(path: string) {
     setAvatarError(false)
+    const previous = profile?.avatar_path
     if (!(await saveProfile({ avatar_path: path }))) setAvatarError(true)
+    else await removeUploadedAvatar(previous)
   }
 
   function saveName(event: FormEvent) {

@@ -63,7 +63,7 @@ export function NotificationsStep({ onNext }: Props) {
   if (pushState === 'unsupported') {
     return shell('sad', 'Qui le notifiche non arrivano', 'Continua', done, (
       <>
-        <h1 className="ob-title">Notifiche non disponibili</h1>
+        <h1 className="ob-title" tabIndex={-1}>Notifiche non disponibili</h1>
         <p>Questo browser non può ricevere notifiche. Su iPhone serve iOS 16.4 o successivo e l'app installata da Safari.</p>
       </>
     ))
@@ -71,7 +71,7 @@ export function NotificationsStep({ onNext }: Props) {
   if (pushState === 'denied') {
     return shell('sad', 'Le notifiche sono bloccate', 'Continua senza notifiche', done, (
       <>
-        <h1 className="ob-title">Notifiche bloccate</h1>
+        <h1 className="ob-title" tabIndex={-1}>Notifiche bloccate</h1>
         <p className="error">Le notifiche sono bloccate.</p>
         <p>Riattivale dalle impostazioni del telefono, nelle notifiche di Bere o del browser, poi riapri l'app.</p>
       </>
@@ -81,7 +81,7 @@ export function NotificationsStep({ onNext }: Props) {
   if (asked) {
     return shell('hello', 'Arrivata?', 'Sì, è arrivata', done, (
       <>
-        <h1 className="ob-title">Ti ho mandato una notifica</h1>
+        <h1 className="ob-title" tabIndex={-1}>Ti ho mandato una notifica</h1>
         <p>Dovrebbe comparire in pochi secondi, anche con l'app chiusa o il telefono bloccato.</p>
       </>
     ), { label: 'No, non è arrivata', onClick: () => onNext(false) })
@@ -89,7 +89,7 @@ export function NotificationsStep({ onNext }: Props) {
 
   return shell('thirsty', 'Altrimenti non posso ricordartelo!', retryTest ? 'Riprova' : 'Attiva le notifiche', () => void (retryTest ? sendTest() : enable()), (
     <>
-      <h1 className="ob-title">Attiva le notifiche</h1>
+      <h1 className="ob-title" tabIndex={-1}>Attiva le notifiche</h1>
       <p>Senza il tuo permesso i promemoria non possono arrivare.</p>
       {error && <p role="alert" className="error">{error}</p>}
     </>

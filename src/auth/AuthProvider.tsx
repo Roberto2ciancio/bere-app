@@ -6,6 +6,7 @@ import { unregisterPush } from '../push/subscribe'
 export interface AuthUser {
   id: string
   email?: string
+  created_at?: string
 }
 
 interface AuthValue {
@@ -29,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true
     const remember = (next: AuthUser) => {
-      writeCache(LAST_USER, { id: next.id, email: next.email })
+      writeCache(LAST_USER, { id: next.id, email: next.email, created_at: next.created_at })
       setUser(next)
       setLoading(false)
     }

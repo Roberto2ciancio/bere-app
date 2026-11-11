@@ -12,6 +12,16 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '1.9.4',
+    date: '2026-11-11',
+    title: 'Correzioni',
+    notes: [
+      'Saltare l’obiettivo nel primo avvio non cambia più l’obiettivo di chi usa già l’app.',
+      'Chi cambia telefono non rifà il primo avvio da capo: si riparte dai promemoria.',
+      'Scegliendo un avatar pronto, la foto caricata prima viene cancellata.',
+    ],
+  },
+  {
     version: '1.9.3',
     date: '2026-11-11',
     title: 'Glu ti fa festa',

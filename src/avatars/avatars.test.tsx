@@ -95,13 +95,13 @@ describe('Profilo', () => {
     window.location.hash = '#/profilo'
   })
 
-  it('scegliere un avatar pronto lo salva nel profilo e non cancella la foto', async () => {
+  it('scegliere un avatar pronto lo salva nel profilo e cancella la foto caricata prima', async () => {
     const { container } = render(<App />)
     await userEvent.click(await screen.findByRole('radio', { name: 'Goccia rossa' }))
     await waitFor(() => expect(fake.tables.profiles[0].avatar_path).toBe('preset:glu-rosso'))
     expect(screen.getByRole('radio', { name: 'Goccia rossa' })).toHaveAttribute('aria-checked', 'true')
     expect(container.querySelector('.profile-id img')).toBeNull()
-    expect(fake.removed).toEqual([])
+    await waitFor(() => expect(fake.removed).toEqual([{ bucket: 'avatars', paths: ['u1/foto.jpg'] }]))
   })
 
   it('il gruppo prende il nome dal titolo visibile', async () => {

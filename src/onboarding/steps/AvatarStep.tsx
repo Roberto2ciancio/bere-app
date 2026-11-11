@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useProfile } from '../../auth/ProfileProvider'
 import { AvatarPicker } from '../../avatars/AvatarPicker'
 import type { GluMood } from '../../mascot/mood'
+import { removeUploadedAvatar } from '../../profile/imageUpload'
 import { useImageReplace } from '../../profile/useImageReplace'
 import { OnboardingShell } from '../OnboardingShell'
 
@@ -16,14 +17,16 @@ export function AvatarStep({ onNext }: { onNext: () => void }) {
   // Prima il server: se non riesce resta l'avatar di prima.
   async function pick(path: string) {
     setFailed(false)
+    const previous = profile?.avatar_path
     if (!(await saveProfile({ avatar_path: path }))) return setFailed(true)
+    await removeUploadedAvatar(previous)
     setMood('goal')
     clearTimeout(timer.current)
     timer.current = setTimeout(() => setMood('idle'), 1500)
   }
 
   return (
-    <OnboardingShell step="avatar" mood={mood} say="Come ti fai vedere in classifica?" onNext={onNext} onSkip={onNext} nextLabel="Avanti">
+    <OnboardingShell step="avatar" title="Scegli il tuo avatar" mood={mood} say="Come ti fai vedere in classifica?" onNext={onNext} onSkip={onNext} nextLabel="Avanti">
       <div className="ob-avatars">
         <AvatarPicker value={profile?.avatar_path ?? null} onPick={(path) => void pick(path)} />
         <label className="file-button">

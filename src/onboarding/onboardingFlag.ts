@@ -17,8 +17,22 @@ export function nextOnboardingStep(step: OnboardingStep): OnboardingStep | null 
   return STEPS[STEPS.indexOf(step) + 1] ?? null
 }
 
-export function pendingOnboardingStep(userId: string, scheduleCount: number): OnboardingStep | null {
-  if (readCache<boolean>(key(userId))) return null
+export const isOnboarded = (userId: string) => readCache<boolean>(key(userId)) === true
+
+const NEW_ACCOUNT_MS = 24 * 60 * 60 * 1000
+
+/**
+ * Account registrato da più di 24 ore (stessa soglia di `set_initial_goal`): chi lo usa già
+ * non rifà il primo avvio da capo su un telefono nuovo. Data ignota = nuovo.
+ */
+export function isEstablishedAccount(createdAt?: string, now = Date.now()): boolean {
+  const created = createdAt ? Date.parse(createdAt) : NaN
+  return Number.isFinite(created) && now - created > NEW_ACCOUNT_MS
+}
+
+export function pendingOnboardingStep(userId: string, scheduleCount: number, createdAt?: string): OnboardingStep | null {
+  if (isOnboarded(userId)) return null
+  if (scheduleCount === 0 && isEstablishedAccount(createdAt)) return 'schedule'
   if (scheduleCount === 0) {
     const done = readCache<OnboardingStep>(progressKey(userId))
     const next = done && STEPS.includes(done) ? nextOnboardingStep(done) : 'hello'
@@ -30,7 +44,7 @@ export function pendingOnboardingStep(userId: string, scheduleCount: number): On
 
 /** Chi ha già programmi e notifiche ma non ha finito riparte dopo l'ultimo passo concluso. */
 export function resumedOnboardingStep(userId: string): OnboardingStep | null {
-  if (readCache<boolean>(key(userId))) return null
+  if (isOnboarded(userId)) return null
   const done = readCache<OnboardingStep>(progressKey(userId))
   return done && STEPS.includes(done) ? nextOnboardingStep(done) : null
 }

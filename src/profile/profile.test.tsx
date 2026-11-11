@@ -33,7 +33,6 @@ beforeEach(() => {
   fake.tables.profiles = [{ id: 'u1', display_name: 'Anna', home_style: 'bottle', drink_ml: 200, tz: 'Europe/Rome', sound: 'none', avatar_path: null, background_path: null }]
   fake.tables.goal_changes = [{ user_id: 'u1', effective_from: '2026-01-01', goal_ml: 3000 }]
   window.location.hash = '#/profilo'
-  delete document.documentElement.dataset.style
 })
 
 describe('prepareImage', () => {
@@ -98,7 +97,6 @@ describe('ProfilePage', () => {
   it('cambiare stile aggiorna subito app e profilo', async () => {
     render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: 'Anello' }))
-    expect(document.documentElement.dataset.style).toBe('ring')
     await waitFor(() => expect(fake.tables.profiles[0].home_style).toBe('ring'))
   })
 
@@ -147,6 +145,32 @@ describe('ProfilePage', () => {
     await waitFor(() => expect(fake.tables.profiles[0].background_path).toBeNull())
     expect(container.querySelector('.shell-bg')).toBeNull()
     expect(fake.removed).toEqual([{ bucket: 'backgrounds', paths: ['u1/sfondo.jpg'] }])
+  })
+
+  it('scegliere un avatar pronto cancella la foto caricata prima', async () => {
+    fake.tables.profiles[0].avatar_path = 'u1/foto.jpg'
+    render(<App />)
+    await userEvent.click((await screen.findAllByRole('radio'))[0])
+    await waitFor(() => expect(String(fake.tables.profiles[0].avatar_path)).toMatch(/^preset:/))
+    await waitFor(() => expect(fake.removed).toEqual([{ bucket: 'avatars', paths: ['u1/foto.jpg'] }]))
+  })
+
+  it('scegliere un avatar pronto dopo un altro non cancella nulla', async () => {
+    fake.tables.profiles[0].avatar_path = 'preset:altro'
+    render(<App />)
+    await userEvent.click((await screen.findAllByRole('radio'))[0])
+    await waitFor(() => expect(fake.tables.profiles[0].avatar_path).not.toBe('preset:altro'))
+    expect(fake.removed).toEqual([])
+  })
+
+  it('se il salvataggio dell avatar fallisce la foto resta', async () => {
+    fake.tables.profiles[0].avatar_path = 'u1/foto.jpg'
+    render(<App />)
+    const radios = await screen.findAllByRole('radio')
+    fake.failures.update = 'offline'
+    await userEvent.click(radios[0])
+    expect(await screen.findByText(/salvataggio non riuscito/i)).toBeInTheDocument()
+    expect(fake.removed).toEqual([])
   })
 
   it('il pulsante esci chiude la sessione', async () => {

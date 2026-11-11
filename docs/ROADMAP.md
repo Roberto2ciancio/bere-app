@@ -1,6 +1,6 @@
 # Bere: idee per le prossime versioni
 
-Ultimo aggiornamento: 11 novembre 2026 (app alla versione 1.9.3).
+Ultimo aggiornamento: 11 novembre 2026 (app alla versione 1.9.4).
 
 Legenda: 🟢 piccolo · 🟡 medio · 🔴 grande · 🗄️ tocca il server (database o funzioni) · 📦 serve un nuovo APK
 
@@ -29,7 +29,8 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 - [x] 🟡 **1.9.2 · Un primo avvio con Glu**: primo avvio guidato da Glu in sette passi (avatar, obiettivo che per chi si è appena registrato vale da subito, bicchiere, orari, notifiche, primo sorso) e 12 avatar pronti, anche in Profilo › Aspetto.
 - [x] 🟡 **1.9.3 · Glu nel resto dell'app**: festa con coriandoli quando sali di livello, Glu nelle pagine vuote (Storico, Classifica, Promemoria) e nel popup delle novità.
 - [x] 🟢 **1.9.3 · Rifiniture**: ultimi ritocchi, peso del pacchetto sotto i 60 KB gzip aggiunti.
-- [ ] 🟡 **1.9.4 · Glu reagisce**: sete crescente (da 2 a 4 ore senza bere), caffè (20 minuti dopo), allenamento, serie di giorni (corona a 7, 14 e 30 giorni) e notte (fuori dall'orario dei promemoria); il telefono inclinato per ultimo.
+- [x] 🟢 **1.9.4 · Correzioni**: saltare l'obiettivo nel primo avvio non cambia più quello di chi usa già l'app, chi cambia telefono non rifà il primo avvio da capo, e scegliendo un avatar pronto la foto caricata prima viene cancellata.
+- [ ] 🟡 **1.9.5 · Glu reagisce**: sete crescente (da 2 a 4 ore senza bere), caffè (20 minuti dopo), allenamento, serie di giorni (corona a 7, 14 e 30 giorni) e notte (fuori dall'orario dei promemoria); il telefono inclinato per ultimo.
 
 ## 2.0: social
 
@@ -69,7 +70,7 @@ Richiede di passare da TWA a Capacitor e rifare le notifiche con Firebase Cloud 
 
 ## Da dove partire
 
-1. Glu che reagisce (1.9.4), dopo la Home (1.9.1), il primo avvio (1.9.2) e il resto dell'app (1.9.3).
+1. Glu che reagisce (1.9.5), dopo la Home (1.9.1), il primo avvio (1.9.2) e il resto dell'app (1.9.3).
 2. «Condividi la settimana», per chiudere la 1.8.
 3. Colore della barra di stato nell'APK (tema scuro), prima del Play Store.
 

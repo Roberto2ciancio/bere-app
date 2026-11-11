@@ -19,8 +19,7 @@
 .steps { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 6px; }
 /* Chip: etichette tonde. Il testo sui colori pieni è scuro fisso: il verde e il giallo restano chiari anche di notte. */
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; background: var(--surface-2); color: var(--ink); font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.chip-streak { background: var(--streak); color: #0b2545; }
-.chip-level, .level-badge { background: var(--reward); color: var(--on-brand); }
+.level-badge { background: var(--reward); color: var(--on-brand); }
 .chip-points { background: var(--success); color: #0b2545; }
 /* Barra di avanzamento con un'onda che scorre dentro il riempimento */
 .progress { height: 12px; border-radius: 999px; background: var(--track); overflow: hidden; }

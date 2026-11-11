@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
 import { isPushOff, pushSupportState } from '../push/subscribe'
 import { listSchedules } from '../schedules/schedulesApi'
 import { useGoalMl } from '../schedules/useGoalMl'
-import { markOnboarded, nextOnboardingStep, pendingOnboardingStep, resumedOnboardingStep, saveOnboardingProgress, type OnboardingStep } from './onboardingFlag'
+import { isEstablishedAccount, isOnboarded, markOnboarded, nextOnboardingStep, pendingOnboardingStep, resumedOnboardingStep, saveOnboardingProgress, type OnboardingStep } from './onboardingFlag'
 import { AvatarStep } from './steps/AvatarStep'
 import { CupStep } from './steps/CupStep'
 import { FirstDrinkStep } from './steps/FirstDrinkStep'
@@ -25,6 +25,8 @@ export function OnboardingPage() {
   const requested = (useLocation().state as { step?: OnboardingStep } | null)?.step
   const userId = user?.id ?? null
   const [scheduleCount, setScheduleCount] = useState<number | null>(requested || !userId ? 0 : null)
+  // Chi ha già finito e arriva qui senza un passo richiesto (link, cronologia) torna alla Home.
+  const [alreadyDone] = useState(() => !requested && userId !== null && isOnboarded(userId))
 
   useEffect(() => {
     if (scheduleCount !== null || !userId) return
@@ -37,6 +39,7 @@ export function OnboardingPage() {
     }
   }, [scheduleCount, userId])
 
+  if (alreadyDone) return <Navigate to="/home" replace />
   if (scheduleCount === null) return null
   return <Onboarding scheduleCount={scheduleCount} requested={requested} />
 }
@@ -53,13 +56,21 @@ function Onboarding({ scheduleCount, requested }: { scheduleCount: number; reque
   const [notArrived, setNotArrived] = useState(false)
 
   // Senza un passo richiesto si riparte dal primo non concluso.
-  const [step, setStep] = useState<OnboardingStep>(() => skipNotifications(requested ?? (userId ? (pendingOnboardingStep(userId, scheduleCount) ?? resumedOnboardingStep(userId)) : null) ?? 'hello'))
+  const [step, setStep] = useState<OnboardingStep>(() => skipNotifications(requested ?? (userId ? (pendingOnboardingStep(userId, scheduleCount, user?.created_at) ?? resumedOnboardingStep(userId)) : null) ?? 'hello'))
+
+  // Chi usa già l'app da tempo e cambia telefono non rifà il «Primo sorso!».
+  const established = isEstablishedAccount(user?.created_at)
+  const route = (next: OnboardingStep): OnboardingStep | null => {
+    const step = skipNotifications(next)
+    return step === 'first-drink' && established ? null : step
+  }
 
   // Ogni passo concluso o saltato si ricorda: chi chiude l'app riparte dal successivo.
   function advance(from: OnboardingStep) {
     if (userId) saveOnboardingProgress(userId, from)
     const next = nextOnboardingStep(from)
-    if (next) setStep(skipNotifications(next))
+    const target = next && route(next)
+    if (target) setStep(target)
     else leave()
   }
   const after = (from: OnboardingStep) => () => advance(from)

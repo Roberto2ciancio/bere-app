@@ -10,15 +10,9 @@ import { syncPushSubscription } from '../push/subscribe'
 
 export function TabsLayout() {
   const { profile } = useProfile()
-  const style = profile?.home_style ?? 'glu'
   const backgroundPath = profile?.background_path ?? null
   const outlet = useOutlet()
   const [background, setBackground] = useState<string | null>(null)
-
-  useEffect(() => {
-    // Serve solo alle viste della Home: non cambia più i colori
-    document.documentElement.dataset.style = style
-  }, [style])
 
   useEffect(() => {
     void syncPushSubscription().catch(() => {})

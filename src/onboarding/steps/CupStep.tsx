@@ -26,7 +26,7 @@ export function CupStep({ goalMl, onNext }: { goalMl: number; onNext: () => void
 
   return (
     <OnboardingShell
-      step="cup"
+      step="cup" title="Il tuo bicchiere"
       mood="idle"
       say={`Circa ${count} ${count === 1 ? 'bicchiere' : 'bicchieri'} al giorno, ce la fai!`}
       onNext={() => void next()}

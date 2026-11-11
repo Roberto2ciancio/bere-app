@@ -24,7 +24,7 @@ export function createFakeSupabase() {
   const invocations: { name: string; body: unknown }[] = []
   const rpcCalls: { name: string; args: unknown }[] = []
   let listener: ((event: string, session: unknown) => void) | null = null
-  let session: { user: { id: string; email?: string } } | null = null
+  let session: { user: { id: string; email?: string; created_at?: string } } | null = null
   let sessionError: { name: string; message: string } | null = null
   let invokeResult: unknown = {}
 
@@ -187,8 +187,8 @@ export function createFakeSupabase() {
     removed,
     failures,
     invocations,
-    signIn(id = 'u1') {
-      session = { user: { id, email: 'a@b.it' } }
+    signIn(id = 'u1', createdAt?: string) {
+      session = { user: { id, email: 'a@b.it', created_at: createdAt } }
       listener?.('SIGNED_IN', session)
     },
     /** La sessione sparisce senza notifiche, come quando il token scade e manca la rete. */

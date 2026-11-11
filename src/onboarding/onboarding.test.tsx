@@ -379,6 +379,26 @@ describe('passi 1-4', () => {
     await waitFor(() => expect(String(fake.tables.profiles[0].avatar_path)).toMatch(/^preset:/))
   })
 
+  it('scegliere un avatar pronto cancella la foto caricata prima', async () => {
+    saveOnboardingProgress('u1', 'hello')
+    fake.tables.profiles[0].avatar_path = 'u1/foto.jpg'
+    render(<App />)
+    await screen.findByText('Come ti fai vedere in classifica?')
+    await userEvent.click(screen.getAllByRole('radio')[0])
+    await waitFor(() => expect(String(fake.tables.profiles[0].avatar_path)).toMatch(/^preset:/))
+    await waitFor(() => expect(fake.removed).toEqual([{ bucket: 'avatars', paths: ['u1/foto.jpg'] }]))
+  })
+
+  it('un avatar pronto già scelto non fa cancellare nulla', async () => {
+    saveOnboardingProgress('u1', 'hello')
+    fake.tables.profiles[0].avatar_path = 'preset:altro'
+    render(<App />)
+    await screen.findByText('Come ti fai vedere in classifica?')
+    await userEvent.click(screen.getAllByRole('radio')[0])
+    await waitFor(() => expect(fake.tables.profiles[0].avatar_path).not.toBe('preset:altro'))
+    expect(fake.removed).toEqual([])
+  })
+
   it('un avatar non salvato non risulta scelto e lo dice', async () => {
     saveOnboardingProgress('u1', 'hello')
     render(<App />)
@@ -437,6 +457,32 @@ describe('passi 1-4', () => {
     expect(fake.tables.goal_changes.filter((g) => g.goal_ml === 2000)).toHaveLength(0)
   })
 
+  it("«Salta» su un account non nuovo non cambia l'obiettivo", async () => {
+    fake.signIn('u1', '2026-01-01T00:00:00Z')
+    window.location.hash = '#/inizia'
+    window.history.replaceState({ usr: { step: 'goal' }, key: 'k', idx: 0 }, '')
+    render(<App />)
+    await screen.findByRole('progressbar', { name: 'Passo 3 di 7' })
+    vi.spyOn(fake.client, 'rpc').mockResolvedValue({ data: null, error: { message: 'account_not_new' } } as never)
+    await click('Salta')
+    expect(await screen.findByRole('progressbar', { name: 'Passo 4 di 7' })).toBeInTheDocument()
+    expect(fake.tables.goal_changes).toEqual([{ user_id: 'u1', effective_from: '2026-01-01', goal_ml: 3000 }])
+  })
+
+  it('ogni passo ha un titolo e il fuoco passa al titolo del nuovo passo', async () => {
+    localStorage.clear()
+    render(<App />)
+    await userEvent.click(await screen.findByRole('button', { name: 'Iniziamo!' }))
+    const avatar = await heading('Scegli il tuo avatar')
+    expect(avatar).toHaveFocus()
+    await click('Salta')
+    expect(await heading('Il tuo obiettivo giornaliero')).toHaveFocus()
+    await click('Salta')
+    expect(await heading('Il tuo bicchiere')).toHaveFocus()
+    await click('Salta')
+    expect(await heading('Quando vuoi bere?')).toHaveFocus()
+  })
+
   it('il bicchiere scelto si salva e dice quanti ne servono', async () => {
     saveOnboardingProgress('u1', 'goal')
     fake.tables.goal_changes = [{ user_id: 'u1', effective_from: '2026-01-01', goal_ml: 2300 }]
@@ -447,6 +493,33 @@ describe('passi 1-4', () => {
     await click('Avanti')
     expect(await heading('Quando vuoi bere?')).toBeInTheDocument()
     expect(fake.tables.profiles[0].drink_ml).toBe(500)
+  })
+})
+
+describe('chi usa già l app', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    fake.signIn('u1', '2026-01-01T00:00:00Z')
+  })
+
+  it('su un telefono nuovo senza programmi parte dai promemoria e non vede «Primo sorso!»', async () => {
+    push.pushSupportState.mockReturnValue('prompt')
+    render(<App />)
+    expect(await heading('Quando vuoi bere?')).toBeInTheDocument()
+    await click('Crea i promemoria')
+    await heading('Attiva le notifiche')
+    await click('Salta')
+    expect(await screen.findByRole('button', { name: /ho bevuto/i })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Primo sorso!' })).not.toBeInTheDocument()
+    expect(localStorage.getItem('bere.onboarded.u1')).not.toBeNull()
+  })
+
+  it('aprire /inizia dopo il primo avvio riporta alla Home', async () => {
+    markOnboarded('u1')
+    window.location.hash = '#/inizia'
+    render(<App />)
+    expect(await screen.findByRole('button', { name: /ho bevuto/i })).toBeInTheDocument()
+    expect(window.location.hash).toBe('#/home')
   })
 })
 
@@ -461,6 +534,11 @@ describe('pendingOnboardingStep', () => {
     expect(pendingOnboardingStep('u1', 0)).toBe('cup')
     saveOnboardingProgress('u1', 'notifications')
     expect(pendingOnboardingStep('u1', 0)).toBe('schedule')
+  })
+  it('un account vecchio senza programmi parte dai promemoria, uno nuovo o senza data dal primo passo', () => {
+    expect(pendingOnboardingStep('u1', 0, '2026-01-01T00:00:00Z')).toBe('schedule')
+    expect(pendingOnboardingStep('u1', 0, new Date().toISOString())).toBe('hello')
+    expect(pendingOnboardingStep('u1', 0, undefined)).toBe('hello')
   })
   it('chi ha programmi parte dalle notifiche, chi ha finito da nessuna parte', () => {
     push.pushSupportState.mockReturnValue('prompt')

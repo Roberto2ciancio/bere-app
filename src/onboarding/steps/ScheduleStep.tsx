@@ -110,7 +110,7 @@ export function ScheduleStep({ goalMl, onNext }: Props) {
       nextDisabled={busy || Boolean(problem) || times.length === 0}
     >
       <div className="ob-schedule">
-        <h1 className="ob-title">Quando vuoi bere?</h1>
+        <h1 className="ob-title" tabIndex={-1}>Quando vuoi bere?</h1>
         <div className="ob-sky" aria-hidden="true">
           <div className="ob-sky-band" style={{ left: pos(start), right: `calc(100% - ${pos(end)})` }} />
           <span className="ob-sky-icon" style={{ left: pos(start) }}><Sun /></span>

@@ -103,6 +103,11 @@ export function HomePage() {
   const { profile, loading } = useProfile()
   const navigate = useNavigate()
   const userId = user?.id ?? null
+  // Letta quando arrivano i programmi: la sessione può completarsi dopo il primo render.
+  const createdAt = useRef(user?.created_at)
+  useEffect(() => {
+    createdAt.current = user?.created_at
+  }, [user?.created_at])
   const tz = profile?.tz ?? new Intl.DateTimeFormat().resolvedOptions().timeZone
   const drinkMl = profile?.drink_ml ?? DEFAULT_DRINK_ML
 
@@ -159,7 +164,7 @@ export function HomePage() {
         const loaded = toReminders(schedules)
         writeCache(remindersKey, loaded)
         setReminders(loaded)
-        const step = pendingOnboardingStep(userId, schedules.length)
+        const step = pendingOnboardingStep(userId, schedules.length, createdAt.current)
         if (step) navigate('/inizia', { replace: true, state: { step } })
       })
       .catch(() => {
