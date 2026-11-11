@@ -7,6 +7,8 @@ import { levelOf } from '../levels/levels'
 import { useLevels } from '../levels/useLevels'
 import { supabase } from '../lib/supabase'
 import { EmptyState } from '../mascot/EmptyState'
+import { GluCorner } from '../mascot/GluCorner'
+import { CORNER_PHRASES } from '../mascot/phrases'
 import { weekStart } from './weekStart'
 import { Stagger } from '../ui/motion/Stagger'
 
@@ -132,6 +134,13 @@ export function LeaderboardPage() {
 
       {failed && <p role="alert" className="error">Classifica non disponibile. Controlla la connessione.</p>}
       {!entries && !failed && <p className="center-note">Caricamento…</p>}
+
+      {entries && entries.length > 1 && (
+        <GluCorner
+          mood={me && me.days_met > 0 && positions[mine] === 1 ? 'goal' : 'idle'}
+          text={me && me.days_met > 0 && positions[mine] === 1 ? CORNER_PHRASES.boardLeader : CORNER_PHRASES.boardIdle}
+        />
+      )}
 
       {me && (
         <section className="card board-me" aria-label="La tua posizione">

@@ -62,3 +62,15 @@
 
 /* L'onda scorre di una lunghezza d'onda e ricomincia: il giro non si vede. */
 @keyframes glu-wave { to { transform: translateX(-50px); } }
+
+/* Glu in cima a Storico, Classifica e Profilo: piccolo, a sinistra, col fumetto accanto. */
+.glu-corner { display: flex; align-items: center; gap: 14px; }
+.glu-corner .glu { flex: none; width: 64px; height: auto; }
+.glu-corner .glu-bubble-live { flex: 1; min-width: 0; justify-content: flex-start; }
+.glu-corner .glu-bubble { margin: 0; padding: 10px 14px; font-size: 0.9375rem; text-align: left; transform-origin: 0 50%; }
+.glu-corner .glu-bubble::after { left: -8px; bottom: auto; top: 50%; margin: -7px 0 0; border: 0; border-left: 1.5px solid var(--line); border-bottom: 1.5px solid var(--line); }
+@media (max-height: 700px) {
+  .glu-corner { gap: 10px; }
+  .glu-corner .glu { width: 48px; }
+  .glu-corner .glu-bubble { padding: 6px 12px; font-size: 0.875rem; }
+}

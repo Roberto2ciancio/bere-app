@@ -1,5 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
+import { useProfile } from '../auth/ProfileProvider'
+import { GluCorner } from '../mascot/GluCorner'
+import { profileGreeting } from '../mascot/phrases'
 import { PauseForm } from '../pause/PauseForm'
 import { NotificationPrefs } from '../push/NotificationPrefs'
 import { PushToggle } from '../push/PushToggle'
@@ -14,10 +17,13 @@ import { Stagger } from '../ui/motion/Stagger'
 // Dall'alto: chi sei, quanto bere, come segnarlo, quando ricordartelo, l'aspetto, l'account.
 export function ProfilePage() {
   const { signOut } = useAuth()
+  const { profile } = useProfile()
 
   return (
     <Stagger as="main" className="page profile">
       <h1>Profilo</h1>
+
+      {profile && <GluCorner mood="hello" text={profileGreeting(profile.display_name)} />}
 
       <ProfileHeader />
 

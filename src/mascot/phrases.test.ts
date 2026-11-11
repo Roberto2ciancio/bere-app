@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PHRASES, phraseFor } from './phrases'
+import { CORNER_PHRASES, historyStreakPhrase, PHRASES, phraseFor, profileGreeting } from './phrases'
 import type { GluMood } from './mood'
 
 const moods = Object.keys(PHRASES) as GluMood[]
@@ -25,6 +25,33 @@ describe('PHRASES: lingua neutra', () => {
   it('nessuna forma al maschile/femminile rivolta a chi usa l’app', () => {
     const vietate = /(bravo|brava|salito|salita|stanco|stanca|pronto a|pronta a|pronto per|pronta per|contento|contenta|solo|sola)/i
     for (const mood of moods) for (const p of PHRASES[mood]) expect(p).not.toMatch(vietate)
+  })
+})
+
+describe('frasi di Glu in Storico, Classifica e Profilo', () => {
+  const all = () => [
+    ...Object.values(CORNER_PHRASES).filter((p) => !p.includes('{nome}')),
+    historyStreakPhrase(1),
+    historyStreakPhrase(7),
+    historyStreakPhrase(365),
+    profileGreeting('Anna'),
+    profileGreeting('Anna Maria Rossi'),
+    profileGreeting('  '),
+  ]
+  it('al massimo 60 caratteri e senza segnaposto', () => {
+    for (const p of all()) {
+      expect(p.length).toBeLessThanOrEqual(60)
+      expect(p).not.toContain('{nome}')
+    }
+    expect(profileGreeting('x'.repeat(40)).length).toBeLessThanOrEqual(60)
+  })
+  it('nessuna forma al maschile/femminile rivolta a chi usa l’app', () => {
+    const vietate = /(bravo|brava|salito|salita|stanco|stanca|pronto a|pronta a|pronto per|pronta per|contento|contenta|solo|sola)/i
+    for (const p of all()) expect(p).not.toMatch(vietate)
+  })
+  it('usa il primo nome e il singolare per un giorno', () => {
+    expect(profileGreeting('Anna Maria')).toBe('Ciao Anna! Qui sistemi tutto a modo tuo.')
+    expect(historyStreakPhrase(1)).toBe('Serie di 1 giorno! Continuiamo così.')
   })
 })
 

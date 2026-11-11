@@ -62,6 +62,22 @@ export const PHRASES: Record<GluMood, string[]> = {
   ],
 }
 
+// Le battute di Glu in cima a Storico, Classifica e Profilo (al massimo 60 caratteri, lingua neutra).
+export const CORNER_PHRASES = {
+  historyIdle: 'Ogni giorno a obiettivo conta, piano piano.',
+  boardLeader: 'Sei in testa!',
+  boardIdle: 'Ogni sorso conta per la classifica.',
+  profileWithName: 'Ciao {nome}! Qui sistemi tutto a modo tuo.',
+  profileNoName: 'Ciao! Qui sistemi tutto a modo tuo.',
+} as const
+
+export const historyStreakPhrase = (days: number) => `Serie di ${days === 1 ? '1 giorno' : `${days} giorni`}! Continuiamo così.`
+
+export const profileGreeting = (name: string) => {
+  const first = name.trim().split(/\s+/)[0]
+  return first ? CORNER_PHRASES.profileWithName.replace('{nome}', first.slice(0, 20)) : CORNER_PHRASES.profileNoName
+}
+
 function hash(s: string): number {
   let h = 0
   for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0

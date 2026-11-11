@@ -19,6 +19,7 @@ export const CHANGELOG: Release[] = [
       'Saltare l’obiettivo nel primo avvio non cambia più l’obiettivo di chi usa già l’app.',
       'Chi cambia telefono non rifà il primo avvio da capo: si riparte dai promemoria.',
       'Scegliendo un avatar pronto, la foto caricata prima viene cancellata.',
+      'Glu ora ti accompagna anche in Storico, Classifica e Profilo.',
     ],
   },
   {

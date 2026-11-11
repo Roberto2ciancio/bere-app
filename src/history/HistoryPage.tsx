@@ -14,7 +14,8 @@ import { weekStart } from '../leaderboard/weekStart'
 import { pausedDays } from '../pause/pauses'
 import { usePauses } from '../pause/usePauses'
 import { supabase } from '../lib/supabase'
-import { EmptyState } from '../mascot/EmptyState'
+import { GluCorner } from '../mascot/GluCorner'
+import { CORNER_PHRASES, historyStreakPhrase } from '../mascot/phrases'
 import { achievements, challenges, computeStats, dayResults, jollyThisWeek, type CaffeineByDay, type DayTotal } from './stats'
 import { CountUp } from '../ui/motion/CountUp'
 import { Stagger } from '../ui/motion/Stagger'
@@ -144,6 +145,8 @@ export function HistoryPage() {
   const locked = badges.filter((a) => !a.earned)
   const metDays = days.filter((d) => d.met).length
   const avgMl = Math.round(days.reduce((sum, d) => sum + d.totalMl, 0) / days.length)
+  const todayDay = days.at(-1)
+  const todayFill = todayDay && todayDay.goalMl > 0 ? todayDay.totalMl / todayDay.goalMl : undefined
   const pickPct = pick && pick.goalMl > 0 ? Math.min(100, Math.round((pick.totalMl / pick.goalMl) * 100)) : 0
 
   return (
@@ -156,6 +159,13 @@ export function HistoryPage() {
           ))}
         </div>
       </header>
+
+      {/* Sempre presente: il giorno vuoto qui sotto è solo una riga, così Glu resta uno solo. */}
+      <GluCorner
+        mood={stats.currentStreak > 0 ? (stats.currentStreak >= 7 ? 'goal' : 'almost') : 'idle'}
+        text={stats.currentStreak > 0 ? historyStreakPhrase(stats.currentStreak) : CORNER_PHRASES.historyIdle}
+        fill={todayFill}
+      />
 
       <section className="card">
         <div className="history-summary">
@@ -222,7 +232,7 @@ export function HistoryPage() {
             <span style={{ width: `${pickPct}%` }} />
           </div>
         )}
-        {entries.length === 0 && <EmptyState mood="idle" title="Nessuna bevuta segnata in questo giorno." />}
+        {entries.length === 0 && <p className="hint">Nessuna bevuta segnata in questo giorno.</p>}
         {entries.length > 0 && (
           <ul className="entry-list">
             {entries.map((entry) => (

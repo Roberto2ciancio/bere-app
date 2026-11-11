@@ -27,9 +27,9 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 - [x] 🟡 **1.9.0 · Nuova grafica**: colori vivaci, bottoni e card morbidi, tema scuro automatico, animazioni (numeri e cambi pagina; i coriandoli arrivano con Glu nella 1.9.1) e «riduci movimento» rispettato.
 - [x] 🟡 **1.9.1 · Arriva Glu**: nuova schermata Oggi con Glu al centro nell'anello del progresso, Glu che si riempie e cambia espressione, azioni a portata di pollice e festa che sale dal basso quando raggiungi l'obiettivo.
 - [x] 🟡 **1.9.2 · Un primo avvio con Glu**: primo avvio guidato da Glu in sette passi (avatar, obiettivo che per chi si è appena registrato vale da subito, bicchiere, orari, notifiche, primo sorso) e 12 avatar pronti, anche in Profilo › Aspetto.
-- [x] 🟡 **1.9.3 · Glu nel resto dell'app**: festa con coriandoli quando sali di livello, Glu nelle pagine vuote (Storico, Classifica, Promemoria) e nel popup delle novità.
+- [x] 🟡 **1.9.3 · Glu nelle pagine vuote**: festa con coriandoli quando sali di livello, Glu nelle pagine vuote (Storico, Classifica, Promemoria) e nel popup delle novità.
 - [x] 🟢 **1.9.3 · Rifiniture**: ultimi ritocchi, peso del pacchetto sotto i 60 KB gzip aggiunti.
-- [x] 🟢 **1.9.4 · Correzioni**: saltare l'obiettivo nel primo avvio non cambia più quello di chi usa già l'app, chi cambia telefono non rifà il primo avvio da capo, e scegliendo un avatar pronto la foto caricata prima viene cancellata.
+- [x] 🟢 **1.9.4 · Correzioni**: saltare l'obiettivo nel primo avvio non cambia più quello di chi usa già l'app, chi cambia telefono non rifà il primo avvio da capo, scegliendo un avatar pronto la foto caricata prima viene cancellata, e Glu ti accompagna sempre in cima a Storico, Classifica e Profilo.
 - [ ] 🟡 **1.9.5 · Glu reagisce**: sete crescente (da 2 a 4 ore senza bere), caffè (20 minuti dopo), allenamento, serie di giorni (corona a 7, 14 e 30 giorni) e notte (fuori dall'orario dei promemoria); il telefono inclinato per ultimo.
 
 ## 2.0: social
@@ -49,7 +49,7 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 
 ## Più avanti: Glu in 3D
 
-- [ ] 🔴 **Glu 3D**: Glu in tre dimensioni, che si muove e si guarda da ogni lato.
+- [ ] 🔴 **Glu 3D**: Glu 3D animato come nei video della proposta: saluta, salta quando bevi, si sposta tra le schermate e va a mettersi in basso sopra la barra, cammina, dà un consiglio quando lo tocchi; sostituisce il Glu 2D della Home e i Glu piccoli di Storico, Classifica e Profilo.
 
 ## Verso il Play Store (2.1)
 
