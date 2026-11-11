@@ -16,6 +16,7 @@ import {
 } from './imageUpload'
 
 const STYLES: { id: HomeStyle; label: string }[] = [
+  { id: 'glu', label: 'Glu' },
   { id: 'bottle', label: 'Bottiglia' },
   { id: 'ring', label: 'Anello' },
   { id: 'drops', label: 'Gocce' },

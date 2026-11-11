@@ -1,12 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Activity, Units } from '../domain/hydration'
-import { readCache, writeCache } from '../lib/cache'
+import { readCache, removeCache, writeCache } from '../lib/cache'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthProvider'
 
 const cacheKey = (userId: string) => `bere.profile.${userId}`
+// Se il server non conosce ancora «Glu» (migrazione mancante) la scelta resta su questo telefono.
+const homeStyleKey = (userId: string) => `bere.homeStyle.${userId}`
 
-export type HomeStyle = 'bottle' | 'ring' | 'drops' | 'drop-face' | 'cat' | 'fish' | 'can'
+export type HomeStyle = 'glu' | 'bottle' | 'ring' | 'drops' | 'drop-face' | 'cat' | 'fish' | 'can'
 
 export interface Profile {
   id: string
@@ -68,6 +70,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       const loaded = data as Profile | null
       if (loaded) {
         const next = { ...loaded }
+        if (readCache<string>(homeStyleKey(userId)) === 'glu') next.home_style = 'glu'
         const deviceTz = new Intl.DateTimeFormat().resolvedOptions().timeZone
         if (deviceTz && loaded.tz !== deviceTz) {
           next.tz = deviceTz
@@ -92,7 +95,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         writeCache(cacheKey(userId), next)
         return next
       })
-      await supabase.from('profiles').update(patch).eq('id', userId)
+      const { error } = await supabase.from('profiles').update(patch).eq('id', userId)
+      if (!patch.home_style) return
+      if (!error) removeCache(homeStyleKey(userId))
+      else if (patch.home_style === 'glu') writeCache(homeStyleKey(userId), 'glu')
     },
     [userId],
   )

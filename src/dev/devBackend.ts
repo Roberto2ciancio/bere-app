@@ -33,7 +33,7 @@ function seed(): Db {
         display_name: 'Prova',
         avatar_path: null,
         background_path: null,
-        home_style: 'bottle',
+        home_style: 'glu',
         sound: 'goccia',
         drink_ml: 200,
         tz: new Intl.DateTimeFormat().resolvedOptions().timeZone,

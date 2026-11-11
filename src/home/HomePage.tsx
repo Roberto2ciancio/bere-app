@@ -18,11 +18,15 @@ import { NewsIcon } from '../news/NewsIcon'
 import { pendingOnboardingStep } from '../onboarding/onboardingFlag'
 import { pushSupportState } from '../push/subscribe'
 import { readCache, writeCache } from '../lib/cache'
+import { Celebration } from '../mascot/Celebration'
+import { useGluMood } from '../mascot/useGluMood'
+import { confetti, haptic } from '../ui/motion/effects'
 import { supabase } from '../lib/supabase'
 import { listSchedules, toReminders } from '../schedules/schedulesApi'
 import { BottleView } from './BottleView'
 import { CharacterView } from './CharacterView'
 import { DropsView } from './DropsView'
+import { GluView } from './GluView'
 import { RingView } from './RingView'
 import { playSound } from './sounds'
 import type { ViewProps } from './views'
@@ -83,6 +87,10 @@ export function HomePage() {
   const [reminders, setReminders] = useState<Reminder[] | null>(null)
   const [pulse, setPulse] = useState(0)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [party, setParty] = useState(false)
+  // Una bevuta di questa sessione è in attesa di rientrare nel totale: serve a riconoscere chi supera l'obiettivo.
+  const [drankHere, setDrankHere] = useState(false)
+  const [lastTotal, setLastTotal] = useState<number | null>(null)
 
   // Tiene aggiornati giorno e prossimo promemoria anche se l'app resta aperta o torna in primo piano.
   useEffect(() => {
@@ -137,10 +145,13 @@ export function HomePage() {
   // Con la fascia attiva i promemoria fuori fascia non partono: non vanno annunciati.
   const activeReminders = reminders && split ? reminders.filter((r) => inActiveHours(r.minutes, hours)) : reminders
   const next = activeReminders ? nextReminder(activeReminders, now, tz) : null
-  const View = VIEWS[profile?.home_style ?? 'bottle'] ?? BottleView
+  const style = profile?.home_style ?? 'glu'
+  const View = style === 'glu' ? null : (VIEWS[style] ?? BottleView)
 
   function onDrink(input?: DrinkInput) {
     if (!drink(input)) return
+    setDrankHere(true)
+    haptic()
     setSheetOpen(false)
     setPulse((p) => p + 1)
     playSound(profile?.sound ?? 'goccia')
@@ -175,15 +186,33 @@ export function HomePage() {
     return () => clearTimeout(timer)
   }, [shortcutNote])
 
+  const parts = localParts(now, tz)
+  const todayMinutes = (reminders ?? []).filter((r) => r.weekdays.includes(weekdayOf(today))).map((r) => r.minutes)
+  const expected = split ? null : expectedByNow(todayMinutes, goalMl, parts.minutes)
+  const mood = useGluMood({ userId, tz, totalMl, goalMl, expectedMl: expected, todayMinutes, pulse, goals })
+
+  // La festa parte solo se una bevuta di questa sessione supera l'obiettivo, e una volta al giorno.
+  const partyKey = userId ? `bere.goalParty.${userId}` : null
+  if (lastTotal === null) {
+    setLastTotal(totalMl)
+  } else if (totalMl !== lastTotal) {
+    setLastTotal(totalMl)
+    setDrankHere(false)
+    if (drankHere && partyKey && goalMl > 0 && lastTotal < goalMl && totalMl >= goalMl && readCache<string>(partyKey) !== today) setParty(true)
+  }
+  useEffect(() => {
+    if (!party || !partyKey) return
+    writeCache(partyKey, today)
+    confetti('goal')
+    haptic()
+  }, [party, partyKey, today])
+
   // La quantità viene dal profilo: non si segna nulla finché non è disponibile.
   if (!profile) {
     return <p className="center-note">{loading ? 'Caricamento…' : 'Profilo non disponibile. Controlla la connessione e riapri l\'app.'}</p>
   }
 
   const units = profile.units
-  const parts = localParts(now, tz)
-  const todayMinutes = (reminders ?? []).filter((r) => r.weekdays.includes(weekdayOf(today))).map((r) => r.minutes)
-  const expected = split ? null : expectedByNow(todayMinutes, goalMl, parts.minutes)
   const pace = split ? describePace(activePace({ goalMl, drunkMl: totalMl, nowMinutes: parts.minutes, hours }), hours, units) : null
   const behind = expected !== null && totalMl < goalMl ? expected - totalMl : 0
   const percent = goalMl > 0 ? Math.min(100, Math.round((totalMl / goalMl) * 100)) : 0
@@ -223,7 +252,11 @@ export function HomePage() {
       </header>
 
       <div className="home-view">
-        <View totalMl={totalMl} goalMl={goalMl} drinkMl={drinkMl} pulse={pulse} />
+        {View ? (
+          <View totalMl={totalMl} goalMl={goalMl} drinkMl={drinkMl} pulse={pulse} />
+        ) : (
+          <GluView totalMl={totalMl} goalMl={goalMl} drinkMl={drinkMl} pulse={pulse} now={now.getTime()} mood={mood} name={profile.display_name.trim().split(/\s+/)[0] ?? ''} />
+        )}
       </div>
 
       <footer className="home-actions">
@@ -269,6 +302,7 @@ export function HomePage() {
         )}
       </footer>
 
+      {party && <Celebration kind="goal" title="Obiettivo raggiunto!" detail={`Hai bevuto ${formatVolume(totalMl, units)}: oggi hai fatto centro.`} onClose={() => setParty(false)} />}
       {sheetOpen && <DrinkSheet userId={userId} units={units} defaultMl={drinkMl} onDrink={onDrink} onClose={() => setSheetOpen(false)} />}
     </Stagger>
   )

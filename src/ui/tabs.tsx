@@ -10,7 +10,7 @@ import { syncPushSubscription } from '../push/subscribe'
 
 export function TabsLayout() {
   const { profile } = useProfile()
-  const style = profile?.home_style ?? 'bottle'
+  const style = profile?.home_style ?? 'glu'
   const backgroundPath = profile?.background_path ?? null
   const outlet = useOutlet()
   const [background, setBackground] = useState<string | null>(null)

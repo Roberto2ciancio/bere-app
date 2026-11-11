@@ -38,6 +38,8 @@ interface Setup {
   profile?: Profile
   /** Aumenti dell'obiettivo di oggi: tipo → ml. */
   boosts?: Record<string, number>
+  /** Obiettivo giornaliero in ml. */
+  goalMl?: number
 }
 
 /** Apre l'app di prova senza popup delle novità, dopo aver preparato il finto database. */
@@ -64,6 +66,7 @@ async function openApp(page: Page, path: string, setup: Setup = {}) {
         Object.assign(profile, { heat_boost: true, city_name: 'Roma (Lazio)', city_lat: 41.9, city_lon: 12.5 })
         localStorage.setItem(`bere.heatChecked.${profile.id}`, `${today}:41.9,12.5`)
       }
+      if (setup.goalMl) db.tables.goal_changes.forEach((g) => (g.goal_ml = setup.goalMl))
       db.tables.goal_boosts = Object.entries(setup.boosts ?? {}).map(([kind, ml]) => ({
         user_id: profile.id,
         local_date: today,
@@ -128,6 +131,8 @@ async function expectNoHorizontalScroll(page: Page) {
       .filter((el) => {
         const r = el.getBoundingClientRect()
         if (r.width === 0 || r.height === 0 || r.right <= width + 1 || getComputedStyle(el).visibility === 'hidden') return false
+        // Dentro un disegno SVG conta il disegno intero: i suoi gruppi misurano anche l'onda di Glu, ritagliata dalla goccia.
+        if (el.closest('svg') !== el && el.closest('svg')) return false
         // Tagliato da un contenitore (per esempio l'onda dell'acqua dentro la bottiglia): a schermo non esce.
         for (let parent = el.parentElement; parent && !parent.classList.contains('shell-body'); parent = parent.parentElement) {
           const style = getComputedStyle(parent)
@@ -136,7 +141,7 @@ async function expectNoHorizontalScroll(page: Page) {
         return true
       })
       .slice(0, 3)
-      .map((el) => `${el.tagName.toLowerCase()}.${el.className} «${(el.textContent ?? '').trim().slice(0, 30)}»`)
+      .map((el) => `${el.tagName.toLowerCase()}.${el.getAttribute('class')} «${(el.textContent ?? '').trim().slice(0, 30)}»`)
   })
   expect(outside, 'elementi oltre il bordo destro').toEqual([])
 }
@@ -145,7 +150,7 @@ async function expectNoHorizontalScroll(page: Page) {
 async function expectHomeInOrder(page: Page) {
   await waitForSettled(page)
   const view = await box(page, '.home-view')
-  const art = await box(page, '.bottle-box, .ring-box, .character-box, .drops')
+  const art = await box(page, '.glu-box, .bottle-box, .ring-box, .character-box, .drops')
   expect(view, 'manca lo spazio della vista').not.toBeNull()
   expect(art, "manca l'illustrazione").not.toBeNull()
   expect(art!.top, "l'illustrazione esce sopra il suo spazio").toBeGreaterThanOrEqual(view!.top - 1)
@@ -193,13 +198,29 @@ test.describe('Oggi', () => {
     await expectNoHorizontalScroll(page)
   })
 
-  for (const style of ['ring', 'character', 'drops']) {
+  for (const style of ['bottle', 'ring', 'character', 'drops']) {
     test(`stile ${style} con la fascia attiva`, async ({ page }) => {
       await openApp(page, '/home', { profile: { ...ALL_DAY, home_style: style } })
       await expectHomeInOrder(page)
       await expectNoHorizontalScroll(page)
     })
   }
+})
+
+test('la festa dell’obiettivo sta nello schermo', async ({ page }) => {
+  await openApp(page, '/home', { goalMl: 200 })
+  await page.getByRole('button', { name: /Ho bevuto/ }).click()
+  const dialog = page.getByRole('dialog', { name: 'Obiettivo raggiunto!' })
+  await expect(dialog).toBeVisible()
+  await waitForSettled(page)
+  const b = (await dialog.boundingBox())!
+  const viewport = page.viewportSize()!
+  expect(b.y).toBeGreaterThanOrEqual(0)
+  expect(b.y + b.height).toBeLessThanOrEqual(viewport.height + 1)
+  expect(b.x).toBeGreaterThanOrEqual(0)
+  expect(b.x + b.width).toBeLessThanOrEqual(viewport.width + 1)
+  await page.getByRole('button', { name: 'Evviva!' }).click()
+  await expect(dialog).toBeHidden()
 })
 
 const PAGES = [
