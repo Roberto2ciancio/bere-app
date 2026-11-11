@@ -107,6 +107,17 @@ describe('Glu: sete', () => {
   })
 })
 
+describe('Glu: obiettivo raggiunto', () => {
+  it('ultima bevuta 5 ore fa ma obiettivo già centrato: niente sete né ventaglio, umore goal', async () => {
+    fake.tables.drinks = [{ ...drinkAt(5 * HOUR), amount_ml: 3000 }]
+    renderHome()
+    await screen.findByTestId('glu')
+    await waitFor(() => expect(mood()).toBe('goal'))
+    expect(droop()).toBeNull()
+    expect(document.querySelector('.glu-fan')).toBeNull()
+  })
+})
+
 describe('Glu: caffè', () => {
   it('nei 20 minuti dopo un caffè: coffee con la sua frase; dopo 21 no', async () => {
     fake.tables.drinks = [drinkAt(10 * MIN)]

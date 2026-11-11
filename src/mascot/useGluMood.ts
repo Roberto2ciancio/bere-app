@@ -146,6 +146,7 @@ export function useGluMood({
     workoutStartedAt,
     currentStreak,
     dayStartMin: todayMinutes.length ? Math.min(...todayMinutes) : REACTIONS.defaultDayStartMin,
+    goalMet: goalMl > 0 && totalMl >= goalMl,
     asleep,
     calm,
   })
@@ -175,7 +176,8 @@ export function useGluMood({
     return () => clearTimeout(timer)
   }, [sad, userId, today])
 
-  return { mood, extras: reactions.extras, streakCelebrate: reactions.streakCelebrate }
+  // Il ventaglio serve solo a un Glu che ha sete davvero: con altri umori (bevuta, caffè...) resta in tasca.
+  return { mood, extras: { ...reactions.extras, fan: reactions.extras.fan && mood === 'thirsty' }, streakCelebrate: reactions.streakCelebrate }
 }
 
 // Senza nessun giorno registrato prima di oggi (account nuovo) non c'è un «ieri» da rimpiangere.

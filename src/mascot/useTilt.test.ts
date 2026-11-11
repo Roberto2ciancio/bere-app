@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from '@testing-library/react'
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useTilt } from './useTilt'
 
@@ -56,6 +56,14 @@ describe('useTilt', () => {
     await waitFor(() => expect(result.current.tilt).toBe(5))
   })
 
+  it('arrotonda a mezzo grado: 10,1 diventa 10, 10,3 diventa 10,5', async () => {
+    const { result } = renderHook(() => useTilt(true))
+    orientation(10.1)
+    await waitFor(() => expect(result.current.tilt).toBe(10))
+    orientation(10.3)
+    await waitFor(() => expect(result.current.tilt).toBe(10.5))
+  })
+
   it('un evento senza gamma non fa nulla', () => {
     const { result } = renderHook(() => useTilt(true))
     orientation(null)
@@ -83,6 +91,44 @@ describe('useTilt', () => {
       unmount()
       const again = renderHook(() => useTilt(true))
       expect(again.result.current.permission).toBe('granted')
+    })
+
+    it('«granted» salvato ma iOS lo ha dimenticato: dopo 2 s di silenzio il tocco lo richiede', async () => {
+      localStorage.setItem('bere.tiltPermission', 'granted')
+      const ask = stubIos('granted')
+      const now = vi.spyOn(Date, 'now')
+      now.mockReturnValue(1_000_000)
+      renderHook(() => useTilt(true))
+      const tap = () => document.dispatchEvent(new Event('pointerdown'))
+      tap() // troppo presto
+      expect(ask).not.toHaveBeenCalled()
+      now.mockReturnValue(1_000_000 + 2100)
+      tap()
+      expect(ask).toHaveBeenCalledOnce()
+      tap()
+      expect(ask).toHaveBeenCalledOnce()
+    })
+
+    it('se gli eventi arrivano il tocco non chiede nulla; se la nuova richiesta è negata il permesso decade', async () => {
+      localStorage.setItem('bere.tiltPermission', 'granted')
+      const ask = stubIos('granted')
+      const now = vi.spyOn(Date, 'now')
+      now.mockReturnValue(1_000_000)
+      const { result } = renderHook(() => useTilt(true))
+      orientation(5)
+      await waitFor(() => expect(result.current.tilt).toBe(5))
+      now.mockReturnValue(1_000_000 + 3000)
+      document.dispatchEvent(new Event('pointerdown'))
+      expect(ask).not.toHaveBeenCalled()
+      cleanup()
+
+      localStorage.setItem('bere.tiltPermission', 'granted')
+      const denied = stubIos('denied')
+      const second = renderHook(() => useTilt(true))
+      now.mockReturnValue(1_000_000 + 6000)
+      document.dispatchEvent(new Event('pointerdown'))
+      expect(denied).toHaveBeenCalledOnce()
+      await waitFor(() => expect(second.result.current.permission).toBe('denied'))
     })
 
     it('permesso negato: nessun errore, nessun ascolto, e dopo il ricaricamento resta deciso', async () => {

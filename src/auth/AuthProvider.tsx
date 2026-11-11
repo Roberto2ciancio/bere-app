@@ -68,6 +68,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 }
 
+/** Per chi può stare anche fuori da AuthProvider: null se manca. */
+export const useOptionalAuth = () => useContext(AuthContext)
+
 export function useAuth(): AuthValue {
   const value = useContext(AuthContext)
   if (!value) throw new Error('useAuth fuori da AuthProvider')

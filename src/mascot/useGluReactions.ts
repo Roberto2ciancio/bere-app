@@ -17,6 +17,8 @@ interface Input {
   /** null se la serie non è (ancora) nota: nessuna corona. */
   currentStreak: number | null
   dayStartMin: number
+  /** Obiettivo raggiunto: Glu ha sete ma non rimprovera. */
+  goalMet: boolean
   asleep: boolean
   calm: boolean
 }
@@ -29,7 +31,7 @@ interface Output {
 
 /** Le reazioni di Glu ai dati veri: sete, caffè, allenamento, serie. Si ricalcola ogni minuto. */
 export function useGluReactions(input: Input): Output {
-  const { userId, tz, lastDrinkAt, lastCoffeeAt, workoutActive, workoutStartedAt, currentStreak, dayStartMin, asleep, calm } = input
+  const { userId, tz, lastDrinkAt, lastCoffeeAt, workoutActive, workoutStartedAt, currentStreak, dayStartMin, goalMet, asleep, calm } = input
   const [clock, setClock] = useState(() => new Date())
   const [sceneDone, setSceneDone] = useState<number | null>(null)
   const [celebrate, setCelebrate] = useState<CrownTier | null>(null)
@@ -66,7 +68,7 @@ export function useGluReactions(input: Input): Output {
   const { minutes } = localParts(now, tz)
   // Inizio giornata in questo fuso: ora corrente meno i minuti passati da quel momento.
   const dayStart = new Date(now.getTime() - (minutes - dayStartMin) * 60_000 - (now.getTime() % 60_000))
-  const thirst = quiet ? 0 : thirstLevel(lastDrinkAt, now, dayStart)
+  const thirst = quiet || goalMet ? 0 : thirstLevel(lastDrinkAt, now, dayStart)
   const coffee = !quiet && coffeeActive(lastCoffeeAt, now)
   const workoutJustStarted = !quiet && scene
   const crown = currentStreak === null ? 0 : streakAccessory(currentStreak)

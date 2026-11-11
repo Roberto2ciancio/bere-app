@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 export const TILT_MAX = 25
 const KEY = 'bere.tiltPermission'
+const RECHECK_MS = 2000
 
 type Permission = 'granted' | 'denied'
 type OrientationWithPermission = typeof DeviceOrientationEvent & { requestPermission?: () => Promise<string> }
@@ -43,14 +44,23 @@ export function useTilt(enabled: boolean) {
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [])
 
+  const decide = useCallback((value: Permission) => {
+    storePermission(value)
+    setPermission(value)
+  }, [])
+
   const latest = useRef(0)
   useEffect(() => {
     if (!listening) return
     let frame = 0
+    let gotEvent = false
+    const startedAt = Date.now()
     const onOrientation = (event: Event) => {
       const gamma = (event as DeviceOrientationEvent).gamma
       if (typeof gamma !== 'number' || Number.isNaN(gamma)) return
-      latest.current = Math.max(-TILT_MAX, Math.min(TILT_MAX, gamma))
+      gotEvent = true
+      // Mezzo grado: il rumore del sensore non deve ridisegnare 60 volte al secondo.
+      latest.current = Math.round(Math.max(-TILT_MAX, Math.min(TILT_MAX, gamma)) * 2) / 2
       if (frame) return
       frame = requestAnimationFrame(() => {
         frame = 0
@@ -58,16 +68,26 @@ export function useTilt(enabled: boolean) {
       })
     }
     window.addEventListener('deviceorientation', onOrientation)
+
+    // iOS può aver dimenticato il permesso salvato: se dopo 2 s non è arrivato nulla, al primo tocco lo richiede
+    // (il tocco serve: fuori da un gesto iOS rifiuta). Se è ancora concesso risponde in silenzio.
+    const ask = permissionApi()
+    let asked = false
+    const onTap = () => {
+      if (!ask || asked || gotEvent || Date.now() - startedAt < RECHECK_MS) return
+      asked = true
+      ask().then(
+        (answer) => answer !== 'granted' && decide('denied'),
+        () => decide('denied'),
+      )
+    }
+    if (ask) document.addEventListener('pointerdown', onTap, true)
     return () => {
       window.removeEventListener('deviceorientation', onOrientation)
+      document.removeEventListener('pointerdown', onTap, true)
       if (frame) cancelAnimationFrame(frame)
     }
-  }, [listening])
-
-  const decide = useCallback((value: Permission) => {
-    storePermission(value)
-    setPermission(value)
-  }, [])
+  }, [listening, decide])
 
   /** Va chiamata da un tocco: su iOS il permesso non si può chiedere altrimenti. */
   const request = useCallback(async () => {

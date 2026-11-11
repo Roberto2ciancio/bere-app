@@ -21,6 +21,7 @@ export const CHANGELOG: Release[] = [
       'Con 7, 14 e 30 giorni di fila Glu si mette la corona.',
       'L’acqua dentro Glu segue l’inclinazione del telefono.',
       'Se preferisci un Glu fermo, attiva «Glu tranquillo» in Profilo › Aspetto.',
+      'Di notte Glu riposa: niente sete né scenette.',
     ],
   },
   {

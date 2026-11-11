@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAuth } from '../auth/AuthProvider'
+import { useOptionalAuth } from '../auth/AuthProvider'
 import { readCache, writeCache } from '../lib/cache'
 import { streakAccessory, type CrownTier } from './reactions'
 
@@ -17,11 +17,7 @@ interface Accessories {
 
 // I Glu piccoli possono stare anche fuori da AuthProvider: senza accesso, nessun accessorio.
 function useUserId(): string | null {
-  try {
-    return useAuth().user?.id ?? null
-  } catch {
-    return null
-  }
+  return useOptionalAuth()?.user?.id ?? null
 }
 
 /** Accessori fermi dei Glu piccoli, letti da quello che l'app ha già salvato (nessuna richiesta di rete). */
