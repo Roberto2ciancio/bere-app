@@ -1,4 +1,4 @@
-export type GluMood = 'hello' | 'idle' | 'thirsty' | 'drink' | 'almost' | 'goal' | 'sad' | 'sleep' | 'levelup'
+export type GluMood = 'hello' | 'idle' | 'thirsty' | 'drink' | 'almost' | 'goal' | 'sad' | 'sleep' | 'levelup' | 'coffee' | 'workout'
 
 export interface MoodState {
   nowMinutes: number // minuti dalla mezzanotte, fuso del profilo
@@ -12,22 +12,28 @@ export interface MoodState {
   firstOpenToday: boolean // per 3 s dopo la prima apertura del giorno
   yesterdayMet: boolean | null
   sadShown: boolean // tristezza già mostrata oggi (4 s passati)
+  coffee: boolean // caffè bevuto negli ultimi 20 min
+  workoutJustStarted: boolean // allenamento appena iniziato (scena breve)
+  thirst: number // 0..1, da thirstLevel
 }
 
 /**
  * Sceglie l'umore di Glu. Priorità, dalla più alta:
- * drink > levelup > goal > sleep > hello > sad > thirsty > almost > idle.
+ * drink > levelup > (sleep blocca coffee e workout) coffee > workout > goal > sleep > hello > sad > thirsty > almost > idle.
  */
 export function pickMood(s: MoodState): GluMood {
   if (s.justDrank) return 'drink'
   if (s.levelUp) return 'levelup'
+  const asleep = isAsleep(s)
+  if (!asleep && s.coffee) return 'coffee'
+  if (!asleep && s.workoutJustStarted) return 'workout'
   if (s.goalMl > 0 && s.totalMl >= s.goalMl) return 'goal'
-  if (isAsleep(s)) return 'sleep'
+  if (asleep) return 'sleep'
   if (s.firstOpenToday) return 'hello'
   // hello ha la precedenza nei primi 3 s; poi la tristezza si mostra una volta sola
   if (!s.firstOpenToday && s.yesterdayMet === false && !s.sadShown) return 'sad'
   // A 0 L ha sete a qualsiasi ora; altrimenti solo se dopo mezzogiorno è indietro col ritmo.
-  if (s.totalMl === 0) return 'thirsty'
+  if (s.totalMl === 0 || s.thirst >= 1) return 'thirsty'
   if (
     s.nowMinutes >= 720 &&
     s.expectedMl !== null &&

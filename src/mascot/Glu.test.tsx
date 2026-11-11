@@ -25,6 +25,8 @@ const DISTINCTIVE: Record<GluMood, string[]> = {
   sad: ['.glu-brow', '.glu-eye-open', '.glu-mouth-sad'],
   sleep: ['.glu-zzz', '.glu-eye-sleep', '.glu-mouth-calm'],
   levelup: ['.glu-sparkle', '.glu-eye-happy', '.glu-mouth-grin'],
+  coffee: ['.glu-eye-open', '.glu-mouth-smile'],
+  workout: ['.glu-eye-open', '.glu-mouth-smile'],
 }
 
 const EXTRAS = ['.glu-sweat', '.glu-bubbles', '.glu-zzz', '.glu-sparkle', '.glu-brow', '.glu-arm-waving']

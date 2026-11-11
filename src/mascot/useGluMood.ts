@@ -100,6 +100,9 @@ export function useGluMood({ userId, tz, totalMl, goalMl, expectedMl, todayMinut
     firstOpenToday,
     yesterdayMet: yesterdayMet(yesterday, goals),
     sadShown,
+    coffee: false, // collegati in G4
+    workoutJustStarted: false,
+    thirst: 0,
   })
 
   // La tristezza dura 4 s e si vede una volta al giorno: il giorno si segna quando compare davvero

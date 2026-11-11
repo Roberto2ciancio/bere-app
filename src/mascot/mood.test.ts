@@ -13,6 +13,9 @@ const base: MoodState = {
   firstOpenToday: false,
   yesterdayMet: null,
   sadShown: false,
+  coffee: false,
+  workoutJustStarted: false,
+  thirst: 0,
 }
 const mood = (o: Partial<MoodState>) => pickMood({ ...base, ...o })
 
@@ -96,5 +99,26 @@ describe('pickMood: casi limite', () => {
   it('sad non se ieri è andata bene o sconosciuto', () => {
     expect(mood({ yesterdayMet: true })).toBe('idle')
     expect(mood({ yesterdayMet: null })).toBe('idle')
+  })
+})
+
+describe('pickMood: caffè, allenamento, sete', () => {
+  it('coffee e workout', () => {
+    expect(mood({ coffee: true })).toBe('coffee')
+    expect(mood({ workoutJustStarted: true })).toBe('workout')
+    expect(mood({ coffee: true, workoutJustStarted: true })).toBe('coffee')
+  })
+  it('coffee batte goal', () => expect(mood({ coffee: true, totalMl: 2000 })).toBe('coffee'))
+  it('drink e levelup battono coffee', () => {
+    expect(mood({ coffee: true, justDrank: true })).toBe('drink')
+    expect(mood({ coffee: true, levelUp: true })).toBe('levelup')
+  })
+  it('sleep batte coffee e workout', () => {
+    expect(mood({ coffee: true, paused: true })).toBe('sleep')
+    expect(mood({ workoutJustStarted: true, nowMinutes: 1400 })).toBe('sleep')
+  })
+  it('thirst 1 è thirsty, 0,5 no', () => {
+    expect(mood({ thirst: 1 })).toBe('thirsty')
+    expect(mood({ thirst: 0.5 })).toBe('idle')
   })
 })

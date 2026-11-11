@@ -60,6 +60,18 @@ export const PHRASES: Record<GluMood, string[]> = {
     'Livello su! Hai un talento che sprizza, {nome}.',
     'Wow, che crescita! Sono con te, {nome}.',
   ],
+  coffee: [
+    'Un caffè? Poi un sorso d’acqua, ti va?',
+    'Che profumino! Io resto fresco.',
+    'Caffè e acqua vanno d’accordo, sai?',
+    'Gustatelo con calma, io sto qui.',
+  ],
+  workout: [
+    'Si parte! Io ti seguo a ritmo di onde.',
+    'Che energia! Un sorso dopo, eh?',
+    'Dai dai dai, io faccio il tifo!',
+    'Muoviamoci! Poi si beve insieme.',
+  ],
 }
 
 // Le battute di Glu in cima a Storico, Classifica e Profilo (al massimo 60 caratteri, lingua neutra).

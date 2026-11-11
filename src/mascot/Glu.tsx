@@ -60,6 +60,8 @@ const EYES: Record<GluMood, [Eye, Eye]> = {
   goal: ['happy', 'happy'],
   levelup: ['happy', 'happy'],
   sleep: ['sleep', 'sleep'],
+  coffee: ['open', 'open'], // aspetto provvisorio come idle, nuovo in G3
+  workout: ['open', 'open'],
 }
 
 // [sinistro, destro]
@@ -73,6 +75,8 @@ const LIFT: Record<GluMood, [number, number]> = {
   drink: [1, 1],
   goal: [1, 1],
   levelup: [1, 1],
+  coffee: [0, 1],
+  workout: [0, 1],
 }
 
 type Mouth = { kind: 'line' | 'fill'; name: string; d: string }
@@ -87,6 +91,8 @@ const MOUTH: Record<Exclude<GluMood, 'drink'>, Mouth> = {
   levelup: GRIN,
   sad: { kind: 'line', name: 'sad', d: 'M89 131q11-9 22 0' },
   sleep: { kind: 'line', name: 'calm', d: 'M94 126q6 4 12 0' },
+  coffee: SMILE,
+  workout: SMILE,
 }
 
 type Move = Record<string, number | number[]>
@@ -101,6 +107,8 @@ const breathe = (depth: number, duration: number) => ({
 const POSE: Record<GluMood, { move: Move; transition: Transition }> = {
   idle: breathe(0.025, 3.2),
   hello: breathe(0.025, 3.2),
+  coffee: breathe(0.025, 3.2),
+  workout: breathe(0.025, 3.2),
   almost: breathe(0.03, 2.6),
   thirsty: breathe(0.02, 3.6),
   sad: breathe(0.015, 4),
