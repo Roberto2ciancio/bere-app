@@ -11,6 +11,10 @@ describe('PHRASES', () => {
     for (const p of PHRASES[mood]) expect(p.length).toBeLessThanOrEqual(60)
   })
 
+  it('ha frasi per ogni umore, anche «almost»', () => {
+    expect(PHRASES.almost?.length).toBeGreaterThanOrEqual(4)
+  })
+
   it('drink contiene «glu glu!» in ogni frase', () => {
     for (const p of PHRASES.drink) expect(p.toLowerCase()).toContain('glu glu')
     expect(PHRASES.drink.some((p) => p.toLowerCase().includes('glu glu!'))).toBe(true)

@@ -1,4 +1,4 @@
-export type GluMood = 'hello' | 'idle' | 'thirsty' | 'drink' | 'goal' | 'sad' | 'sleep' | 'levelup'
+export type GluMood = 'hello' | 'idle' | 'thirsty' | 'drink' | 'almost' | 'goal' | 'sad' | 'sleep' | 'levelup'
 
 export interface MoodState {
   nowMinutes: number // minuti dalla mezzanotte, fuso del profilo
@@ -16,7 +16,7 @@ export interface MoodState {
 
 /**
  * Sceglie l'umore di Glu. Priorità, dalla più alta:
- * drink > levelup > goal > sleep > hello > sad > thirsty > idle.
+ * drink > levelup > goal > sleep > hello > sad > thirsty > almost > idle.
  */
 export function pickMood(s: MoodState): GluMood {
   if (s.justDrank) return 'drink'
@@ -26,6 +26,8 @@ export function pickMood(s: MoodState): GluMood {
   if (s.firstOpenToday) return 'hello'
   // hello ha la precedenza nei primi 3 s; poi la tristezza si mostra una volta sola
   if (!s.firstOpenToday && s.yesterdayMet === false && !s.sadShown) return 'sad'
+  // A 0 L ha sete a qualsiasi ora; altrimenti solo se dopo mezzogiorno è indietro col ritmo.
+  if (s.totalMl === 0) return 'thirsty'
   if (
     s.nowMinutes >= 720 &&
     s.expectedMl !== null &&
@@ -34,6 +36,7 @@ export function pickMood(s: MoodState): GluMood {
   ) {
     return 'thirsty'
   }
+  if (s.goalMl > 0 && s.totalMl >= 0.8 * s.goalMl) return 'almost'
   return 'idle'
 }
 

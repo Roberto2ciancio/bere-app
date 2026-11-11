@@ -29,6 +29,13 @@ export const PHRASES: Record<GluMood, string[]> = {
     'Fresco fresco! Glu glu!',
     'Glu glu! Un altro passo verso l’obiettivo.',
   ],
+  almost: [
+    'Ci siamo quasi! Ancora un sorso o due.',
+    'Manca pochissimo, {nome}! Lo sento già.',
+    'Quasi pieno! Che bella onda che fa.',
+    'Ultimo tratto, {nome}: ci arriviamo insieme.',
+    'Ancora un goccio e si fa festa!',
+  ],
   goal: [
     'Obiettivo raggiunto! Sono fiero di te, {nome}!',
     'Ce l’abbiamo fatta! Che giornata, {nome}!',

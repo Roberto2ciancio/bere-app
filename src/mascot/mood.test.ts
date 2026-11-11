@@ -35,6 +35,15 @@ describe('pickMood: ogni umore', () => {
   it('thirsty', () => {
     expect(mood({ nowMinutes: 720, expectedMl: 1000, totalMl: 500 })).toBe('thirsty')
   })
+  it('thirsty a 0 L, a qualsiasi ora del giorno', () => {
+    expect(mood({ totalMl: 0 })).toBe('thirsty')
+    expect(mood({ totalMl: 0, nowMinutes: 460 })).toBe('thirsty')
+  })
+  it('almost dall’80% dell’obiettivo', () => {
+    expect(mood({ totalMl: 1600 })).toBe('almost')
+    expect(mood({ totalMl: 1999 })).toBe('almost')
+    expect(mood({ totalMl: 1599 })).toBe('idle')
+  })
 })
 
 describe('pickMood: priorità adiacenti', () => {
@@ -51,6 +60,16 @@ describe('pickMood: priorità adiacenti', () => {
     expect(mood({ ...late, yesterdayMet: false })).toBe('sad')
     expect(mood({ ...late, yesterdayMet: false, sadShown: true })).toBe('thirsty')
   })
+  it('thirsty > almost', () => {
+    expect(mood({ nowMinutes: 800, expectedMl: 3000, totalMl: 1700 })).toBe('thirsty')
+  })
+  it('almost > idle', () => expect(mood({ totalMl: 1700 })).toBe('almost'))
+  it('sad > thirsty a 0 L', () => expect(mood({ totalMl: 0, yesterdayMet: false })).toBe('sad'))
+  it('sleep > thirsty a 0 L', () => {
+    expect(mood({ totalMl: 0, paused: true })).toBe('sleep')
+    expect(mood({ totalMl: 0, nowMinutes: 1200 })).toBe('sleep')
+  })
+  it('hello > thirsty a 0 L', () => expect(mood({ totalMl: 0, firstOpenToday: true })).toBe('hello'))
   it('thirsty > idle', () => {
     expect(mood({ nowMinutes: 800, expectedMl: 1000, totalMl: 100 })).toBe('thirsty')
   })
@@ -60,19 +79,19 @@ describe('pickMood: casi limite', () => {
   it('senza promemoria alle 23:30 e senza pausa non dorme', () => {
     expect(mood({ todayMinutes: [], nowMinutes: 1410 })).toBe('idle')
   })
-  it('goalMl 0 non è obiettivo raggiunto', () => {
-    expect(mood({ goalMl: 0, totalMl: 0 })).toBe('idle')
+  it('goalMl 0 non è obiettivo raggiunto né quasi', () => {
+    expect(mood({ goalMl: 0, totalMl: 100 })).toBe('idle')
   })
-  it('thirsty non prima di mezzogiorno', () => {
-    expect(mood({ nowMinutes: 719, expectedMl: 1000, totalMl: 0 })).toBe('idle')
+  it('thirsty per il ritmo non prima di mezzogiorno', () => {
+    expect(mood({ nowMinutes: 719, expectedMl: 1000, totalMl: 100 })).toBe('idle')
   })
   it('thirsty solo sotto il 60% dell\'atteso', () => {
     expect(mood({ nowMinutes: 800, expectedMl: 1000, totalMl: 600 })).toBe('idle')
     expect(mood({ nowMinutes: 800, expectedMl: 1000, totalMl: 599 })).toBe('thirsty')
   })
   it('expectedMl null o 0 non è thirsty', () => {
-    expect(mood({ nowMinutes: 800, expectedMl: null, totalMl: 0 })).toBe('idle')
-    expect(mood({ nowMinutes: 800, expectedMl: 0, totalMl: 0 })).toBe('idle')
+    expect(mood({ nowMinutes: 800, expectedMl: null, totalMl: 100 })).toBe('idle')
+    expect(mood({ nowMinutes: 800, expectedMl: 0, totalMl: 100 })).toBe('idle')
   })
   it('sad non se ieri è andata bene o sconosciuto', () => {
     expect(mood({ yesterdayMet: true })).toBe('idle')

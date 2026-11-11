@@ -1,7 +1,7 @@
 import { Glu } from '../mascot/Glu'
 import type { GluMood } from '../mascot/mood'
 
-const MOODS: GluMood[] = ['hello', 'idle', 'thirsty', 'drink', 'goal', 'sad', 'sleep', 'levelup']
+const MOODS: GluMood[] = ['thirsty', 'idle', 'drink', 'almost', 'goal', 'sleep', 'hello', 'sad', 'levelup']
 const FILLS = [0, 0.5, 1]
 
 // Solo nell'app di prova: tutti gli umori e i livelli d'acqua, per gli screenshot.

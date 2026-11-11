@@ -178,7 +178,8 @@ describe('Glu: tristezza, saluto e salvataggio dello stile', () => {
     writeCache('bere.gluHello.u1', today())
     const first = renderIn(<HomePage />)
     await waitFor(() => expect(mood()).toBe('sad'), { timeout: 4000 })
-    expect(readCache<string>('bere.gluSad.u1')).toBe(today())
+    // Il giorno si segna in un effetto, subito dopo il render che mostra la tristezza.
+    await waitFor(() => expect(readCache<string>('bere.gluSad.u1')).toBe(today()))
     first.unmount()
     renderIn(<HomePage />)
     await screen.findByTestId('glu')
