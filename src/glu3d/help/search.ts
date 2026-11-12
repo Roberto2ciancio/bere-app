@@ -10,7 +10,7 @@ export interface GuideEntry {
 }
 
 /** Sotto questa soglia non c'è una risposta sicura. */
-export const MIN_SCORE = 2
+export const MIN_SCORE = 3
 
 /** Il primo deve superare il secondo di almeno il 20%. */
 const GAP = 1.2
@@ -33,22 +33,25 @@ export const STOPWORDS = new Set([
   'posso', 'puoi', 'puo', 'possibile', 'voglio', 'vorrei', 'devo', 'deve',
   'fare', 'faccio', 'fa', 'fai', 'essere', 'sono', 'ho', 'ha', 'hai', 'ce', 'c',
   'dimmi', 'spiegami', 'aiuto', 'ciao', 'grazie', 'favore', 'app',
+  // riempitivi
+  'dell', 'dall', 'nell', 'sull', 'all', 'quell', 'cos', 'qual', 'dov', 'com', 'anch', 'un',
+  'piu', 'molto', 'poco', 'mai', 'sempre', 'dopo', 'poi', 'quindi', 'dovrei', 'vorrei', 'quanta', 'quanti', 'quante',
 ])
 
 /** Gruppi di sinonimi: la prima parola è la forma canonica. Estendere qui. */
 export const SYNONYMS: string[][] = [
   ['notifica', 'avviso', 'push'],
-  ['obiettivo', 'meta', 'target'],
+  ['obiettivo', 'target'],
   ['togliere', 'cancellare', 'eliminare', 'rimuovere', 'annullare', 'cancello'],
-  ['bevuta', 'acqua', 'bere', 'bevo', 'bevuto', 'bicchiere'],
-  ['segnare', 'registrare', 'annotare', 'aggiungere', 'inserire'],
+  ['bevuta', 'bere', 'bevo', 'bevuto'],
+  ['segnare', 'registrare', 'annotare'],
   ['caffe', 'caffeina', 'espresso'],
   ['storico', 'cronologia'],
   ['telefono', 'cellulare', 'smartphone'],
   ['installare', 'scaricare'],
   ['uscire', 'logout', 'disconnettere'],
   ['foto', 'immagine'],
-  ['scuro', 'dark', 'notte'],
+  ['scuro', 'dark', 'tema', 'buio'],
 ]
 
 const SUFFIXES = ['iamo', 'ando', 'endo', 'ano', 'ono', 'are', 'ere', 'ire', 'ato', 'ati', 'ata', 'ate', 'i', 'e', 'o', 'a']
@@ -95,6 +98,8 @@ export function normalize(text: string): string[] {
 /** Stessa radice, o una è l'altra con una lettera in più (cambio/cambi). */
 function close(a: string, b: string): boolean {
   if (a === b) return true
+  // Plurale in -e/-i di una parola di 4 lettere (mese/mesi): stessa radice, vocale finale diversa.
+  if (a.length === b.length && a.length === 4 && a.slice(0, 3) === b.slice(0, 3) && 'ei'.includes(a[3]) && 'ei'.includes(b[3])) return true
   const [s, l] = a.length <= b.length ? [a, b] : [b, a]
   return s.length >= 4 && l.length - s.length <= 1 && l.startsWith(s)
 }
@@ -120,35 +125,54 @@ function prepare(e: GuideEntry): Prepared {
   return p
 }
 
-function score(q: string[], e: GuideEntry): number {
+/**
+ * Peso di una parola: quelle che compaiono in molte voci («bevuta», «notifica») contano meno di quelle rare.
+ * Va da 1 (in tutte le voci) a 4 (in una sola): i punteggi non scendono mai sotto quelli senza pesi.
+ */
+function weightOf(t: string, entries: GuideEntry[]): number {
+  const n = entries.length
+  if (n < 2) return 1
+  const df = entries.filter((e) => {
+    const p = prepare(e)
+    return has(p.keywords, t) || has(p.title, t) || p.questions.some((sentence) => has(sentence, t))
+  }).length
+  return df === 0 ? 1 : 1 + (3 * Math.log(n / df)) / Math.log(n)
+}
+
+function score(q: string[], e: GuideEntry, weights: number[]): number {
   const p = prepare(e)
-  let kw = 0
-  let ti = 0
-  for (const t of q) {
-    if (has(p.keywords, t)) kw += 3
-    if (has(p.title, t)) ti += 2
-  }
+  let sum = 0
+  q.forEach((t, i) => {
+    if (has(p.keywords, t)) sum += 3 * weights[i]
+    if (has(p.title, t)) sum += 2 * weights[i]
+  })
   let qs = 0
   for (const sentence of p.questions) {
-    qs = Math.max(qs, q.filter((t) => has(sentence, t)).length)
+    qs = Math.max(qs, q.reduce((acc, t, i) => (has(sentence, t) ? acc + weights[i] : acc), 0))
   }
-  return (kw + ti + qs) / Math.sqrt(q.length)
+  return (sum + qs) / Math.sqrt(q.length)
+}
+
+/** Le voci con almeno un punto, dalla migliore. */
+export function rankGuide(query: string, entries: GuideEntry[]): { entry: GuideEntry; score: number }[] {
+  const q = [...new Set(normalize(query))]
+  if (q.length === 0) return []
+  const weights = q.map((t) => weightOf(t, entries))
+  return entries
+    .map((entry) => ({ entry, score: score(q, entry, weights) }))
+    .filter((r) => r.score > 0)
+    .sort((a, b) => b.score - a.score)
 }
 
 export function searchGuide(
   query: string,
   entries: GuideEntry[],
 ): { best: GuideEntry | null; suggestions: GuideEntry[] } {
-  const q = [...new Set(normalize(query))]
-  if (q.length === 0) return { best: null, suggestions: [] }
-  const ranked = entries
-    .map((e) => ({ e, s: score(q, e) }))
-    .filter((r) => r.s > 0)
-    .sort((a, b) => b.s - a.s)
+  const ranked = rankGuide(query, entries)
   const top = ranked[0]
-  const sure = top && top.s >= MIN_SCORE && (!ranked[1] || top.s >= ranked[1].s * GAP)
+  const sure = top && top.score >= MIN_SCORE && (!ranked[1] || top.score >= ranked[1].score * GAP)
   if (sure) {
-    return { best: top.e, suggestions: ranked.slice(1, 3).map((r) => r.e) }
+    return { best: top.entry, suggestions: ranked.slice(1, 3).map((r) => r.entry) }
   }
-  return { best: null, suggestions: ranked.slice(0, 3).map((r) => r.e) }
+  return { best: null, suggestions: ranked.slice(0, 3).map((r) => r.entry) }
 }

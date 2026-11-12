@@ -99,3 +99,32 @@ describe('searchGuide', () => {
     expect(MIN_SCORE).toBeGreaterThan(0)
   })
 })
+
+describe('affinamenti della guida', () => {
+  it('«metà» non è un sinonimo di «obiettivo»', () => {
+    expect(normalize('metà')).not.toEqual(normalize('obiettivo'))
+  })
+  it('«tema» è come «scuro»; «notte» non lo è', () => {
+    expect(normalize('tema')).toEqual(normalize('scuro'))
+    expect(normalize('notte')).not.toEqual(normalize('scuro'))
+  })
+  it('toglie i riempitivi: più, molto, poco, mai, sempre, dopo, poi, quindi', () => {
+    expect(normalize('più molto poco mai sempre dopo poi quindi')).toEqual([])
+    expect(normalize("cos'è dell'acqua")).toEqual(['acqu'])
+  })
+  it('plurale in -e/-i di una parola di 4 lettere: mese/mesi', () => {
+    const month = entry({ id: 'month', title: 'Calendario del mese', keywords: ['mese'] })
+    expect(searchGuide('mesi', [month]).best?.id).toBe('month')
+    const other = entry({ id: 'other', title: 'Altro', keywords: ['apro'] })
+    expect(searchGuide('apre', [other]).best).toBeNull()
+  })
+  it('una parola rara pesa più di una presente in molte voci', () => {
+    const common = Array.from({ length: 4 }, (_, i) => entry({ id: `c${i}`, title: `Voce ${i}`, keywords: ['bevuta'] }))
+    const rare = entry({ id: 'rare', title: 'Rara', keywords: ['ieri'] })
+    expect(searchGuide('bevuta ieri', [...common, rare]).best?.id).toBe('rare')
+  })
+  it('un solo aggancio debole (sotto MIN_SCORE) non basta', () => {
+    const weak = entry({ id: 'weak', title: 'Altro', questions: ['quanti caffè al giorno posso prendere'] })
+    expect(searchGuide('ho mal di testa cosa prendo', [weak, goal]).best).toBeNull()
+  })
+})
