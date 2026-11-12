@@ -124,7 +124,7 @@ export function poseFor(input: PoseInput): Pose {
 
   const breath = still ? 0 : 0.02 * (1 - thirst) * Math.sin(t * 2)
   const scaleY = 1 - 0.08 * thirst + breath
-  // Con la sete gli occhi si socchiudono (non con gli occhi spalancati del caffè).
+  // Con la sete gli occhi si socchiudono (non con gli occhi spalancati del caffÃ¨).
   if (mood !== 'coffee') eyeOpen = Math.min(eyeOpen, 1 - 0.5 * thirst)
   if (thirst > 0.5 && (mood === 'idle' || mood === 'thirsty')) mouth = 'small'
 
