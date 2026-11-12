@@ -16,6 +16,7 @@ import { ProfileProvider } from '../auth/ProfileProvider'
 import { DeleteAccount } from '../profile/DeleteAccount'
 import { PrivacyPage } from '../profile/PrivacyPage'
 import { FeedbackForm } from './FeedbackForm'
+import { ReportPage } from './ReportPage'
 
 function wrap(node: React.ReactNode) {
   return render(
@@ -112,5 +113,39 @@ describe('PrivacyPage', () => {
     expect(await screen.findByText(/nome e foto sono visibili/i)).toBeInTheDocument()
     expect(screen.getByText(/supabase/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/scrivi elimina/i)).toBeInTheDocument()
+  })
+})
+
+describe('ReportPage', () => {
+  const send = () => userEvent.click(screen.getByRole('button', { name: 'Invia la segnalazione' }))
+
+  it("per il diritto d'autore servono le due dichiarazioni", async () => {
+    wrap(<ReportPage />)
+    await userEvent.type(await screen.findByLabelText(/nome in classifica/i), 'Marco')
+    await userEvent.type(screen.getByLabelText(/quale opera/i), 'La mia foto del tramonto')
+    await send()
+    expect(await screen.findByRole('alert')).toHaveTextContent(/dichiarazioni/i)
+    expect(fake.tables.feedback ?? []).toHaveLength(0)
+  })
+
+  it('una segnalazione completa arriva tra i suggerimenti con chi è segnalato', async () => {
+    wrap(<ReportPage />)
+    await userEvent.type(await screen.findByLabelText(/nome in classifica/i), 'Marco')
+    await userEvent.type(screen.getByLabelText(/quale opera/i), 'La mia foto del tramonto')
+    await userEvent.click(screen.getByLabelText(/buona fede/i))
+    await userEvent.click(screen.getByLabelText(/informazioni sono esatte/i))
+    await send()
+    expect(await screen.findByRole('status')).toHaveTextContent(/ricevuta/i)
+    await waitFor(() => expect(fake.tables.feedback).toHaveLength(1))
+    const row = fake.tables.feedback[0] as { message: string; user_id: string }
+    expect(row.user_id).toBe('u1')
+    expect(row.message).toContain("[Segnalazione: diritto d'autore]")
+    expect(row.message).toContain('In classifica: Marco')
+  })
+
+  it('un contenuto offensivo non chiede le dichiarazioni', async () => {
+    wrap(<ReportPage />)
+    await userEvent.click(await screen.findByLabelText(/offensivo/i))
+    expect(screen.queryByLabelText(/buona fede/i)).not.toBeInTheDocument()
   })
 })

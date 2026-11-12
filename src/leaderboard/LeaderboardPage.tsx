@@ -219,6 +219,7 @@ export function LeaderboardPage() {
           <p className="hint">Con «Sprona» mandi a un amico una notifica per ricordargli di bere. Al massimo 3 volte al giorno, e una volta all'ora per la stessa persona.</p>
           <p className="hint">Quando qualcuno raggiunge l'obiettivo del giorno, gli altri ricevono un avviso e possono mandargli i complimenti 👏, dalla notifica o da qui. Puoi spegnere questi avvisi nel Profilo.</p>
           <p className="hint">Nome e foto sono visibili a tutti gli utenti dell'app, insieme ai giorni in cui hai raggiunto l'obiettivo. Le quantità bevute restano private.</p>
+          <p className="hint">Una foto usa una tua opera senza permesso, o un nome o una foto è offensivo? <a href="#/segnala">Segnalalo</a>: lo controlliamo e, se serve, lo togliamo.</p>
         </div>
       </details>
     </Stagger>

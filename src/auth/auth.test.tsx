@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createFakeSupabase, type FakeSupabase } from '../test/fakeSupabase'
@@ -21,6 +21,10 @@ beforeEach(() => {
 
 function fill(label: RegExp, value: string) {
   return userEvent.type(screen.getByLabelText(label), value)
+}
+
+function birth(value = '1990-05-01') {
+  fireEvent.change(screen.getByLabelText(/data di nascita/i), { target: { value } })
 }
 
 describe('accesso', () => {
@@ -66,6 +70,7 @@ describe('registrazione', () => {
     await screen.findByRole('heading', { name: 'Crea il tuo profilo' })
     await fill(/email/i, 'a@b.it')
     await fill(/password/i, 'password1')
+    birth()
     await userEvent.click(screen.getByRole('button', { name: 'Registrati' }))
     expect(await screen.findByText('Inserisci il tuo nome')).toBeInTheDocument()
     expect(fake.client.auth.signUp).not.toHaveBeenCalled()
@@ -88,11 +93,49 @@ describe('registrazione', () => {
     await fill(/nome/i, 'Anna')
     await fill(/email/i, 'a@b.it')
     await fill(/password/i, 'password1')
+    birth()
     await userEvent.click(screen.getByRole('button', { name: 'Registrati' }))
     expect(await screen.findByText(/controlla la tua email/i)).toBeInTheDocument()
     const arg = fake.client.auth.signUp.mock.calls[0][0] as { options: { data: { display_name: string; tz: string } } }
     expect(arg.options.data.display_name).toBe('Anna')
     expect(arg.options.data.tz).toBeTruthy()
+  })
+})
+
+describe('età minima', () => {
+  beforeEach(() => {
+    localStorage.removeItem('bere.ageBlocked')
+    window.location.hash = '#/registrati'
+  })
+
+  async function fillAll(date: string) {
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Crea il tuo profilo' })
+    await fill(/nome/i, 'Anna')
+    await fill(/email/i, 'a@b.it')
+    await fill(/password/i, 'password1')
+    if (date) birth(date)
+    await userEvent.click(screen.getByRole('button', { name: 'Registrati' }))
+  }
+
+  it('chiede la data di nascita', async () => {
+    await fillAll('')
+    expect(await screen.findByText('Inserisci la tua data di nascita')).toBeInTheDocument()
+    expect(fake.client.auth.signUp).not.toHaveBeenCalled()
+  })
+
+  it('sotto i 14 anni non crea il profilo e non lascia riprovare cambiando data', async () => {
+    const y = new Date().getFullYear() - 13
+    await fillAll(`${y}-01-01`)
+    expect(await screen.findByRole('heading', { name: /almeno 14 anni/i })).toBeInTheDocument()
+    expect(fake.client.auth.signUp).not.toHaveBeenCalled()
+    expect(localStorage.getItem('bere.ageBlocked')).toBe('1')
+  })
+
+  it('la data di nascita non viene inviata', async () => {
+    await fillAll('1990-05-01')
+    await screen.findByText(/controlla la tua email/i)
+    expect(JSON.stringify(fake.client.auth.signUp.mock.calls[0][0])).not.toContain('1990')
   })
 })
 
@@ -104,6 +147,7 @@ describe('errori di registrazione', () => {
     await fill(/nome/i, 'Anna')
     await fill(/email/i, email)
     await fill(/password/i, 'password1')
+    birth()
     await userEvent.click(screen.getByRole('button', { name: 'Registrati' }))
   }
 
@@ -220,6 +264,7 @@ describe('verifica email con codice', () => {
     await fill(/nome/i, 'Anna')
     await fill(/email/i, 'a@b.it')
     await fill(/password/i, 'password1')
+    birth()
     await userEvent.click(screen.getByRole('button', { name: 'Registrati' }))
     await screen.findByRole('heading', { name: 'Inserisci il codice' })
   }

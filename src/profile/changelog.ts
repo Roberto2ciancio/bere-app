@@ -12,6 +12,16 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '1.9.6',
+    date: '2026-11-12',
+    title: 'Iscrizione e segnalazioni',
+    notes: [
+      'Per iscriversi a Bere servono almeno 14 anni: la data di nascita resta sul telefono e non viene salvata.',
+      'Dalla Classifica puoi segnalare una foto che usa una tua opera senza permesso, o un nome o una foto offensivi.',
+      'La pagina Privacy spiega come trattiamo età, foto e segnalazioni.',
+    ],
+  },
+  {
     version: '1.9.5',
     date: '2026-11-11',
     title: 'Glu reagisce',

@@ -25,6 +25,16 @@ export function PrivacyPage() {
       </section>
 
       <section className="section">
+        <h2>Età minima</h2>
+        <p>Bere è per chi ha almeno 14 anni. All'iscrizione chiediamo la data di nascita solo per questo controllo: resta sul telefono e non la salviamo. Se scopriamo che un profilo è di una persona più giovane, lo cancelliamo.</p>
+      </section>
+
+      <section className="section">
+        <h2>Foto e diritto d'autore</h2>
+        <p>Carica solo foto tue o che hai il permesso di usare: la foto del profilo è visibile a tutti in classifica. Se una foto usa una tua opera senza permesso, o un nome o una foto è offensivo, <Link to="/segnala">segnalalo</Link> indicando il nome in classifica e l'opera originale. Controlliamo ogni segnalazione e togliamo i contenuti che violano diritti o regole; chi lo fa più volte perde il profilo. Puoi togliere la tua foto in ogni momento scegliendo uno degli avatar pronti.</p>
+      </section>
+
+      <section className="section">
         <h2>Cancellare il profilo</h2>
         <p>Cancella subito profilo, foto, bevute, caffeina e promemoria. I suggerimenti già inviati restano, senza il collegamento al tuo profilo. Non si può annullare.</p>
         <DeleteAccount />

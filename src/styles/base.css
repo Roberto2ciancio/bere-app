@@ -35,6 +35,10 @@ select { width: 100%; min-height: 46px; padding: 10px 12px; border: 2px solid va
 .stack { display: flex; flex-direction: column; gap: 14px; }
 .stack label { display: flex; flex-direction: column; gap: 5px; font-weight: 600; font-size: 0.93rem; }
 .stack label.row { flex-direction: row; align-items: center; }
+.stack label.check { flex-direction: row; align-items: flex-start; gap: 10px; font-weight: 500; }
+.stack label.check input { flex: none; width: 22px; min-height: 22px; margin: 0; accent-color: var(--water-deep); }
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+legend { font-weight: 700; padding: 0; margin-bottom: 4px; }
 .hint { color: var(--ink-soft); font-size: 0.88rem; }
 .error { color: var(--danger); font-size: 0.92rem; font-weight: 600; }
 .center-note { padding: 40px 16px; text-align: center; color: var(--ink-soft); }

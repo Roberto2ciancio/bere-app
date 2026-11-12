@@ -341,6 +341,7 @@ const PAGES = [
   ['Tazze e bevande', '/tazze', null],
   ['Suggerimenti', '/feedback', null],
   ['Privacy', '/privacy', null],
+  ['Segnala', '/segnala', 'Segnala'],
   ['Stato notifiche', '/notifiche', null],
 ] as const
 
