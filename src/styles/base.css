@@ -51,6 +51,8 @@ legend { font-weight: 700; padding: 0; margin-bottom: 4px; }
   flex-direction: column;
   gap: 28px;
 }
+/* Schede col Glu del palcoscenico nell'angolo (app di prova): spazio in fondo perché l'ultima riga resti sopra di lui. */
+.page.has-glu-stage { padding-bottom: calc(32px + 88px); }
 .section { display: flex; flex-direction: column; gap: 12px; }
 .section + .section { border-top: 1px solid var(--line); padding-top: 24px; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

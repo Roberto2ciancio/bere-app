@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 
-/** Glu 3D nella Home dell'app di prova: solo Chromium (il 3D su WebKit headless non è affidabile). */
+/** Glu 3D dell'app di prova (Home e palcoscenico tra le schede): solo Chromium (il 3D su WebKit headless non è affidabile). */
 
 const VERSION = (JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string }).version
 const DEV_USER = '00000000-0000-4000-8000-00000000de00'
@@ -10,8 +10,8 @@ test.beforeEach(({ browserName }) => {
   test.skip(browserName !== 'chromium', 'Glu 3D si prova solo su Chromium')
 })
 
-/** Apre la Home senza primo avvio né novità; `check` è la verifica 3D salvata (null: nessuna). */
-async function openHome(page: Page, check: 'ok' | null) {
+/** Apre l'app senza primo avvio né novità; `check` è la verifica 3D salvata (null: nessuna). */
+async function openHome(page: Page, check: 'ok' | 'nowebgl' | null, path = '#/home') {
   await page.route(/open-meteo\.com/, (route) => route.fulfill({ json: { daily: { temperature_2m_max: [31] } } }))
   await page.addInitScript(
     ({ user, version, check }) => {
@@ -23,8 +23,8 @@ async function openHome(page: Page, check: 'ok' | null) {
     },
     { user: DEV_USER, version: VERSION, check },
   )
-  await page.goto('./#/home')
-  await expect(page.getByRole('button', { name: /Ho bevuto/ })).toBeVisible()
+  await page.goto(`./${path}`)
+  if (path === '#/home') await expect(page.getByRole('button', { name: /Ho bevuto/ })).toBeVisible()
 }
 
 async function expectNoHorizontalScroll(page: Page) {
@@ -39,9 +39,9 @@ async function expectNoHorizontalScroll(page: Page) {
   expect(overflow.body, 'il contenuto esce di lato').toBeLessThanOrEqual(1)
 }
 
-test('con la verifica 3D riuscita la Home mostra Glu 3D, senza scorrimento laterale', async ({ page }) => {
+test('con la verifica 3D riuscita la Home mostra Glu 3D (nel palcoscenico), senza scorrimento laterale', async ({ page }) => {
   await openHome(page, 'ok')
-  await expect(page.getByTestId('glu-3d')).toBeVisible()
+  await expect(page.getByTestId('glu-stage').getByTestId('glu-3d')).toBeVisible()
   await expect(page.getByTestId('glu')).toHaveCount(0)
   for (const width of [320, 390]) {
     await page.setViewportSize({ width, height: 700 })
@@ -66,4 +66,109 @@ test('senza WebGL la Home mostra Glu 2D e il 3D non compare mai', async ({ page 
   await openHome(page, null)
   await expect(page.getByTestId('glu')).toBeVisible()
   expect(await page.evaluate(() => (window as unknown as { __glu3dSeen: boolean }).__glu3dSeen)).toBe(false)
+})
+
+type Box = { x: number; y: number; width: number; height: number }
+
+const stageBox = (page: Page) => page.getByTestId('glu-stage-box')
+
+/** Il riquadro di Glu a fine viaggio (smette di muoversi). */
+async function settledBox(page: Page): Promise<Box> {
+  let last: Box | null = null
+  await expect(async () => {
+    const box = (await stageBox(page).boundingBox())!
+    const same = last && Math.abs(box.x - last.x) < 0.5 && Math.abs(box.y - last.y) < 0.5 && Math.abs(box.width - last.width) < 0.5
+    last = box
+    expect(same).toBe(true)
+  }).toPass({ intervals: [150], timeout: 5000 })
+  return last!
+}
+
+async function goTab(page: Page, name: string, hash: string) {
+  await page.getByRole('navigation', { name: 'Sezioni' }).getByRole('link', { name }).click()
+  await expect(page).toHaveURL(new RegExp(`${hash}$`))
+}
+
+/** Glu nel quarto in basso a destra, sopra la barra; nessun glu-corner; nessuno scorrimento laterale; ultima card sopra Glu. */
+async function expectCorner(page: Page) {
+  await expect(page.getByTestId('glu-stage')).toHaveCount(1)
+  await expect(page.getByTestId('glu-stage')).toHaveAttribute('data-spot', 'corner')
+  await expect(page.locator('.glu-corner')).toHaveCount(0)
+  const box = await settledBox(page)
+  const view = page.viewportSize()!
+  const tabs = (await page.locator('.tabs').boundingBox())!
+  expect(box.x, 'Glu nella metà destra').toBeGreaterThanOrEqual(view.width / 2)
+  expect(box.x + box.width, 'Glu dentro lo schermo').toBeLessThanOrEqual(view.width)
+  expect(box.y, 'Glu nella metà bassa').toBeGreaterThanOrEqual(view.height / 2)
+  expect(box.y + box.height, 'Glu sopra la barra').toBeLessThanOrEqual(tabs.y + 0.5)
+  // In fondo alla pagina l'ultima card resta sopra Glu.
+  await page.evaluate(() => {
+    const body = document.querySelector('.shell-body')!
+    body.scrollTop = body.scrollHeight
+  })
+  await page.waitForTimeout(100)
+  const cardBottom = await page.evaluate(() => {
+    const cards = document.querySelectorAll('.shell-body main .card')
+    const last = cards[cards.length - 1]
+    return last ? last.getBoundingClientRect().bottom : null
+  })
+  expect(cardBottom, 'la pagina ha almeno una card').not.toBeNull()
+  expect(cardBottom!, 'ultima card sopra Glu').toBeLessThanOrEqual(box.y)
+  await page.evaluate(() => (document.querySelector('.shell-body')!.scrollTop = 0))
+}
+
+test('un solo Glu viaggia tra le schede: angolo sopra la barra, fuori scena nei dettagli, anello nella Home', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 })
+  await openHome(page, 'ok')
+  await expect(page.getByTestId('glu-stage')).toHaveCount(1)
+  const ring = await settledBox(page)
+
+  await goTab(page, 'Storico', '#/storico')
+  await expectCorner(page)
+  await expectNoHorizontalScroll(page)
+  await goTab(page, 'Profilo', '#/profilo')
+  await expectCorner(page)
+  await expectNoHorizontalScroll(page)
+  await goTab(page, 'Classifica', '#/classifica')
+  await expectCorner(page)
+  await expectNoHorizontalScroll(page)
+
+  await goTab(page, 'Profilo', '#/profilo')
+  await page.getByRole('link', { name: 'Gestisci i promemoria' }).click()
+  await expect(page).toHaveURL(/#\/promemoria$/)
+  await expect(page.getByTestId('glu-stage')).toHaveAttribute('data-spot', 'away')
+  const away = await settledBox(page)
+  expect(away.x, 'Glu fuori scena a destra').toBeGreaterThanOrEqual(320)
+  await expectNoHorizontalScroll(page)
+
+  await goTab(page, 'Oggi', '#/home')
+  await expect(page.getByTestId('glu-stage')).toHaveAttribute('data-spot', 'ring')
+  const back = await settledBox(page)
+  const slot = (await page.getByTestId('glu-ring-slot').boundingBox())!
+  expect(Math.abs(back.x - slot.x)).toBeLessThanOrEqual(2)
+  expect(Math.abs(back.y - slot.y)).toBeLessThanOrEqual(2)
+  expect(Math.abs(back.width - slot.width)).toBeLessThanOrEqual(2)
+  expect(Math.abs(back.width - ring.width)).toBeLessThanOrEqual(2)
+  await expect(page.getByTestId('glu-stage')).toHaveCount(1)
+})
+
+test('aprendo direttamente lo Storico col 3D il glu-corner non compare mai', async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __cornerSeen: boolean }
+    w.__cornerSeen = false
+    new MutationObserver(() => {
+      if (document.querySelector('.glu-corner')) w.__cornerSeen = true
+    }).observe(document, { childList: true, subtree: true })
+  })
+  await openHome(page, 'ok', '#/storico')
+  await expect(page.getByRole('heading', { name: 'Storico' })).toBeVisible()
+  await expect(page.getByTestId('glu-stage')).toHaveAttribute('data-spot', 'corner')
+  await page.waitForTimeout(300)
+  expect(await page.evaluate(() => (window as unknown as { __cornerSeen: boolean }).__cornerSeen)).toBe(false)
+})
+
+test('senza 3D lo Storico ha il glu-corner di sempre e nessun palcoscenico', async ({ page }) => {
+  await openHome(page, 'nowebgl', '#/storico')
+  await expect(page.locator('.glu-corner')).toBeVisible()
+  await expect(page.getByTestId('glu-stage')).toHaveCount(0)
 })

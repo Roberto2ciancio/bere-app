@@ -35,6 +35,7 @@ import { ProfileProvider } from '../auth/ProfileProvider'
 import { addDays, localParts } from '../domain/time'
 import { GluView } from '../home/GluView'
 import { HomePage } from '../home/HomePage'
+import { GluStageProvider, useStageInternals } from '../glu3d/stage/stageContext'
 import { readCache, writeCache } from '../lib/cache'
 import { reportError } from '../lib/errorReporting'
 
@@ -197,41 +198,40 @@ describe('Glu: tristezza e saluto', () => {
   })
 })
 
-describe('Glu 3D nella Home', () => {
-  const view = (choice: '3d' | '2d') => render(<GluView choice={choice} fill={0.4} mood="idle" name="Anna" now={0} />)
+describe('Glu della Home col palcoscenico', () => {
+  function Probe() {
+    const ctx = useStageInternals()
+    return <output data-testid="probe">{JSON.stringify({ spot: ctx?.spec?.spot ?? null, fill: ctx?.spec?.fill ?? null, ring: !!ctx?.ringEl })}</output>
+  }
+  const view = (active: boolean) =>
+    render(
+      <GluStageProvider active={active}>
+        <GluView fill={0.4} mood="idle" name="Anna" now={0} />
+        <Probe />
+      </GluStageProvider>,
+    )
 
-  it('con la scelta 3D c’è Glu 3D e non il disegno 2D', () => {
-    view('3d')
-    expect(screen.getByTestId('glu-3d')).toBeInTheDocument()
+  it('con il palcoscenico attivo la Home non disegna Glu ma prenota l’anello', () => {
+    view(true)
     expect(screen.queryByTestId('glu')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('glu-3d')).not.toBeInTheDocument()
+    const slot = screen.getByTestId('glu-ring-slot')
+    expect(slot.closest('.progress-ring-art')).not.toBeNull()
+    expect(JSON.parse(screen.getByTestId('probe').textContent!)).toEqual({ spot: 'ring', fill: 0.4, ring: true })
+    // Il fumetto della Home resta della Home.
+    expect(screen.getByTestId('glu-view').querySelector('.glu-bubble')).not.toBeNull()
   })
 
-  it('se il 3D si guasta torna il 2D e l’errore si segnala una volta', () => {
-    view('3d')
-    const broken = screen.getByRole('button', { name: 'guasta' })
-    act(() => {
-      broken.click()
-      broken.click()
-    })
+  it('senza palcoscenico c’è il disegno 2D e nessun 3D', () => {
+    view(false)
     expect(screen.getByTestId('glu')).toBeInTheDocument()
     expect(screen.queryByTestId('glu-3d')).not.toBeInTheDocument()
-    expect(reportError).toHaveBeenCalledTimes(1)
-    expect(reportError).toHaveBeenCalledWith('react', expect.any(Error))
+    expect(screen.queryByTestId('glu-ring-slot')).not.toBeInTheDocument()
   })
 
-  it('con la scelta 2D c’è solo il disegno 2D', () => {
-    view('2d')
-    expect(screen.getByTestId('glu')).toBeInTheDocument()
-    expect(screen.queryByTestId('glu-3d')).not.toBeInTheDocument()
-  })
-
-  it('finché la scelta è in sospeso la Home dice «Caricamento…» e non c’è «Ho bevuto»', async () => {
+  it('la Home non aspetta più la scelta 3D: «Ho bevuto» arriva anche se TabsLayout è in sospeso', async () => {
     g.choice = 'pending'
     renderIn(<HomePage />)
-    expect(await screen.findByText('Caricamento…')).toBeInTheDocument()
-    // Anche con il profilo arrivato (dalla finta rete, subito): si aspetta la scelta.
-    await new Promise((r) => setTimeout(r, 100))
-    expect(screen.getByText('Caricamento…')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /ho bevuto/i })).not.toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /ho bevuto/i })).toBeInTheDocument()
   })
 })

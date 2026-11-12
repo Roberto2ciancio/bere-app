@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
+import { useGluSpot, useGluStageActive } from '../glu3d/stage/stageContext'
+import { useGluAccessories } from '../mascot/accessories'
 import { GluCorner } from '../mascot/GluCorner'
 import { profileGreeting } from '../mascot/phrases'
 import { PauseForm } from '../pause/PauseForm'
@@ -18,12 +20,17 @@ import { Stagger } from '../ui/motion/Stagger'
 export function ProfilePage() {
   const { signOut } = useAuth()
   const { profile } = useProfile()
+  // Glu nell'angolo: con il palcoscenico lo disegna lui (stessa frase), altrimenti GluCorner.
+  const stage = useGluStageActive()
+  const accessories = useGluAccessories()
+  const greeting = profile ? profileGreeting(profile.display_name) : undefined
+  useGluSpot(stage ? { spot: 'corner', mood: 'hello', text: greeting, fill: 0.6, extras: accessories } : null)
 
   return (
-    <Stagger as="main" className="page profile">
+    <Stagger as="main" className={stage ? 'page profile has-glu-stage' : 'page profile'}>
       <h1>Profilo</h1>
 
-      {profile && <GluCorner mood="hello" text={profileGreeting(profile.display_name)} />}
+      {!stage && greeting && <GluCorner mood="hello" text={greeting} />}
 
       <ProfileHeader />
 

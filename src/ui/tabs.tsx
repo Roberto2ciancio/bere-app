@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useOutlet } from 'react-router-dom'
+import { useOptionalAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
+import { useGlu3dChoice } from '../glu3d/capability'
+import { GLU_3D_ENABLED } from '../glu3d/enabled'
+import { GluStage } from '../glu3d/stage/GluStage'
+import { GluStageProvider } from '../glu3d/stage/stageContext'
 import { touchLastSeen } from '../lib/lastSeen'
 import { backgroundUrl } from '../profile/imageUpload'
 import { HomeIcon, ProfileIcon, StatsIcon, TrophyIcon } from './icons'
@@ -12,6 +17,10 @@ export function TabsLayout() {
   const { profile } = useProfile()
   const backgroundPath = profile?.background_path ?? null
   const outlet = useOutlet()
+  // Glu 3D o 2D: finché non si sa, si aspetta (al massimo pochi secondi) per non cambiare Glu sotto gli occhi.
+  const gluChoice = useGlu3dChoice(useOptionalAuth()?.user?.id ?? null)
+  // Il palcoscenico (un solo Glu 3D che viaggia tra le schede) esiste solo nell'app di prova.
+  const stage = GLU_3D_ENABLED && gluChoice === '3d'
   const [background, setBackground] = useState<string | null>(null)
 
   useEffect(() => {
@@ -40,18 +49,21 @@ export function TabsLayout() {
   }, [backgroundPath])
 
   return (
-    <div className="shell">
-      {background && <div className="shell-bg" style={{ backgroundImage: `url("${background}")` }} />}
-      <div className="shell-body">
-        <PageTransition>{outlet}</PageTransition>
+    <GluStageProvider active={stage}>
+      <div className="shell">
+        {background && <div className="shell-bg" style={{ backgroundImage: `url("${background}")` }} />}
+        <div className="shell-body">
+          {gluChoice === 'pending' ? <p className="center-note">Caricamento…</p> : <PageTransition>{outlet}</PageTransition>}
+        </div>
+        <nav className="tabs" aria-label="Sezioni">
+          <NavLink to="/home"><span className="tab-icon"><HomeIcon /></span>Oggi</NavLink>
+          <NavLink to="/storico"><span className="tab-icon"><StatsIcon /></span>Storico</NavLink>
+          <NavLink to="/classifica"><span className="tab-icon"><TrophyIcon /></span>Classifica</NavLink>
+          <NavLink to="/profilo"><span className="tab-icon"><ProfileIcon /></span>Profilo</NavLink>
+        </nav>
+        {GLU_3D_ENABLED && stage && <GluStage />}
+        <WhatsNew />
       </div>
-      <nav className="tabs" aria-label="Sezioni">
-        <NavLink to="/home"><span className="tab-icon"><HomeIcon /></span>Oggi</NavLink>
-        <NavLink to="/storico"><span className="tab-icon"><StatsIcon /></span>Storico</NavLink>
-        <NavLink to="/classifica"><span className="tab-icon"><TrophyIcon /></span>Classifica</NavLink>
-        <NavLink to="/profilo"><span className="tab-icon"><ProfileIcon /></span>Profilo</NavLink>
-      </nav>
-      <WhatsNew />
-    </div>
+    </GluStageProvider>
   )
 }

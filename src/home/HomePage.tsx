@@ -13,7 +13,6 @@ import { DrinkSheet } from '../drinks/DrinkSheet'
 import { useDrinks, type DrinkInput } from '../drinks/useDrinks'
 import { WORKOUT_BOOST_ML } from '../goal/boosts'
 import { useGoalBoosts } from '../goal/useGoalBoosts'
-import { useGlu3dChoice } from '../glu3d/capability'
 import { expectedByNow, formatAmount, formatVolume, HIGH_INTAKE_ML, type Units } from '../domain/hydration'
 import { NewsIcon } from '../news/NewsIcon'
 import { pendingOnboardingStep } from '../onboarding/onboardingFlag'
@@ -90,8 +89,6 @@ export function HomePage() {
   const { profile, loading } = useProfile()
   const navigate = useNavigate()
   const userId = user?.id ?? null
-  // Glu 3D o 2D: finché non si sa, la Home aspetta (al massimo pochi secondi) per non cambiare Glu sotto gli occhi.
-  const gluChoice = useGlu3dChoice(userId)
   // Letta quando arrivano i programmi: la sessione può completarsi dopo il primo render.
   const createdAt = useRef(user?.created_at)
   useEffect(() => {
@@ -265,7 +262,6 @@ export function HomePage() {
   if (!profile) {
     return <p className="center-note">{loading ? 'Caricamento…' : 'Profilo non disponibile. Controlla la connessione e riapri l\'app.'}</p>
   }
-  if (gluChoice === 'pending') return <p className="center-note">Caricamento…</p>
 
   const units = profile.units
   const pace = split ? describePace(activePace({ goalMl, drunkMl: totalMl, nowMinutes: parts.minutes, hours }), hours, units) : null
@@ -295,7 +291,6 @@ export function HomePage() {
           coffeeOver={caffeine.overLimit}
           calm={!!userId && isGluCalm(userId)}
           name={profile.display_name.trim().split(/\s+/)[0] ?? ''}
-          choice={gluChoice}
         />
       </div>
 

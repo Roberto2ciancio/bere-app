@@ -14,8 +14,10 @@ import { weekStart } from '../leaderboard/weekStart'
 import { pausedDays } from '../pause/pauses'
 import { usePauses } from '../pause/usePauses'
 import { supabase } from '../lib/supabase'
-import { saveStreak } from '../mascot/accessories'
+import { saveStreak, useGluAccessories } from '../mascot/accessories'
 import { GluCorner } from '../mascot/GluCorner'
+import type { GluMood } from '../mascot/mood'
+import { useGluSpot, useGluStageActive } from '../glu3d/stage/stageContext'
 import { CORNER_PHRASES, historyStreakPhrase } from '../mascot/phrases'
 import { streakAccessory } from '../mascot/reactions'
 import { achievements, challenges, computeStats, dayResults, jollyThisWeek, type CaffeineByDay, type DayTotal } from './stats'
@@ -135,6 +137,27 @@ export function HistoryPage() {
     if (userId && streak !== null) saveStreak(userId, streak)
   }, [userId, streak])
 
+  // Glu nell'angolo: con il palcoscenico lo disegna lui (stessa frase), altrimenti GluCorner.
+  const stage = useGluStageActive()
+  const accessories = useGluAccessories()
+  const todayDay = totals && stats ? dayResults(totals, goals, today, range, boosts).at(-1) : undefined
+  const todayFill = todayDay && todayDay.goalMl > 0 ? todayDay.totalMl / todayDay.goalMl : undefined
+  const corner = stats
+    ? {
+        mood: (stats.currentStreak > 0 ? (stats.currentStreak >= 7 ? 'goal' : 'almost') : 'idle') as GluMood,
+        text: stats.currentStreak > 0 ? historyStreakPhrase(stats.currentStreak) : CORNER_PHRASES.historyIdle,
+        fill: todayFill,
+        crown: streakAccessory(stats.currentStreak),
+      }
+    : null
+  useGluSpot(
+    stage
+      ? corner
+        ? { spot: 'corner', mood: corner.mood, text: corner.text, fill: corner.fill ?? 0.6, extras: { crown: corner.crown ?? accessories.crown, headband: accessories.headband } }
+        : { spot: 'corner', mood: 'idle' }
+      : null,
+  )
+
   if (failed) {
     return (
       <main className="page">
@@ -156,12 +179,10 @@ export function HistoryPage() {
   const locked = badges.filter((a) => !a.earned)
   const metDays = days.filter((d) => d.met).length
   const avgMl = Math.round(days.reduce((sum, d) => sum + d.totalMl, 0) / days.length)
-  const todayDay = days.at(-1)
-  const todayFill = todayDay && todayDay.goalMl > 0 ? todayDay.totalMl / todayDay.goalMl : undefined
   const pickPct = pick && pick.goalMl > 0 ? Math.min(100, Math.round((pick.totalMl / pick.goalMl) * 100)) : 0
 
   return (
-    <Stagger as="main" className="page history">
+    <Stagger as="main" className={stage ? 'page history has-glu-stage' : 'page history'}>
       <header className="page-head">
         <h1>Storico</h1>
         <div className="segmented" role="group" aria-label="Periodo">
@@ -172,12 +193,7 @@ export function HistoryPage() {
       </header>
 
       {/* Sempre presente: il giorno vuoto qui sotto è solo una riga, così Glu resta uno solo. */}
-      <GluCorner
-        mood={stats.currentStreak > 0 ? (stats.currentStreak >= 7 ? 'goal' : 'almost') : 'idle'}
-        text={stats.currentStreak > 0 ? historyStreakPhrase(stats.currentStreak) : CORNER_PHRASES.historyIdle}
-        fill={todayFill}
-        crown={streakAccessory(stats.currentStreak)}
-      />
+      {!stage && corner && <GluCorner {...corner} />}
 
       <section className="card">
         <div className="history-summary">

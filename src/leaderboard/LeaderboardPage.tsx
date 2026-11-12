@@ -8,6 +8,8 @@ import { useLevels } from '../levels/useLevels'
 import { supabase } from '../lib/supabase'
 import { EmptyState } from '../mascot/EmptyState'
 import { GluCorner } from '../mascot/GluCorner'
+import { useGluAccessories } from '../mascot/accessories'
+import { useGluSpot, useGluStageActive } from '../glu3d/stage/stageContext'
 import { CORNER_PHRASES } from '../mascot/phrases'
 import { weekStart } from './weekStart'
 import { Stagger } from '../ui/motion/Stagger'
@@ -124,9 +126,20 @@ export function LeaderboardPage() {
   const positions = entries ? ranks(entries) : []
   const mine = entries?.findIndex((e) => e.user_id === user?.id) ?? -1
   const me = entries && mine >= 0 ? entries[mine] : null
+  const leader = !!me && me.days_met > 0 && positions[mine] === 1
+  // Glu nell'angolo: con il palcoscenico lo disegna lui (anche sulla classifica vuota), altrimenti GluCorner.
+  const stage = useGluStageActive()
+  const accessories = useGluAccessories()
+  useGluSpot(
+    stage
+      ? entries
+        ? { spot: 'corner', mood: leader ? 'goal' : 'idle', text: leader ? CORNER_PHRASES.boardLeader : CORNER_PHRASES.boardIdle, fill: 0.6, extras: accessories }
+        : { spot: 'corner', mood: 'idle' }
+      : null,
+  )
 
   return (
-    <Stagger as="main" className="page board">
+    <Stagger as="main" className={stage ? 'page board has-glu-stage' : 'page board'}>
       <header className="board-head">
         <h1>Classifica</h1>
         <p className="hint">Settimana {weekLabel(week)}</p>
@@ -135,11 +148,8 @@ export function LeaderboardPage() {
       {failed && <p role="alert" className="error">Classifica non disponibile. Controlla la connessione.</p>}
       {!entries && !failed && <p className="center-note">Caricamento…</p>}
 
-      {entries && entries.length > 1 && (
-        <GluCorner
-          mood={me && me.days_met > 0 && positions[mine] === 1 ? 'goal' : 'idle'}
-          text={me && me.days_met > 0 && positions[mine] === 1 ? CORNER_PHRASES.boardLeader : CORNER_PHRASES.boardIdle}
-        />
+      {!stage && entries && entries.length > 1 && (
+        <GluCorner mood={leader ? 'goal' : 'idle'} text={leader ? CORNER_PHRASES.boardLeader : CORNER_PHRASES.boardIdle} />
       )}
 
       {me && (
