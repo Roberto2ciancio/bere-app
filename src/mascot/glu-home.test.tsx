@@ -15,11 +15,28 @@ vi.mock('../ui/motion/effects', async (original) => ({
   confetti: vi.fn(),
 }))
 
+// Scelta 3D/2D decisa dal test; Glu3D finto (jsdom non ha WebGL) con un pulsante che simula il guasto.
+const g = vi.hoisted(() => ({ choice: '2d' as '3d' | '2d' | 'pending' }))
+vi.mock('../glu3d/capability', async (original) => ({
+  ...(await original<typeof import('../glu3d/capability')>()),
+  useGlu3dChoice: () => g.choice,
+}))
+vi.mock('../glu3d/Glu3D', () => ({
+  Glu3D: ({ onFail }: { onFail: (e: unknown) => void }) => (
+    <div data-testid="glu-3d">
+      <button onClick={() => onFail(new Error('guasto'))}>guasta</button>
+    </div>
+  ),
+}))
+vi.mock('../lib/errorReporting', () => ({ reportError: vi.fn() }))
+
 import { AuthProvider } from '../auth/AuthProvider'
 import { ProfileProvider } from '../auth/ProfileProvider'
 import { addDays, localParts } from '../domain/time'
+import { GluView } from '../home/GluView'
 import { HomePage } from '../home/HomePage'
 import { readCache, writeCache } from '../lib/cache'
+import { reportError } from '../lib/errorReporting'
 
 const tz = new Intl.DateTimeFormat().resolvedOptions().timeZone
 const today = () => localParts(new Date(), tz).date
@@ -55,7 +72,11 @@ function tapLater(button: HTMLElement) {
   fireEvent.click(button)
 }
 
-beforeEach(() => seed())
+beforeEach(() => {
+  g.choice = '2d'
+  vi.mocked(reportError).mockClear()
+  seed()
+})
 
 describe('Glu nella Home', () => {
   it('con lo stile Glu mostra la goccia e un fumetto', async () => {
@@ -173,5 +194,44 @@ describe('Glu: tristezza e saluto', () => {
     await screen.findByTestId('glu')
     await waitFor(() => expect(fake.rpcCalls.filter((c) => c.name === 'daily_totals')).toHaveLength(2), { timeout: 4000 })
     expect(mood()).not.toBe('sad')
+  })
+})
+
+describe('Glu 3D nella Home', () => {
+  const view = (choice: '3d' | '2d') => render(<GluView choice={choice} fill={0.4} mood="idle" name="Anna" now={0} />)
+
+  it('con la scelta 3D c’è Glu 3D e non il disegno 2D', () => {
+    view('3d')
+    expect(screen.getByTestId('glu-3d')).toBeInTheDocument()
+    expect(screen.queryByTestId('glu')).not.toBeInTheDocument()
+  })
+
+  it('se il 3D si guasta torna il 2D e l’errore si segnala una volta', () => {
+    view('3d')
+    const broken = screen.getByRole('button', { name: 'guasta' })
+    act(() => {
+      broken.click()
+      broken.click()
+    })
+    expect(screen.getByTestId('glu')).toBeInTheDocument()
+    expect(screen.queryByTestId('glu-3d')).not.toBeInTheDocument()
+    expect(reportError).toHaveBeenCalledTimes(1)
+    expect(reportError).toHaveBeenCalledWith('react', expect.any(Error))
+  })
+
+  it('con la scelta 2D c’è solo il disegno 2D', () => {
+    view('2d')
+    expect(screen.getByTestId('glu')).toBeInTheDocument()
+    expect(screen.queryByTestId('glu-3d')).not.toBeInTheDocument()
+  })
+
+  it('finché la scelta è in sospeso la Home dice «Caricamento…» e non c’è «Ho bevuto»', async () => {
+    g.choice = 'pending'
+    renderIn(<HomePage />)
+    expect(await screen.findByText('Caricamento…')).toBeInTheDocument()
+    // Anche con il profilo arrivato (dalla finta rete, subito): si aspetta la scelta.
+    await new Promise((r) => setTimeout(r, 100))
+    expect(screen.getByText('Caricamento…')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /ho bevuto/i })).not.toBeInTheDocument()
   })
 })

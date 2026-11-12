@@ -29,6 +29,8 @@
 .progress-ring-art { grid-area: 1 / 1; width: 64%; height: 64%; container-type: size; display: grid; place-items: center; }
 .progress-ring-art.wide { width: 74%; height: 74%; }
 .progress-ring-art .glu { width: 100%; height: 100%; }
+/* Glu 3D nello stesso riquadro del 2D: la misura in linea (size) vale solo per la risoluzione del disegno. */
+.progress-ring-art .glu-3d { width: 100% !important; height: 100% !important; }
 
 /* Litri, obiettivo e percentuale su una riga */
 .home-stats { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }

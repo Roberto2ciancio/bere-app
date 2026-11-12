@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { GluView } from '../home/GluView'
 
-const view = (props: { calm?: boolean; fill?: number } = {}) => render(<GluView fill={props.fill ?? 0.5} mood="idle" name="Anna" now={0} calm={props.calm} />)
+const view = (props: { calm?: boolean; fill?: number } = {}) => render(<GluView fill={props.fill ?? 0.5} mood="idle" name="Anna" now={0} calm={props.calm} choice="2d" />)
 const stubIos = (answer = 'granted') => vi.stubGlobal('DeviceOrientationEvent', Object.assign(function () {}, { requestPermission: vi.fn(() => Promise.resolve(answer)) }))
 const waterTransform = () => document.querySelector('.glu-tilt')?.getAttribute('transform') ?? null
 

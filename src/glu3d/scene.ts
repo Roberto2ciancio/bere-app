@@ -77,8 +77,9 @@ export function createGluScene(
   const scene = new Scene()
   const fov = 25
   const camera = new PerspectiveCamera(fov, 1, 100, 4000)
-  camera.position.set(0, 20, 170 / Math.tan(((fov / 2) * Math.PI) / 180))
-  camera.lookAt(0, 20, 0)
+  // Inquadratura da y -125 a 155: Glu (da -93 a 100) grande come quello 2D, con spazio sopra per il salto.
+  camera.position.set(0, 15, 140 / Math.tan(((fov / 2) * Math.PI) / 180))
+  camera.lookAt(0, 15, 0)
 
   scene.add(new AmbientLight(0xffffff, 1.6))
   const key = new DirectionalLight(0xffffff, 2.6)

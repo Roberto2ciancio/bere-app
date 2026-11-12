@@ -50,6 +50,8 @@ interface Setup {
   coffeeMinutesAgo?: number
   /** Giorni di fila a obiettivo fino a ieri (corona di Glu). */
   streak?: number
+  /** Verifica 3D salvata: 'ok' per Glu 3D; di default «niente WebGL», così le misure restano sul Glu 2D. */
+  glu3d?: 'ok'
 }
 
 /** Apre l'app di prova senza popup delle novità, dopo aver preparato il finto database. */
@@ -58,10 +60,15 @@ async function openApp(page: Page, path: string, setup: Setup = {}) {
   if (setup.at) await page.clock.setFixedTime(new Date(setup.at))
   // Mai il meteo vero nei test.
   await page.route(/open-meteo\.com/, (route) => route.fulfill({ json: { daily: { temperature_2m_max: [31] } } }))
-  await page.addInitScript((version) => {
-    localStorage.setItem('bere.seenVersion', version)
-    localStorage.setItem('bere.newsRead', version)
-  }, VERSION)
+  await page.addInitScript(
+    ({ version, glu3d }) => {
+      localStorage.setItem('bere.seenVersion', version)
+      localStorage.setItem('bere.newsRead', version)
+      // L'app di prova mette «dev.» davanti alle sue chiavi (storageKey).
+      localStorage.setItem('dev.bere.glu3dCheck', JSON.stringify({ result: glu3d === 'ok' ? 'ok' : 'nowebgl', version }))
+    },
+    { version: VERSION, glu3d: setup.glu3d },
+  )
   await page.goto('./#/home')
   await expect(page.getByRole('button', { name: /Ho bevuto/ })).toBeVisible()
   // Si modifica il finto database da una pagina senza l'app: l'app aperta potrebbe riscriverlo subito dopo.
