@@ -37,6 +37,11 @@ describe('poseFor', () => {
     expect(m).not.toBe('#CFEBFB')
     expect(m).not.toBe('#9DB4C4')
   })
+  it('sete: occhi socchiusi, bocca solo da calmo', () => {
+    expect(p({ mood: 'thirsty', extras: { thirst: 1 }, t: 1 }).eyeOpen).toBeLessThanOrEqual(0.5)
+    expect(p({ mood: 'sleep', extras: { thirst: 1 } }).eyeOpen).toBe(0)
+    expect(p({ mood: 'goal', extras: { thirst: 1 } }).mouth).toBe('big')
+  })
   it('corona', () => {
     for (const c of [7, 14, 30] as const) expect(p({ extras: { crown: c } }).crown).toBe(c)
     expect(p({ extras: { crown: 7, crownDrop: true }, moodT: 0 }).crownDropY).toBeGreaterThan(0)
