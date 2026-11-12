@@ -12,6 +12,17 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '1.10.0',
+    date: '2026-11-12',
+    title: 'Glu in 3D',
+    notes: [
+      'Glu ora è in 3D: saluta, salta quando bevi e l’acqua dentro di lui sale.',
+      'Glu ti segue tra le schermate: in Storico, Classifica e Profilo si mette in basso, ti dice la sua e ogni tanto fa una passeggiata.',
+      'Tocca Glu per chiedergli come si fa qualcosa nell’app: risponde con i passaggi e ti porta nella schermata giusta.',
+      'Se il telefono fatica o vuoi risparmiare batteria, spegni «Glu in 3D» in Profilo › Aspetto.',
+    ],
+  },
+  {
     version: '1.9.7',
     date: '2026-11-12',
     title: 'Ritocchi',

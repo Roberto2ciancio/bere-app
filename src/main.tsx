@@ -37,5 +37,5 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 )
 
-// Glu in 3D (solo devapp): il pacchetto si scarica dopo il render; in produzione l'import sparisce dal build.
-if (import.meta.env.MODE === 'devapp' && GLU_3D_ENABLED) startGlu3d(() => import('./glu3d/runtime'))
+// Glu in 3D: il pacchetto si scarica subito dopo il render, in parallelo con profilo e dati.
+if (GLU_3D_ENABLED) startGlu3d(() => import('./glu3d/runtime'))

@@ -23,7 +23,7 @@ export function TabsLayout() {
   const gluChoice = useGlu3dChoice(userId)
   // Spegnere «Glu in 3D» vale subito; riaccenderlo riporta il 3D solo se la visita era partita in 3D.
   const glu3dOn = useGlu3dOn(userId)
-  // Il palcoscenico (un solo Glu 3D che viaggia tra le schede) esiste solo nell'app di prova.
+  // Il palcoscenico: un solo Glu 3D che viaggia tra le schede (quando il 3D è scelto e acceso).
   const stage = GLU_3D_ENABLED && gluChoice === '3d' && glu3dOn
   const [background, setBackground] = useState<string | null>(null)
 

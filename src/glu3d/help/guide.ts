@@ -913,7 +913,7 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['3d', 'tre dimensioni', 'tridimensionale', 'batteria', 'risparmiare', 'consumare', 'consumo', 'glu in 3d', 'grafica'],
     answer: [
-      "Solo nell'app di prova: apri la scheda «Profilo» e vai alla sezione «Aspetto».",
+      "Apri la scheda «Profilo» e vai alla sezione «Aspetto».",
       'Con «Glu in 3D» attivo Glu si muove in tre dimensioni. Spegnilo per risparmiare batteria: vale subito.',
     ],
     route: '/profilo',
