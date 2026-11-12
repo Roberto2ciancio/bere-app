@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { GLU_3D_ENABLED } from '../glu3d/enabled'
 import { isGluCalm, setGluCalm } from '../mascot/calm'
-import { isGlu3dOn, setGlu3dOn } from '../mascot/glu3dPref'
+import { setGlu3dOn, useGlu3dOn } from '../mascot/glu3dPref'
 import { Link } from 'react-router-dom'
 import { useProfile } from '../auth/ProfileProvider'
 import { Avatar } from '../avatars/Avatar'
@@ -149,11 +149,7 @@ export function AppearanceForm() {
   const { user } = useAuth()
   const userId = user?.id ?? null
   const [calm, setCalm] = useState(() => !!userId && isGluCalm(userId))
-  const [glu3d, setGlu3d] = useState(() => !!userId && isGlu3dOn(userId))
-  // L'utente può arrivare dopo il primo render: rileggi la preferenza.
-  useEffect(() => {
-    if (userId) setGlu3d(isGlu3dOn(userId))
-  }, [userId])
+  const glu3d = useGlu3dOn(userId)
   if (!profile) return null
 
   async function removeBackground() {
@@ -204,10 +200,7 @@ export function AppearanceForm() {
               type="checkbox"
               checked={glu3d}
               aria-describedby="glu-3d-hint"
-              onChange={(e) => {
-                setGlu3dOn(userId, e.target.checked)
-                setGlu3d(e.target.checked)
-              }}
+              onChange={(e) => setGlu3dOn(userId, e.target.checked)}
             />
           </label>
           <p id="glu-3d-hint" className="hint">Glu si muove in tre dimensioni. Spegnilo per risparmiare batteria.</p>

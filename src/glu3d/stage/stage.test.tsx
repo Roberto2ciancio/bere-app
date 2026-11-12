@@ -204,6 +204,22 @@ describe('GluStage', () => {
     expect(screen.getByTestId('probe').dataset.shows).toBe('false')
   })
 
+  it("cambio scheda a metà volo: prosegue dalla posizione corrente, senza scatti", () => {
+    const r = render(<App><RingPage key="home" spec={{ spot: 'ring', mood: 'idle' }} /></App>)
+    r.rerender(<App><Page key="storico" spec={corner} /></App>)
+    advance(300)
+    let prev = box()
+    r.rerender(<App><Page key="classifica" spec={{ ...corner, text: 'Classifica' }} /></App>)
+    for (let i = 0; i < 50; i++) {
+      advance(16)
+      const cur = box()
+      expect(Math.hypot(cur.x - prev.x, cur.y - prev.y)).toBeLessThan(40)
+      prev = cur
+    }
+    expect(box()).toEqual({ x: W - 84, y: TABS_TOP - 80, s: 72 / 186 })
+    expect(screen.getByTestId('glu-stage-bubble').textContent).toBe('Classifica')
+  })
+
   it("resize: l'angolo si ricalcola", () => {
     render(<App><Page spec={corner} /></App>)
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 500 })

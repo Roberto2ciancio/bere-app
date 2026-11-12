@@ -18,6 +18,7 @@ export const AWAY_GAP_PX = 24 // quanto oltre il bordo destro sta Glu fuori scen
 export const WALK_EDGE_PX = 16 // la passeggiata arriva a 16 px dal bordo sinistro
 export const BUBBLE_MS = 4000
 export const HOP_MS = 450
+export const RETARGET_MS = 400 // nuovo traguardo a metà viaggio
 
 interface Pos {
   x: number
@@ -191,6 +192,7 @@ function Stage() {
     if (spot !== 'away') shown.current = true
     const tr = travelFor(from, spot, { still, calm: live.current.calm })
     const wasWalking = anim.current.mode === 'walk'
+    const wasTravel = anim.current.mode === 'travel'
     stopAnim()
     clearTimer('walk')
     setWalkDir(null)
@@ -209,8 +211,23 @@ function Stage() {
     const fromPos = posRef.current
     const target = measure(spot)
 
-    if (tr.kind === 'appear' || (tr.kind === 'hop' && (!wasWalking || still))) {
+    if (tr.kind === 'appear' || (tr.kind === 'hop' && (!(wasWalking || wasTravel) || still))) {
       arrive()
+      return
+    }
+    if (tr.kind === 'hop' && wasTravel && !wasWalking) {
+      // Cambio scheda a metà viaggio: prosegue dalla posizione corrente, senza teletrasporto.
+      const ms = Math.max(RETARGET_MS, tr.ms)
+      loop(
+        'travel',
+        (t) => {
+          const k = easeInOut(Math.min(1, t / ms))
+          const c = measure(spot)
+          setPos({ x: lerp(fromPos.x, c.x, k), y: lerp(fromPos.y, c.y, k), s: lerp(fromPos.s, c.s, k), o: lerp(fromPos.o, c.o, k) })
+          return t >= ms
+        },
+        arrive,
+      )
       return
     }
     if (tr.kind === 'hop') {

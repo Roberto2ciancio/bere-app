@@ -140,7 +140,9 @@ export function HistoryPage() {
   // Glu nell'angolo: con il palcoscenico lo disegna lui (stessa frase), altrimenti GluCorner.
   const stage = useGluStageActive()
   const accessories = useGluAccessories()
-  const todayDay = totals && stats ? dayResults(totals, goals, today, range, boosts).at(-1) : undefined
+  // Un solo calcolo dei giorni per render: serve all'angolo e al grafico.
+  const days = totals && stats ? dayResults(totals, goals, today, range, boosts) : null
+  const todayDay = days?.at(-1)
   const todayFill = todayDay && todayDay.goalMl > 0 ? todayDay.totalMl / todayDay.goalMl : undefined
   const corner = stats
     ? {
@@ -166,9 +168,8 @@ export function HistoryPage() {
       </main>
     )
   }
-  if (!totals || !stats) return <p className="center-note">Caricamento…</p>
+  if (!totals || !stats || !days) return <p className="center-note">Caricamento…</p>
 
-  const days = dayResults(totals, goals, today, range, boosts)
   const scale = Math.max(...days.map((d) => Math.max(d.totalMl, d.goalMl)), 1)
   const goalNow = days.at(-1)?.goalMl ?? 0
   const pick = days.find((d) => d.day === selected)

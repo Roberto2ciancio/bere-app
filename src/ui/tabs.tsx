@@ -7,6 +7,7 @@ import { GLU_3D_ENABLED } from '../glu3d/enabled'
 import { GluStage } from '../glu3d/stage/GluStage'
 import { GluStageProvider } from '../glu3d/stage/stageContext'
 import { touchLastSeen } from '../lib/lastSeen'
+import { useGlu3dOn } from '../mascot/glu3dPref'
 import { backgroundUrl } from '../profile/imageUpload'
 import { HomeIcon, ProfileIcon, StatsIcon, TrophyIcon } from './icons'
 import { PageTransition } from './motion/PageTransition'
@@ -18,9 +19,12 @@ export function TabsLayout() {
   const backgroundPath = profile?.background_path ?? null
   const outlet = useOutlet()
   // Glu 3D o 2D: finché non si sa, si aspetta (al massimo pochi secondi) per non cambiare Glu sotto gli occhi.
-  const gluChoice = useGlu3dChoice(useOptionalAuth()?.user?.id ?? null)
+  const userId = useOptionalAuth()?.user?.id ?? null
+  const gluChoice = useGlu3dChoice(userId)
+  // Spegnere «Glu in 3D» vale subito; riaccenderlo riporta il 3D solo se la visita era partita in 3D.
+  const glu3dOn = useGlu3dOn(userId)
   // Il palcoscenico (un solo Glu 3D che viaggia tra le schede) esiste solo nell'app di prova.
-  const stage = GLU_3D_ENABLED && gluChoice === '3d'
+  const stage = GLU_3D_ENABLED && gluChoice === '3d' && glu3dOn
   const [background, setBackground] = useState<string | null>(null)
 
   useEffect(() => {
