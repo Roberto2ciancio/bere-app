@@ -8,7 +8,7 @@ import type { GluScene } from './scene'
 export const FRAME_MS = 33 // 30 fps al massimo
 export const FILL_MS = 600
 export const CONTEXT_RESTORE_MS = 2000
-export const WALK_CYCLES_PER_S = 1 // cicli di fase al secondo (2 passi per ciclo)
+export const WALK_CYCLES_PER_S = 0.5 // cicli di fase al secondo: la fase fa 2 periodi di seno per ciclo (un piede alzato ciascuno), quindi ~2 passi/s
 
 const NO_EXTRAS: GluExtras = {}
 

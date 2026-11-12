@@ -142,8 +142,11 @@ describe('Glu3D', () => {
     const p2 = lastPose().walk.phase
     expect(lastPose().walk.dir).toBe(1)
     expect(p2).toBeGreaterThan(p1)
+    // Cadenza: dopo 1 s di camminata la fase vale ~0,5 (2 passi al secondo).
+    tick(2100)
+    expect(lastPose().walk.phase - p1).toBeCloseTo(0.5 * (2100 - 1100) / 1000, 5)
     rerender(<Glu3D mood="idle" fill={0.5} walk={null} onFail={() => {}} />)
-    tick(1300)
+    tick(3000)
     expect(lastPose().walk).toBeUndefined()
   })
 
