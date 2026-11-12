@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { probe } from './probe'
 import type { GluScene } from './scene'
 
@@ -22,6 +22,8 @@ function fakeScene(opts: { renderer?: string; renderMs?: number; noGl?: boolean 
 }
 
 describe('probe', () => {
+  afterEach(() => vi.restoreAllMocks())
+
   it('fabbrica null -> nowebgl', async () => {
     expect(await probe(() => null)).toBe('nowebgl')
   })
@@ -52,3 +54,4 @@ describe('probe', () => {
     expect(dispose).toHaveBeenCalled()
   })
 })
+

@@ -21,13 +21,18 @@ let loading: Promise<Glu3dRuntime | null> | null = null
 let probing: Promise<CheckResult> | null = null
 // Oltre il tempo massimo resta 2D per tutta la visita.
 let timedOut = false
+// Il pacchetto non si è caricato: 2D per tutta la visita.
+let loadFailed = false
 
 /** Avvia (una volta sola) il caricamento del pacchetto 3D. No-op se il 3D è spento. */
 export function startGlu3d(load?: () => Promise<Glu3dRuntime>): void {
   if (!GLU_3D_ENABLED || loading || !load) return
   loading = load().then(
     (r) => (runtime = r),
-    () => null,
+    () => {
+      loadFailed = true
+      return null
+    },
   )
 }
 
@@ -44,8 +49,10 @@ function savedCheck(): CheckResult | null {
 
 function initial(userId: string | null): '3d' | '2d' | 'pending' {
   if (!GLU_3D_ENABLED || !userId || !isGlu3dOn(userId) || timedOut) return '2d'
+  if (loadFailed) return '2d'
   const saved = savedCheck()
   if (saved && saved !== 'ok') return '2d'
+  if (saved === 'ok' && runtime) return '3d'
   return 'pending'
 }
 
@@ -54,9 +61,14 @@ async function resolveChoice(): Promise<'3d' | '2d'> {
   if (!rt) return '2d'
   let result = savedCheck()
   if (!result) {
-    probing ??= rt.probe()
-    result = await probing
-    probing = null
+    try {
+      probing ??= rt.probe()
+      result = await probing
+    } catch {
+      result = 'nowebgl'
+    } finally {
+      probing = null
+    }
     writeCache(CHECK_KEY, { result, version: __APP_VERSION__ } satisfies StoredCheck)
   }
   return result === 'ok' ? '3d' : '2d'
@@ -92,4 +104,6 @@ export function resetGlu3dForTests(): void {
   loading = null
   probing = null
   timedOut = false
+  loadFailed = false
 }
+

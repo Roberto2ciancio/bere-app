@@ -130,4 +130,35 @@ describe('capability', () => {
     })
     expect(err).not.toHaveBeenCalled()
   })
+
+
+  it('seconda istanza dopo la scelta: 3d subito', async () => {
+    startGlu3d(async () => fakeRuntime('ok'))
+    const first = renderHook(() => useGlu3dChoice('u1'))
+    await flush()
+    expect(first.result.current).toBe('3d')
+    const second = renderHook(() => useGlu3dChoice('u1'))
+    expect(second.result.current).toBe('3d')
+  })
+
+  it('caricamento fallito: nuova istanza 2d subito', async () => {
+    startGlu3d(() => Promise.reject(new Error('chunk')))
+    await flush()
+    const { result } = renderHook(() => useGlu3dChoice('u1'))
+    expect(result.current).toBe('2d')
+  })
+
+  it('prova che fallisce: 2d, nessun rifiuto non gestito', async () => {
+    const onUnhandled = vi.fn()
+    process.on('unhandledRejection', onUnhandled)
+    const rt = { probe: vi.fn(async () => { throw new Error('boom') }) } as unknown as Glu3dRuntime
+    startGlu3d(async () => rt)
+    const { result } = renderHook(() => useGlu3dChoice('u1'))
+    await flush()
+    expect(result.current).toBe('2d')
+    process.off('unhandledRejection', onUnhandled)
+    expect(onUnhandled).not.toHaveBeenCalled()
+  })
 })
+
+
