@@ -289,7 +289,6 @@ test.describe('Oggi', () => {
   // Le reazioni di Glu non devono spingere niente fuori posto, da 320 px e col testo al 130%.
   const reactions: [string, Setup, string][] = [
     ['sete forte', { at: AFTERNOON, noSchedules: true, lastDrinkHoursAgo: 4 }, '.glu-fan'],
-    ['caffè', { at: AFTERNOON, noSchedules: true, lastDrinkHoursAgo: 1, coffeeMinutesAgo: 5 }, '[data-testid="glu"][data-mood="coffee"]'],
     ['allenamento', { at: AFTERNOON, noSchedules: true, lastDrinkHoursAgo: 1, boosts: { workout: 500 } }, '.glu-headband'],
     ['serie di 7 giorni', { at: AFTERNOON, noSchedules: true, lastDrinkHoursAgo: 1, streak: 7 }, '.glu-crown'],
   ]

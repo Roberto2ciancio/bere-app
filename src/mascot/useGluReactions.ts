@@ -34,6 +34,7 @@ export function useGluReactions(input: Input): Output {
   const { userId, tz, lastDrinkAt, lastCoffeeAt, workoutActive, workoutStartedAt, currentStreak, dayStartMin, goalMet, asleep, calm } = input
   const [clock, setClock] = useState(() => new Date())
   const [sceneDone, setSceneDone] = useState<number | null>(null)
+  const [coffeeDone, setCoffeeDone] = useState<number | null>(null)
   const [celebrate, setCelebrate] = useState<CrownTier | null>(null)
 
   // La sete cresce anche se i dati non cambiano: orologio al minuto.
@@ -43,6 +44,15 @@ export function useGluReactions(input: Input): Output {
   }, [])
   // Una bevuta o un caffè appena segnati non possono stare nel futuro rispetto all'orologio.
   const now = new Date(Math.max(clock.getTime(), lastDrinkAt?.getTime() ?? 0, lastCoffeeAt?.getTime() ?? 0))
+
+  // L'effetto del caffè dura 4 s da quando lo si segna: poi un timer lo spegne (l'orologio va al minuto).
+  const coffeeAt = lastCoffeeAt?.getTime() ?? null
+  useEffect(() => {
+    if (coffeeAt === null) return
+    const left = Math.max(0, coffeeAt + REACTIONS.coffeeMs - Date.now())
+    const timer = setTimeout(() => setCoffeeDone(coffeeAt), left)
+    return () => clearTimeout(timer)
+  }, [coffeeAt])
 
   // La scenetta dell'allenamento dura 6 s dal momento in cui lo si accende.
   useEffect(() => {
@@ -69,7 +79,7 @@ export function useGluReactions(input: Input): Output {
   // Inizio giornata in questo fuso: ora corrente meno i minuti passati da quel momento.
   const dayStart = new Date(now.getTime() - (minutes - dayStartMin) * 60_000 - (now.getTime() % 60_000))
   const thirst = quiet || goalMet ? 0 : thirstLevel(lastDrinkAt, now, dayStart)
-  const coffee = !quiet && coffeeActive(lastCoffeeAt, now)
+  const coffee = !quiet && coffeeDone !== coffeeAt && coffeeActive(lastCoffeeAt, now)
   const workoutJustStarted = !quiet && scene
   const crown = currentStreak === null ? 0 : streakAccessory(currentStreak)
 

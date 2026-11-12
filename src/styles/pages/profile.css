@@ -89,8 +89,9 @@ input[type='file']::file-selector-button {
 /* Avatar pronti: il disegno è ritagliato a cerchio, così il corpo di Glu può uscire dal fondo. */
 .avatar-preset { background: none; }
 .avatar-art { display: block; width: 100%; height: 100%; clip-path: circle(50%); }
-.avatar-picker { display: grid; grid-template-columns: repeat(4, minmax(44px, 64px)); gap: 10px; }
-.avatar-option { aspect-ratio: 1; min-height: 44px; padding: 3px; border: 3px solid transparent; border-radius: 50%; background: none; -webkit-tap-highlight-color: transparent; }
+.avatar-picker { display: grid; grid-template-columns: repeat(4, minmax(44px, 64px)); justify-content: center; align-items: center; gap: 10px; }
+/* Quadrato vero: larghezza della colonna, altezza uguale (niente stiramento della riga), così il bordo è un cerchio. */
+.avatar-option { box-sizing: border-box; width: 100%; height: auto; aspect-ratio: 1; min-height: 0; align-self: center; justify-self: center; padding: 3px; border: 3px solid transparent; border-radius: 50%; background: none; -webkit-tap-highlight-color: transparent; }
 .avatar-option[aria-checked='true'] { border-color: var(--brand); }
 /* Focus distinto dalla scelta: anello esterno, fuori dal bordo. */
 .avatar-option:focus-visible { outline: 3px dashed var(--ink); outline-offset: 2px; }

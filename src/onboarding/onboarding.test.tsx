@@ -130,6 +130,24 @@ describe('passo dei promemoria', () => {
     expect(Math.max(...minutes)).toBeLessThanOrEqual(22 * 60)
   })
 
+  it('lascia scegliere ogni quanto: il consigliato è già scelto, e la scelta guida gli orari', async () => {
+    render(<App />)
+    await heading('Quando vuoi bere?')
+    const group = screen.getByRole('radiogroup', { name: 'Ogni quanto?' })
+    const radios = Array.from(group.querySelectorAll('[role="radio"]'))
+    expect(radios.map((r) => r.textContent)).toEqual(expect.arrayContaining([expect.stringContaining('30 min'), expect.stringContaining('1 ora'), expect.stringContaining('3 ore')]))
+    const checked = radios.filter((r) => r.getAttribute('aria-checked') === 'true')
+    expect(checked).toHaveLength(1)
+    expect(checked[0].textContent).toMatch(/consigliato/)
+    await userEvent.click(screen.getByRole('radio', { name: /^3 ore/ }))
+    expect(screen.getByRole('radio', { name: /^3 ore/ })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByText(/ogni 3 ore/)).toBeInTheDocument()
+    await click('Crea i promemoria')
+    expect(await heading('Attiva le notifiche')).toBeInTheDocument()
+    const minutes = fake.tables.schedule_times.map((t) => t.minutes as number).sort((a, b) => a - b)
+    expect(minutes.slice(0, 3)).toEqual([480, 660, 840])
+  })
+
   it("il sonno non può scendere sotto un'ora dalla sveglia", async () => {
     render(<App />)
     await heading('Quando vuoi bere?')

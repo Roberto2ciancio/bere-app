@@ -2,7 +2,7 @@
 export const REACTIONS = {
   thirstStartH: 2,
   thirstMaxH: 4,
-  coffeeMin: 20,
+  coffeeMs: 4000,
   streakTiers: [7, 14, 30],
   workoutSceneMs: 6000,
   defaultDayStartMin: 480,
@@ -21,8 +21,8 @@ export function thirstLevel(lastDrinkAt: Date | null, now: Date, dayStart: Date)
 
 export function coffeeActive(lastCoffeeAt: Date | null, now: Date): boolean {
   if (!lastCoffeeAt) return false
-  const min = (now.getTime() - lastCoffeeAt.getTime()) / 60_000
-  return min >= 0 && min <= REACTIONS.coffeeMin
+  const ms = now.getTime() - lastCoffeeAt.getTime()
+  return ms >= 0 && ms < REACTIONS.coffeeMs
 }
 
 export type CrownTier = 0 | 7 | 14 | 30
