@@ -107,6 +107,11 @@ const REAL: [string, string][] = [
   ['una foto in classifica è offensiva', 'report'],
   ["dove leggo le novità dell'app", 'news'],
   ["cosa c'è di nuovo nell'ultima versione", 'news'],
+  // Ondata finale: le domande più semplici sulla bevuta e sulla serie.
+  ['come aggiungo acqua', 'drink-log'],
+  ['bevuta', 'drink-log'],
+  ['quanta acqua devo bere', 'goal-calc'],
+  ['come funziona la serie', 'streak'],
 ]
 
 describe('GUIDE', () => {
@@ -208,5 +213,33 @@ describe('fix round 1: suggerimenti vicini e pulizie', () => {
       const score = new Map(ranked.map((r) => [r.entry.id, r.score]))
       for (const s of searchGuide(q, GUIDE).suggestions) expect(score.get(s.id)!, `${q}: ${s.id}`).toBeGreaterThanOrEqual(floor)
     }
+  })
+})
+
+describe('ondata finale: niente argomenti fuori tema', () => {
+  const ids = (q: string) => searchGuide(q, GUIDE).suggestions.map((s) => s.id)
+  it('«acqua» da sola propone segnare una bevuta e il calcolo dell\'obiettivo', () => {
+    const r = searchGuide('acqua', GUIDE)
+    const all = [r.best?.id, ...r.suggestions.map((s) => s.id)]
+    expect(all).toContain('drink-log')
+    expect(all).toContain('goal-calc')
+  })
+  it('«ieri ho dimenticato di segnare»: bevuta passata, nessuna password', () => {
+    expect(searchGuide('ieri ho dimenticato di segnare', GUIDE).best?.id).toBe('drink-past')
+    expect(ids('ieri ho dimenticato di segnare')).not.toContain('password')
+  })
+  it('«voglio meno promemoria»: prima i promemoria, non l\'obiettivo', () => {
+    const r = searchGuide('voglio meno promemoria', GUIDE)
+    const first = r.best ?? r.suggestions[0]
+    expect(first.id).toBe('reminders-manage')
+  })
+  it('«cancella account»: cancellare il profilo, senza «Annullare l\'ultima bevuta»', () => {
+    expect(searchGuide('cancella account', GUIDE).best?.id).toBe('delete')
+    expect(ids('cancella account')).not.toContain('drink-undo')
+  })
+  it('«come funziona la serie» stacca la classifica', () => {
+    const r = searchGuide('come funziona la serie', GUIDE)
+    expect(r.best?.id).toBe('streak')
+    expect(ids('come funziona la serie')).not.toContain('board-how')
   })
 })

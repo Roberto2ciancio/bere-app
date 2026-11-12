@@ -185,7 +185,12 @@ async function openHelp(page: Page) {
   await settledBox(page)
   await askGlu(page).click()
   await expect(helpDialog(page)).toBeVisible()
-  await expect(helpDialog(page).getByRole('textbox', { name: 'La tua domanda' })).toBeFocused()
+  // Col dito il focus va al titolo (niente tastiera che si apre da sola), col mouse al campo.
+  const coarse = await page.evaluate(() => matchMedia('(pointer: coarse)').matches)
+  const focused = coarse
+    ? helpDialog(page).getByRole('heading', { name: 'Chiedi a Glu' })
+    : helpDialog(page).getByRole('textbox', { name: 'La tua domanda' })
+  await expect(focused).toBeFocused()
 }
 
 test('tocco su Glu nella Home: chat, domanda sull\'obiettivo, «Portami lì» apre il Profilo', async ({ page }) => {

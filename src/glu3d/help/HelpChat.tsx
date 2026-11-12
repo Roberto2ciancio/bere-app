@@ -24,6 +24,11 @@ function readView(): { h: number; top: number } | null {
   return vv ? { h: Math.round(vv.height), top: Math.round(vv.offsetTop) } : null
 }
 
+/** Dito invece di mouse: telefono o tablet. */
+function isCoarsePointer(): boolean {
+  return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches
+}
+
 /** 'navigate': la chat si chiude perché si va a un'altra schermata («Portami lì», «Suggerimenti»). */
 export type HelpCloseReason = 'navigate'
 
@@ -35,6 +40,7 @@ export function HelpChat({ page, onClose }: { page: HelpPage; onClose: (reason?:
   const navigate = useNavigate()
   const titleId = useId()
   const input = useRef<HTMLInputElement>(null)
+  const heading = useRef<HTMLHeadingElement>(null)
   const log = useRef<HTMLDivElement>(null)
   const close = useRef(onClose)
   const nextId = useRef(1)
@@ -49,7 +55,9 @@ export function HelpChat({ page, onClose }: { page: HelpPage; onClose: (reason?:
 
   useEffect(() => {
     // Il foglio sta ancora comparendo: senza preventScroll il browser proverebbe a portarlo in vista.
-    input.current?.focus({ preventScroll: true })
+    // Sui touch il focus va al titolo: la tastiera non si apre da sola e i suggerimenti restano in vista.
+    const target = isCoarsePointer() ? heading.current : input.current
+    target?.focus({ preventScroll: true })
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
       event.stopPropagation()
@@ -150,7 +158,9 @@ export function HelpChat({ page, onClose }: { page: HelpPage; onClose: (reason?:
         onKeyDown={trapTab}
       >
         <div className="help-head">
-          <h2 id={titleId}>Chiedi a Glu</h2>
+          <h2 id={titleId} ref={heading} tabIndex={-1}>
+            Chiedi a Glu
+          </h2>
           <button type="button" className="ghost help-close" aria-label="Chiudi" onClick={() => onClose()}>
             ✕
           </button>
@@ -173,8 +183,8 @@ export function HelpChat({ page, onClose }: { page: HelpPage; onClose: (reason?:
                 <div key={m.id} className="help-msg from-glu">
                   <p className="help-topic">{m.entry.title}</p>
                   <ol>
-                    {m.entry.answer.map((step) => (
-                      <li key={step}>{step}</li>
+                    {m.entry.answer.map((step, i) => (
+                      <li key={i}>{step}</li>
                     ))}
                   </ol>
                   {m.entry.route && (

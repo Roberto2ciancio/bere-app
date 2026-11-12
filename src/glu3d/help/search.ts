@@ -39,14 +39,16 @@ export const STOPWORDS = new Set([
   'dimmi', 'spiegami', 'aiuto', 'ciao', 'grazie', 'favore', 'app',
   // riempitivi
   'dell', 'dall', 'nell', 'sull', 'all', 'quell', 'cos', 'qual', 'dov', 'com', 'anch', 'un',
-  'piu', 'molto', 'poco', 'mai', 'sempre', 'dopo', 'poi', 'quindi', 'dovrei', 'quanta', 'quanti', 'quante',
+  'piu', 'molto', 'poco', 'mai', 'sempre', 'dopo', 'poi', 'quindi', 'dovrei', 'quanti', 'quante',
 ])
 
 /** Gruppi di sinonimi: la prima parola è la forma canonica. Estendere qui. */
 export const SYNONYMS: string[][] = [
   ['notifica', 'avviso', 'push'],
   ['obiettivo', 'target'],
-  ['togliere', 'cancellare', 'eliminare', 'rimuovere', 'annullare', 'cancello'],
+  ['togliere', 'cancellare', 'eliminare', 'rimuovere', 'cancello'],
+  // «annullare» resta a parte: annullare l'ultima bevuta non è cancellare il profilo.
+  ['annullare', 'annulla', 'annullo'],
   ['bevuta', 'bere', 'bevo', 'bevuto'],
   ['segnare', 'registrare', 'annotare'],
   ['caffe', 'caffeina', 'espresso'],

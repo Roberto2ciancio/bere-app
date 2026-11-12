@@ -64,6 +64,17 @@ describe('HelpChat', () => {
     expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'La tua domanda' }))
   })
 
+  it('sui touch (pointer: coarse) il focus va al titolo, non al campo: la tastiera non si apre da sola', () => {
+    const original = window.matchMedia
+    window.matchMedia = ((query: string) => ({ ...original(query), matches: query === '(pointer: coarse)' })) as typeof window.matchMedia
+    try {
+      renderChat()
+      expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Chiedi a Glu' }))
+    } finally {
+      window.matchMedia = original
+    }
+  })
+
   it('ogni pagina ha i suoi 4 suggerimenti', () => {
     for (const page of ['home', 'classifica', 'profilo'] as const) {
       const r = render(<MemoryRouter><HelpChat page={page} onClose={() => {}} /></MemoryRouter>)

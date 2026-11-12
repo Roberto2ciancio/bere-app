@@ -146,3 +146,4 @@
 .help-form { display: flex; gap: 8px; }
 .help-form input { flex: 1; min-width: 0; }
 .help-form .primary { flex: none; width: auto; min-height: 46px; padding: 0 16px; }
+.help-head h2:focus:not(:focus-visible) { outline: none; }

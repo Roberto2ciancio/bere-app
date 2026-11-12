@@ -34,7 +34,7 @@ export const GUIDE: GuideEntry[] = [
       "l'app può calcolarmi i litri giusti",
       "calcolatore dell'obiettivo",
     ],
-    keywords: ['calcolare', 'calcolo', 'calcolalo', 'calcolatore', 'peso', 'kg', 'chili', 'suggerito', 'stima', 'attività', 'sedentaria', 'litri giusti', 'automatico'],
+    keywords: ['calcolare', 'calcolo', 'calcolalo', 'calcolatore', 'peso', 'kg', 'chili', 'suggerito', 'stima', 'attività', 'sedentaria', 'litri giusti', 'automatico', 'quanta', 'quanta acqua', 'devo bere', 'quanto bere'],
     answer: [
       'Apri la scheda «Profilo», sezione «Obiettivo», e tocca «Calcolalo per me».',
       'Scrivi il tuo «Peso (kg)» e scegli l\'«Attività»: Sedentaria, Leggera, Moderata o Intensa.',
@@ -89,7 +89,7 @@ export const GUIDE: GuideEntry[] = [
       'come registro quello che bevo',
       "ho appena bevuto un bicchiere d'acqua",
     ],
-    keywords: ['bicchiere'],
+    keywords: ['bicchiere', 'acqua', 'aggiungere', 'aggiungo', 'bevuta'],
     answer: [
       'Nella scheda «Oggi» tocca il pulsante grande «Ho bevuto», con la quantità scritta accanto.',
       "Il totale sale e Glu si riempie. Un secondo tocco subito dopo viene ignorato, per evitare doppioni.",
@@ -123,7 +123,7 @@ export const GUIDE: GuideEntry[] = [
       'devo segnare una birra o un vino',
       "come scelgo un'altra bevanda o una quantità diversa",
     ],
-    keywords: ['tè', 'latte', 'succo', 'bibita', 'birra', 'vino', 'frutta', 'spremuta'],
+    keywords: ['tè', 'latte', 'succo', 'bibita', 'birra', 'vino', 'frutta', 'spremuta', 'invece', 'segnare'],
     answer: [
       'Nella scheda «Oggi» tocca il pulsante «+» accanto a «Ho bevuto»: si apre «Cosa hai bevuto?».',
       'Tocca una tazza (Bicchiere, Tazza, Bottiglia o le tue), oppure scegli la «Bevanda» e scrivi la «Quantità (ml)», da 1 a 2000.',
@@ -224,7 +224,7 @@ export const GUIDE: GuideEntry[] = [
       'cosa significa la percentuale accanto alla bevanda',
       'tutte le bevande contano uguale',
     ],
-    keywords: ['percentuale', 'idrata', 'idratazione', 'conta', 'vale', 'meno', 'birra', 'bibita', 'succo', 'latte', 'tè', 'caffè', 'bevanda', 'idratare'],
+    keywords: ['percentuale', 'idrata', 'idratazione', 'conta', 'vale', 'birra', 'bibita', 'succo', 'latte', 'tè', 'caffè', 'bevanda', 'idratare'],
     answer: [
       "Ogni bevanda conta in proporzione a una percentuale: Acqua 100%, Tè 90%, Latte 90%, Succo 85%, Caffè 80%, Bibita 70%, Birra 50%.",
       'Esempio: 200 ml di Caffè contano 160 ml verso l\'obiettivo. È un valore indicativo.',
@@ -384,8 +384,9 @@ export const GUIDE: GuideEntry[] = [
       'come elimino un programma di promemoria',
       'come modifico i miei programmi',
       'perché ricevo due promemoria uguali',
+      'voglio ricevere meno promemoria',
     ],
-    keywords: ['programma', 'programmi', 'spegnere', 'spengo', 'attivo', 'eliminare', 'cancellare', 'doppie', 'doppio', 'uguali', 'due', 'duplicate', 'disattivare', 'elimina programma', 'senza cancellarlo', 'notifiche'],
+    keywords: ['programma', 'programmi', 'spegnere', 'spengo', 'attivo', 'eliminare', 'cancellare', 'doppie', 'doppio', 'uguali', 'due', 'duplicate', 'disattivare', 'elimina programma', 'senza cancellarlo', 'notifiche', 'meno', 'troppi'],
     answer: [
       'Apri la pagina «Promemoria» (Profilo › «Gestisci i promemoria»).',
       'In «I tuoi programmi» togli la spunta per spegnere un programma senza perderlo.',
@@ -631,7 +632,7 @@ export const GUIDE: GuideEntry[] = [
       'come si decide la posizione in classifica',
       'perché non sono in classifica',
     ],
-    keywords: ['classifica', 'posizione', 'vince', 'vincere', 'primo', 'podio', 'parità', '1,5 L', 'come funziona', 'punteggio', 'primo posto'],
+    keywords: ['classifica', 'posizione', 'vince', 'vincere', 'primo', 'podio', 'parità', '1,5 L', 'punteggio', 'primo posto'],
     answer: [
       'Apri la scheda «Classifica».',
       "Vince chi raggiunge il proprio obiettivo in più giorni, da lunedì a domenica. A parità conta la serie più lunga di giorni consecutivi.",
@@ -908,7 +909,7 @@ export const GUIDE: GuideEntry[] = [
       'come risparmio batteria con Glu',
       'come torno al Glu normale',
     ],
-    keywords: ['3d', 'tre dimensioni', 'tridimensionale', 'batteria', 'risparmiare', 'glu in 3d', 'grafica'],
+    keywords: ['3d', 'tre dimensioni', 'tridimensionale', 'batteria', 'risparmiare', 'consumare', 'consumo', 'glu in 3d', 'grafica'],
     answer: [
       "Solo nell'app di prova: apri la scheda «Profilo» e vai alla sezione «Aspetto».",
       'Con «Glu in 3D» attivo Glu si muove in tre dimensioni. Spegnilo per risparmiare batteria: vale subito.',
@@ -958,7 +959,7 @@ export const GUIDE: GuideEntry[] = [
       'come recupero la password',
       'voglio una nuova password',
     ],
-    keywords: ['password', 'dimenticata', 'dimenticato', 'scordato', 'scordata', 'scordare', 'recuperare', 'recupero', 'reset', 'nuova', 'accesso', 'credenziali', 'ricordo'],
+    keywords: ['password', 'recuperare', 'recupero', 'reset', 'nuova', 'accesso', 'credenziali', 'ricordo'],
     answer: [
       'Apri la scheda «Profilo», sezione «Account», e tocca «Password».',
       'Scrivi la «Password attuale» e la «Nuova password» (almeno 8 caratteri), poi tocca «Cambia password».',
