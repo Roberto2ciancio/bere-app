@@ -101,13 +101,13 @@ describe('GluStage', () => {
     vi.restoreAllMocks()
   })
 
-  it("nell'angolo: in basso a destra sopra la barra, fumetto per 4 s", () => {
+  it("nell'angolo: in basso a destra sopra la barra, fumetto per 2 s", () => {
     render(<App><Page spec={corner} /></App>)
     expect(box()).toEqual({ x: W - 12 - 72, y: TABS_TOP - 8 - 72, s: 72 / 186 })
     const bubble = screen.getByTestId('glu-stage-bubble')
     expect(bubble.getAttribute('aria-live')).toBe('polite')
     expect(bubble.textContent).toBe('Ciao')
-    advance(3900)
+    advance(1900)
     expect(bubble.textContent).toBe('Ciao')
     advance(200)
     expect(bubble.textContent).toBe('')
@@ -116,7 +116,7 @@ describe('GluStage', () => {
 
   it('fumetto di nuovo al cambio di frase nell\'angolo', () => {
     const r = render(<App><Page spec={corner} /></App>)
-    advance(4100)
+    advance(2100)
     r.rerender(<App><Page spec={{ ...corner, text: 'Altro' }} /></App>)
     expect(screen.getByTestId('glu-stage-bubble').textContent).toBe('Altro')
   })

@@ -16,7 +16,7 @@ export const CORNER_RIGHT_PX = 12
 export const CORNER_ABOVE_TABS_PX = 8
 export const AWAY_GAP_PX = 24 // quanto oltre il bordo destro sta Glu fuori scena
 export const WALK_EDGE_PX = 16 // la passeggiata arriva a 16 px dal bordo sinistro
-export const BUBBLE_MS = 4000
+export const BUBBLE_MS = 2000
 export const HOP_MS = 450
 export const RETARGET_MS = 400 // nuovo traguardo a metà viaggio
 
