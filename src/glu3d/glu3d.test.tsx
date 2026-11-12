@@ -77,7 +77,7 @@ describe('Glu3D', () => {
   })
 
   const mount = (p: Partial<React.ComponentProps<typeof Glu3D>> = {}) =>
-    render(<Glu3D mood="calm" fill={0.5} onFail={() => {}} {...p} />)
+    render(<Glu3D mood="idle" fill={0.5} onFail={() => {}} {...p} />)
 
   it('disegna al fotogramma e limita a 30 fps', () => {
     mount()
@@ -109,11 +109,11 @@ describe('Glu3D', () => {
     const { rerender } = mount()
     expect(cbs.size).toBe(0)
     expect(scene.render).toHaveBeenCalledTimes(1)
-    rerender(<Glu3D mood="happy" fill={0.5} onFail={() => {}} />)
+    rerender(<Glu3D mood="goal" fill={0.5} onFail={() => {}} />)
     expect(scene.render).toHaveBeenCalledTimes(2)
-    rerender(<Glu3D mood="happy" fill={0.7} onFail={() => {}} />)
+    rerender(<Glu3D mood="goal" fill={0.7} onFail={() => {}} />)
     expect(scene.render).toHaveBeenCalledTimes(3)
-    rerender(<Glu3D mood="happy" fill={0.7} extras={{ sweat: true }} onFail={() => {}} />)
+    rerender(<Glu3D mood="goal" fill={0.7} extras={{ sweat: true }} onFail={() => {}} />)
     expect(scene.render).toHaveBeenCalledTimes(4)
     expect(cbs.size).toBe(0)
     expect(lastPose().still).toBe(true)
@@ -124,7 +124,7 @@ describe('Glu3D', () => {
     tick(1000)
     tick(5000)
     expect(lastPose().moodT).toBeCloseTo(4)
-    rerender(<Glu3D mood="happy" fill={0.5} onFail={() => {}} />)
+    rerender(<Glu3D mood="goal" fill={0.5} onFail={() => {}} />)
     tick(6000)
     expect(lastPose().moodT).toBeCloseTo(0)
     tick(6500)
@@ -135,7 +135,7 @@ describe('Glu3D', () => {
     const { rerender } = mount({ fill: 0.3 })
     tick(1000)
     expect(lastPose().fill).toBeCloseTo(0.3)
-    rerender(<Glu3D mood="calm" fill={0.6} onFail={() => {}} />)
+    rerender(<Glu3D mood="idle" fill={0.6} onFail={() => {}} />)
     tick(2000)
     expect(lastPose().fill).toBeCloseTo(0.3)
     tick(2300)
@@ -207,3 +207,4 @@ describe('Glu3D', () => {
     expect(scene.resize).toHaveBeenCalledWith(180, window.devicePixelRatio)
   })
 })
+

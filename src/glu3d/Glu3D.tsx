@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { GluMood } from '../mascot/mood'
 import type { GluExtras } from '../mascot/Glu'
 import { prefersReducedMotion } from '../ui/motion/effects'
@@ -23,12 +23,9 @@ interface Props {
 export function Glu3D({ mood, fill, size = 220, extras = NO_EXTRAS, calm = false, onFail }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const props = useRef({ mood, fill, extras, calm })
-  props.current = { mood, fill, extras, calm }
   const onFailRef = useRef(onFail)
-  onFailRef.current = onFail
   const sceneRef = useRef<GluScene | null>(null)
   const sizeRef = useRef(size)
-  sizeRef.current = size
   // Stato del ciclo: tempi in ms dell'orologio di requestAnimationFrame.
   const st = useRef({
     moodStart: null as number | null,
@@ -37,6 +34,12 @@ export function Glu3D({ mood, fill, size = 220, extras = NO_EXTRAS, calm = false
     fillStart: null as number | null,
     drawn: null as { mood: GluMood; fill: number; extras: GluExtras } | null,
     draw: null as null | (() => void),
+  })
+
+  useLayoutEffect(() => {
+    props.current = { mood, fill, extras, calm }
+    onFailRef.current = onFail
+    sizeRef.current = size
   })
 
   // Cambio di umore: moodT riparte da 0 al prossimo fotogramma.
@@ -188,3 +191,4 @@ export function Glu3D({ mood, fill, size = 220, extras = NO_EXTRAS, calm = false
     </div>
   )
 }
+
