@@ -8,6 +8,7 @@ import type { GluScene } from './scene'
 export const FRAME_MS = 33 // 30 fps al massimo
 export const FILL_MS = 600
 export const CONTEXT_RESTORE_MS = 2000
+export const WALK_CYCLES_PER_S = 1 // cicli di fase al secondo (2 passi per ciclo)
 
 const NO_EXTRAS: GluExtras = {}
 
@@ -17,12 +18,14 @@ interface Props {
   size?: number
   extras?: GluExtras
   calm?: boolean
+  /** Glu cammina nel verso `dir`; null/assente: fermo. */
+  walk?: { dir: -1 | 0 | 1 } | null
   onFail: (error: unknown) => void
 }
 
-export function Glu3D({ mood, fill, size = 220, extras = NO_EXTRAS, calm = false, onFail }: Props) {
+export function Glu3D({ mood, fill, size = 220, extras = NO_EXTRAS, calm = false, walk = null, onFail }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const props = useRef({ mood, fill, extras, calm })
+  const props = useRef({ mood, fill, extras, calm, walk })
   const onFailRef = useRef(onFail)
   const sizeRef = useRef(size)
   // Stato del ciclo: tempi in ms dell'orologio di requestAnimationFrame.
@@ -32,12 +35,14 @@ export function Glu3D({ mood, fill, size = 220, extras = NO_EXTRAS, calm = false
     fillTo: fill,
     fillStart: null as number | null,
     drawn: null as { mood: GluMood; fill: number; extras: GluExtras } | null,
+    walkPhase: 0,
+    walkLast: null as number | null,
     draw: null as null | (() => void),
     resize: null as null | ((cssPx: number) => void),
   })
 
   useLayoutEffect(() => {
-    props.current = { mood, fill, extras, calm }
+    props.current = { mood, fill, extras, calm, walk }
     onFailRef.current = onFail
     sizeRef.current = size
   })
@@ -60,7 +65,7 @@ export function Glu3D({ mood, fill, size = 220, extras = NO_EXTRAS, calm = false
   // Con movimento ridotto si ridisegna solo quando cambia qualcosa.
   useEffect(() => {
     if (prefersReducedMotion()) st.current.draw?.()
-  }, [mood, fill, extras, calm])
+  }, [mood, fill, extras, calm, walk])
 
   useEffect(() => {
     st.current.resize?.(size)
@@ -128,6 +133,15 @@ export function Glu3D({ mood, fill, size = 220, extras = NO_EXTRAS, calm = false
         const k = Math.min(1, (now - s.fillStart) / FILL_MS)
         f = s.fillFrom + (s.fillTo - s.fillFrom) * k
       }
+      let walkInput: { phase: number; dir: -1 | 0 | 1 } | undefined
+      if (p.walk) {
+        if (!still && s.walkLast !== null) s.walkPhase += ((now - s.walkLast) / 1000) * WALK_CYCLES_PER_S
+        s.walkLast = now
+        walkInput = { phase: s.walkPhase, dir: p.walk.dir }
+      } else {
+        s.walkPhase = 0
+        s.walkLast = null
+      }
       const pose = rt.poseFor({
         mood: p.mood,
         extras: p.extras,
@@ -136,6 +150,7 @@ export function Glu3D({ mood, fill, size = 220, extras = NO_EXTRAS, calm = false
         moodT: still ? 0 : (now - s.moodStart!) / 1000,
         calm: p.calm,
         still,
+        ...(walkInput ? { walk: walkInput } : {}),
       })
       scene.applyPose(pose)
       scene.render()

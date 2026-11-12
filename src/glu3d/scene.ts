@@ -64,6 +64,8 @@ const PAD_TOP = 0.36
 const PAD_SIDE = 0.18
 const VIEW_HALF = ART_HALF * (1 + 2 * PAD_SIDE)
 const VIEW_CY = BODY_CY + ART_HALF * (PAD_TOP - (2 * PAD_SIDE - PAD_TOP))
+const FOOT_Y = -76
+const STEP_LIFT = 14
 const INK_LIGHT = 0x0b2545
 const INK_DARK = 0x071a33
 
@@ -196,11 +198,12 @@ export function createGluScene(
     return p
   })
   const footMat = new MeshPhysicalMaterial({ color: 0x19a0e8, roughness: 0.3 })
-  ;([-1, 1] as const).forEach((s) => {
+  const feet = ([-1, 1] as const).map((s) => {
     const f = named(new Mesh(new SphereGeometry(17, 20, 14), footMat), s < 0 ? 'footR' : 'footL')
     f.scale.set(1, 0.5, 1.25)
-    f.position.set(s * 27, -76, 10)
+    f.position.set(s * 27, FOOT_Y, 10)
     g.add(f)
+    return f
   })
 
   const tuft = named(new Mesh(new SphereGeometry(10, 20, 14), limb), 'tuft')
@@ -284,8 +287,12 @@ export function createGluScene(
   const crownBaseY = crowns.map((c) => c.position.y)
 
   function applyPose(p: Pose) {
-    g.position.set(p.shakeX * U, p.jumpY * U, 0)
-    g.rotation.y = p.lookY
+    const lift = p.jumpY + p.bob
+    g.position.set(p.shakeX * U, lift * U, 0)
+    g.rotation.y = p.lookY + p.turnY
+    // feet[0] è il piede destro di Glu (s -1, 'footR'), feet[1] il sinistro.
+    feet[0].position.y = FOOT_Y + p.stepR * STEP_LIFT
+    feet[1].position.y = FOOT_Y + p.stepL * STEP_LIFT
     body.scale.y = p.scaleY
     water.scale.set(0.94, 0.94 * p.scaleY, 0.94)
     shadow.scale.x = 1 - Math.min(0.4, p.jumpY * 1.2)
@@ -307,7 +314,7 @@ export function createGluScene(
     const th = (p.waterTilt * Math.PI) / 180
     plane.normal.set(Math.sin(th), -Math.cos(th), 0)
     const level = Math.min(1, Math.max(0, p.waterLevel))
-    plane.constant = WATER_BOTTOM + (WATER_TOP - WATER_BOTTOM) * level + p.jumpY * U
+    plane.constant = WATER_BOTTOM + (WATER_TOP - WATER_BOTTOM) * level + lift * U
 
     headband.visible = p.headband
     sweat.visible = p.sweat

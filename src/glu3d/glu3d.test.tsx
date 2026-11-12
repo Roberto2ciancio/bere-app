@@ -131,6 +131,22 @@ describe('Glu3D', () => {
     expect(lastPose().moodT).toBeCloseTo(0.5)
   })
 
+  it('walk: la fase cresce tra i fotogrammi, senza walk nessun campo', () => {
+    const { rerender } = mount()
+    tick(1000)
+    expect(lastPose().walk).toBeUndefined()
+    rerender(<Glu3D mood="idle" fill={0.5} walk={{ dir: 1 }} onFail={() => {}} />)
+    tick(1100)
+    const p1 = lastPose().walk.phase
+    tick(1200)
+    const p2 = lastPose().walk.phase
+    expect(lastPose().walk.dir).toBe(1)
+    expect(p2).toBeGreaterThan(p1)
+    rerender(<Glu3D mood="idle" fill={0.5} walk={null} onFail={() => {}} />)
+    tick(1300)
+    expect(lastPose().walk).toBeUndefined()
+  })
+
   it('interpola il livello in 0,6 s', () => {
     const { rerender } = mount({ fill: 0.3 })
     tick(1000)

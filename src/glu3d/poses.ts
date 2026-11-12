@@ -10,6 +10,8 @@ export interface PoseInput {
   moodT: number // s dall'inizio dell'umore
   calm: boolean
   still: boolean
+  /** Camminata: fase in cicli (due passi per ciclo) e verso. */
+  walk?: { phase: number; dir: -1 | 0 | 1 }
 }
 
 export interface Pose {
@@ -30,10 +32,15 @@ export interface Pose {
   crownDropY: number // 0 = in testa
   fan: boolean
   zzz: boolean
+  stepL: number // 0..1, piede sinistro alzato
+  stepR: number
+  bob: number // unità scena, ondeggio verticale del corpo
+  turnY: number // rad, rotazione del corpo verso il verso di marcia
 }
 
 export const HELLO_S = 2
 export const JUMP_S = 0.6
+export const WALK_TURN = 0.6
 
 const BODY = [0xcf, 0xeb, 0xfb]
 const THIRSTY = [0x9d, 0xb4, 0xc4]
@@ -137,6 +144,14 @@ export function poseFor(input: PoseInput): Pose {
   const fan = !calm && (!!extras.fan || (extras.thirst ?? 0) >= 1)
   if (fan && !ARM_MOODS.has(mood)) armR = 0.6 * Math.PI + (still ? 0 : 0.25 * Math.sin(8 * t))
 
+  // Camminata: passi alternati e ondeggio; da fermo niente passi ma Glu guarda il verso.
+  const walk = input.walk
+  const wave = walk && !still ? Math.sin(walk.phase * Math.PI * 4) : 0
+  const stepL = Math.max(0, wave)
+  const stepR = Math.max(0, -wave)
+  const bob = 0.03 * Math.abs(wave)
+  const turnY = walk ? walk.dir * WALK_TURN : 0
+
   const crown = extras.crown ?? 0
   const crownDropY = extras.crownDrop && moodT < 1.5 ? 1.2 * (1 - moodT / 1.5) ** 2 : 0
 
@@ -158,5 +173,9 @@ export function poseFor(input: PoseInput): Pose {
     crownDropY,
     fan,
     zzz,
+    stepL,
+    stepR,
+    bob,
+    turnY,
   }
 }

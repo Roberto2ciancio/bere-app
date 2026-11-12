@@ -34,6 +34,10 @@ const BASE: Pose = {
   crownDropY: 0,
   fan: false,
   zzz: false,
+  stepL: 0,
+  stepR: 0,
+  bob: 0,
+  turnY: 0,
 }
 
 function make() {
@@ -154,5 +158,19 @@ describe('createGluScene', () => {
     expect(r.dispose).toHaveBeenCalled()
     expect(spy.mock.calls.length).toBeGreaterThanOrEqual(10)
     spy.mockRestore()
+  })
+
+  it('applyPose: passo alza il piede, turnY ruota il corpo, bob alza il corpo', () => {
+    const { s, get } = make()
+    s.applyPose({ ...BASE })
+    const y0 = get('footL').position.y
+    const r0 = get('footR').position.y
+    s.applyPose({ ...BASE, stepL: 1 })
+    expect(get('footL').position.y).toBeGreaterThan(y0)
+    expect(get('footR').position.y).toBe(r0)
+    s.applyPose({ ...BASE, turnY: 0.6 })
+    expect(get('body').parent!.rotation.y).toBe(0.6)
+    s.applyPose({ ...BASE, bob: 0.03 })
+    expect(get('body').parent!.position.y).toBeGreaterThan(0)
   })
 })
