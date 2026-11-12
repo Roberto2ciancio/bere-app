@@ -39,7 +39,7 @@ export const STOPWORDS = new Set([
   'dimmi', 'spiegami', 'aiuto', 'ciao', 'grazie', 'favore', 'app',
   // riempitivi
   'dell', 'dall', 'nell', 'sull', 'all', 'quell', 'cos', 'qual', 'dov', 'com', 'anch', 'un',
-  'piu', 'molto', 'poco', 'mai', 'sempre', 'dopo', 'poi', 'quindi', 'dovrei', 'quanti', 'quante',
+  'piu', 'molto', 'poco', 'mai', 'sempre', 'dopo', 'poi', 'quindi', 'dovrei', 'quanta', 'quanti', 'quante',
 ])
 
 /** Gruppi di sinonimi: la prima parola è la forma canonica. Estendere qui. */

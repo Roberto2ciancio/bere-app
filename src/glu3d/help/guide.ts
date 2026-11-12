@@ -34,7 +34,7 @@ export const GUIDE: GuideEntry[] = [
       "l'app può calcolarmi i litri giusti",
       "calcolatore dell'obiettivo",
     ],
-    keywords: ['calcolare', 'calcolo', 'calcolalo', 'calcolatore', 'peso', 'kg', 'chili', 'suggerito', 'stima', 'attività', 'sedentaria', 'litri giusti', 'automatico', 'quanta', 'quanta acqua', 'devo bere', 'quanto bere'],
+    keywords: ['calcolare', 'calcolo', 'calcolalo', 'calcolatore', 'peso', 'kg', 'chili', 'suggerito', 'stima', 'attività', 'sedentaria', 'litri giusti', 'automatico', 'acqua', 'devo bere', 'quanto bere'],
     answer: [
       'Apri la scheda «Profilo», sezione «Obiettivo», e tocca «Calcolalo per me».',
       'Scrivi il tuo «Peso (kg)» e scegli l\'«Attività»: Sedentaria, Leggera, Moderata o Intensa.',
@@ -88,8 +88,9 @@ export const GUIDE: GuideEntry[] = [
       "dove segno l'acqua che ho bevuto",
       'come registro quello che bevo',
       "ho appena bevuto un bicchiere d'acqua",
+      "come aggiungo l'acqua che ho bevuto",
     ],
-    keywords: ['bicchiere', 'acqua', 'aggiungere', 'aggiungo', 'bevuta'],
+    keywords: ['bicchiere', 'aggiungere', 'aggiungo', 'bevuta', 'segnare'],
     answer: [
       'Nella scheda «Oggi» tocca il pulsante grande «Ho bevuto», con la quantità scritta accanto.',
       "Il totale sale e Glu si riempie. Un secondo tocco subito dopo viene ignorato, per evitare doppioni.",
@@ -123,7 +124,7 @@ export const GUIDE: GuideEntry[] = [
       'devo segnare una birra o un vino',
       "come scelgo un'altra bevanda o una quantità diversa",
     ],
-    keywords: ['tè', 'latte', 'succo', 'bibita', 'birra', 'vino', 'frutta', 'spremuta', 'invece', 'segnare'],
+    keywords: ['tè', 'latte', 'succo', 'bibita', 'birra', 'vino', 'frutta', 'spremuta', 'invece', 'segnare', 'bevuto'],
     answer: [
       'Nella scheda «Oggi» tocca il pulsante «+» accanto a «Ho bevuto»: si apre «Cosa hai bevuto?».',
       'Tocca una tazza (Bicchiere, Tazza, Bottiglia o le tue), oppure scegli la «Bevanda» e scrivi la «Quantità (ml)», da 1 a 2000.',
@@ -224,7 +225,7 @@ export const GUIDE: GuideEntry[] = [
       'cosa significa la percentuale accanto alla bevanda',
       'tutte le bevande contano uguale',
     ],
-    keywords: ['percentuale', 'idrata', 'idratazione', 'conta', 'vale', 'birra', 'bibita', 'succo', 'latte', 'tè', 'caffè', 'bevanda', 'idratare'],
+    keywords: ['percentuale', 'idrata', 'idratazione', 'conta', 'vale', 'birra', 'bibita', 'succo', 'latte', 'tè', 'caffè', 'bevanda', 'idratare', 'acqua'],
     answer: [
       "Ogni bevanda conta in proporzione a una percentuale: Acqua 100%, Tè 90%, Latte 90%, Succo 85%, Caffè 80%, Bibita 70%, Birra 50%.",
       'Esempio: 200 ml di Caffè contano 160 ml verso l\'obiettivo. È un valore indicativo.',
@@ -260,8 +261,9 @@ export const GUIDE: GuideEntry[] = [
       'cosa significa oltre i 400 mg di riferimento',
       'qual è il limite del caffè',
       'quanti caffè al giorno posso prendere',
+      'quanta caffeina posso bere al giorno',
     ],
-    keywords: ['caffeina', 'limite', '400', 'mg', 'riferimento', 'troppo', 'superato', 'oltre', 'efsa', 'assumere', 'assumo'],
+    keywords: ['caffeina', 'limite', '400', 'mg', 'riferimento', 'troppo', 'superato', 'oltre', 'efsa', 'assumere', 'assumo', 'bere', 'al giorno'],
     answer: [
       'Il riquadro «Caffè» nella scheda «Oggi» mostra «mg di caffeina su 400».',
       'Oltre i 400 mg compare «oltre i 400 di riferimento»: è il valore indicativo per un adulto sano in una giornata, non un consiglio medico.',

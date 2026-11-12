@@ -112,6 +112,9 @@ const REAL: [string, string][] = [
   ['bevuta', 'drink-log'],
   ['quanta acqua devo bere', 'goal-calc'],
   ['come funziona la serie', 'streak'],
+  ['quanta caffeina posso bere', 'caffeine-limit'],
+  ['quanta acqua ha un caffè', 'hydration-pct'],
+  ['quanto caffè posso bere al giorno', 'caffeine-limit'],
 ]
 
 describe('GUIDE', () => {
@@ -218,11 +221,10 @@ describe('fix round 1: suggerimenti vicini e pulizie', () => {
 
 describe('ondata finale: niente argomenti fuori tema', () => {
   const ids = (q: string) => searchGuide(q, GUIDE).suggestions.map((s) => s.id)
-  it('«acqua» da sola propone segnare una bevuta e il calcolo dell\'obiettivo', () => {
+  it('«acqua» da sola: nessuna risposta sicura, propone il calcolo dell\'obiettivo', () => {
     const r = searchGuide('acqua', GUIDE)
-    const all = [r.best?.id, ...r.suggestions.map((s) => s.id)]
-    expect(all).toContain('drink-log')
-    expect(all).toContain('goal-calc')
+    expect(r.best).toBeNull()
+    expect(r.suggestions.map((s) => s.id)).toContain('goal-calc')
   })
   it('«ieri ho dimenticato di segnare»: bevuta passata, nessuna password', () => {
     expect(searchGuide('ieri ho dimenticato di segnare', GUIDE).best?.id).toBe('drink-past')
