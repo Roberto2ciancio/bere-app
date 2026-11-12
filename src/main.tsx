@@ -12,6 +12,8 @@ import { installErrorReporting } from './lib/errorReporting'
 import { ErrorBoundary } from './ui/ErrorBoundary'
 import { MotionRoot } from './ui/motion/MotionRoot'
 import { rememberStartupData } from './profile/whatsNew'
+import { GLU_3D_ENABLED } from './glu3d/enabled'
+import { startGlu3d } from './glu3d/capability'
 
 // Prima del render: serve a distinguere un aggiornamento da una nuova installazione.
 rememberStartupData()
@@ -34,3 +36,8 @@ createRoot(document.getElementById('root')!).render(
     </ErrorBoundary>
   </StrictMode>,
 )
+
+// Glu in 3D (solo devapp): il pacchetto si scarica dopo il render; in produzione l'import sparisce dal build.
+if (import.meta.env.MODE === 'devapp' && GLU_3D_ENABLED) startGlu3d(() => import('./glu3d/runtime'))
+
+
