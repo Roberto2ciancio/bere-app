@@ -16,7 +16,7 @@ export const GUIDE: GuideEntry[] = [
       "dove si imposta l'obiettivo",
       "modificare l'obiettivo giornaliero",
     ],
-    keywords: ['giornaliero', 'litri', 'abbassare', 'alzare', 'aumentare', 'diminuire', 'impostare', 'meno', 'al giorno', 'meta', 'quantità', 'modificare'],
+    keywords: ['giornaliero', 'litri', 'abbassare', 'alzare', 'aumentare', 'diminuire', 'impostare', 'meno', 'al giorno', 'quantità', 'modificare'],
     answer: [
       'Apri la scheda «Profilo» e vai alla sezione «Obiettivo».',
       'Scrivi i litri nel campo «Obiettivo giornaliero (litri)»: da 0,1 a 10.',
@@ -261,7 +261,7 @@ export const GUIDE: GuideEntry[] = [
       'qual è il limite del caffè',
       'quanti caffè al giorno posso prendere',
     ],
-    keywords: ['caffeina', 'limite', '400', 'mg', 'riferimento', 'troppo', 'superato', 'quanti', 'oltre', 'efsa', 'assumere', 'assumo'],
+    keywords: ['caffeina', 'limite', '400', 'mg', 'riferimento', 'troppo', 'superato', 'oltre', 'efsa', 'assumere', 'assumo'],
     answer: [
       'Il riquadro «Caffè» nella scheda «Oggi» mostra «mg di caffeina su 400».',
       'Oltre i 400 mg compare «oltre i 400 di riferimento»: è il valore indicativo per un adulto sano in una giornata, non un consiglio medico.',
@@ -417,8 +417,8 @@ export const GUIDE: GuideEntry[] = [
     title: 'Rimandare un promemoria',
     questions: [
       'posso rimandare un promemoria',
-    'cosa fa il pulsante tra 15 min',
       'cosa fa il pulsante tra 15 min',
+      'posso posticipare la notifica di un quarto d\'ora',
       'come mi ricorda più tardi',
     ],
     keywords: ['tra 15 min', 'rimandare', 'rimando', 'snooze', 'più tardi', 'posticipare', 'bevuto ✓', 'pulsanti', 'quarto'],
@@ -975,7 +975,7 @@ export const GUIDE: GuideEntry[] = [
       'voglio disconnettermi',
       'come cambio utente',
     ],
-    keywords: ['uscire', 'esci', 'esco', 'logout', 'disconnettere', 'disconnettermi', 'cambiare utente', 'sloggare'],
+    keywords: ['uscire', 'esci', 'esco', 'logout', 'disconnettere', 'disconnettermi', 'utente', 'sloggare'],
     answer: [
       'Apri la scheda «Profilo», in fondo alla sezione «Account».',
       'Tocca «Esci».',
@@ -1042,7 +1042,7 @@ export const GUIDE: GuideEntry[] = [
       'una foto usa una mia opera senza permesso',
       'come segnalo un utente',
     ],
-    keywords: ['segnalare', 'segnalazione', 'segnala', 'offensivo', 'inadatto', 'diritto d\'autore', 'copyright', 'abuso', 'utente', 'inappropriato', 'offensiva'],
+    keywords: ['segnalare', 'segnalazione', 'segnala', 'offensivo', 'inadatto', 'diritto d\'autore', 'copyright', 'abuso', 'inappropriato', 'offensiva'],
     answer: [
       'Apri la scheda «Classifica», tocca «Come funziona» e poi «Segnalalo» (lo trovi anche nella pagina «Privacy»).',
       'Scegli «Cosa segnali?», scrivi il «Nome in classifica» e i dettagli.',
@@ -1059,7 +1059,7 @@ export const GUIDE: GuideEntry[] = [
       'cos\'è il pallino sull\'icona in alto',
       'dove leggo la newsletter',
     ],
-    keywords: ['newsletter', 'novità', 'nuovo', 'versione', 'aggiornamento', 'changelog', 'pallino', 'cambiamenti', 'ultima versione', 'release', 'cambiato'],
+    keywords: ['newsletter', 'novità', 'nuovo', 'versione', 'aggiornamento', 'changelog', 'pallino', 'ultima versione', 'release'],
     answer: [
       "Nella scheda «Oggi», in alto a destra, tocca l'icona «Newsletter»: ha un pallino se ci sono novità da leggere.",
       'La pagina elenca le novità di Bere, versione per versione, dalla più recente.',

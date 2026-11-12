@@ -5,7 +5,7 @@ import { reportError } from '../../lib/errorReporting'
 import { isGluCalm } from '../../mascot/calm'
 import { prefersReducedMotion } from '../../ui/motion/effects'
 import { Glu3D } from '../Glu3D'
-import { HelpChat, type HelpPage } from '../help/HelpChat'
+import { HelpChat, type HelpCloseReason, type HelpPage } from '../help/HelpChat'
 import { travelFor } from './motion'
 import type { GluSpot } from './motion'
 import { nextWalkDelay, walkTimeline, WALK_LEG_MS } from './walks'
@@ -316,7 +316,9 @@ function Stage() {
       setPos(measure(live.current.spot))
     }
     // Allo scorrimento si muove solo l'anello: angolo e fuori scena dipendono dalla finestra.
-    const onScroll = () => {
+    const onScroll = (event: Event) => {
+      // La conversazione della chat che scorre non sposta Glu.
+      if (event.target instanceof Element && event.target.closest('.help-overlay')) return
       if (live.current.spot === 'ring') remeasure()
     }
     remeasure()
@@ -367,9 +369,20 @@ function Stage() {
     live.current.chat = help
     setChat(help)
   }
-  const closeChat = useCallback(() => {
-    refocus.current = true
+  const closeChat = useCallback((reason?: HelpCloseReason) => {
     setChat(null)
+    if (reason !== 'navigate') {
+      refocus.current = true
+      return
+    }
+    // Si va a un'altra schermata: Glu parte in viaggio (il suo pulsante sparisce), il focus va al titolo nuovo.
+    refocus.current = false
+    setTimeout(() => {
+      const title = document.querySelector<HTMLElement>('main h1')
+      if (!title) return
+      if (!title.hasAttribute('tabindex')) title.setAttribute('tabindex', '-1')
+      title.focus({ preventScroll: true })
+    }, 0)
   }, [])
 
   // Chiusa la chat, il focus torna su Glu (se è ancora lì: con «Portami lì» sta viaggiando).

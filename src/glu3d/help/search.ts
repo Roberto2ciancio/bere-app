@@ -15,6 +15,10 @@ export const MIN_SCORE = 3
 /** Il primo deve superare il secondo di almeno il 20%. */
 const GAP = 1.2
 
+/** Soglia dei suggerimenti: almeno MIN_SCORE × 0,5 e il 35% del punteggio del primo. */
+export const SUGGEST_MIN_FACTOR = 0.5
+export const SUGGEST_REL = 0.35
+
 /** Parole vuote italiane (già senza accenti). Aggiungere qui, in minuscolo. */
 export const STOPWORDS = new Set([
   // articoli e preposizioni
@@ -35,7 +39,7 @@ export const STOPWORDS = new Set([
   'dimmi', 'spiegami', 'aiuto', 'ciao', 'grazie', 'favore', 'app',
   // riempitivi
   'dell', 'dall', 'nell', 'sull', 'all', 'quell', 'cos', 'qual', 'dov', 'com', 'anch', 'un',
-  'piu', 'molto', 'poco', 'mai', 'sempre', 'dopo', 'poi', 'quindi', 'dovrei', 'vorrei', 'quanta', 'quanti', 'quante',
+  'piu', 'molto', 'poco', 'mai', 'sempre', 'dopo', 'poi', 'quindi', 'dovrei', 'quanta', 'quanti', 'quante',
 ])
 
 /** Gruppi di sinonimi: la prima parola è la forma canonica. Estendere qui. */
@@ -171,8 +175,11 @@ export function searchGuide(
   const ranked = rankGuide(query, entries)
   const top = ranked[0]
   const sure = top && top.score >= MIN_SCORE && (!ranked[1] || top.score >= ranked[1].score * GAP)
+  // Niente argomenti scollegati: un suggerimento deve valere almeno metà soglia e il 35% del primo.
+  const floor = top ? Math.max(MIN_SCORE * SUGGEST_MIN_FACTOR, top.score * SUGGEST_REL) : 0
+  const near = (list: typeof ranked) => list.filter((r) => r.score >= floor).map((r) => r.entry)
   if (sure) {
-    return { best: top.entry, suggestions: ranked.slice(1, 3).map((r) => r.entry) }
+    return { best: top.entry, suggestions: near(ranked.slice(1, 3)) }
   }
-  return { best: null, suggestions: ranked.slice(0, 3).map((r) => r.entry) }
+  return { best: null, suggestions: near(ranked.slice(0, 3)) }
 }

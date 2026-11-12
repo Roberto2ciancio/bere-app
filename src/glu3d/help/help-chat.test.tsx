@@ -1,15 +1,23 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const h = vi.hoisted(() => ({
   navigate: vi.fn(),
+  realNavigate: false,
   props: [] as Array<Record<string, unknown>>,
 }))
-vi.mock('react-router-dom', async (orig) => ({
-  ...(await orig<typeof import('react-router-dom')>()),
-  useNavigate: () => h.navigate,
-}))
+vi.mock('react-router-dom', async (orig) => {
+  const rr = await orig<typeof import('react-router-dom')>()
+  return {
+    ...rr,
+    // Negli esempi del palcoscenico serve la navigazione vera (cambio pagina dopo «Portami lì»).
+    useNavigate: () => {
+      const real = rr.useNavigate()
+      return h.realNavigate ? real : h.navigate
+    },
+  }
+})
 vi.mock('../Glu3D', () => ({
   Glu3D: (p: Record<string, unknown>) => {
     h.props.push(p)
@@ -22,7 +30,7 @@ vi.mock('../../lib/errorReporting', () => ({ reportError: vi.fn() }))
 import { HelpChat } from './HelpChat'
 import { GUIDE, PAGE_TIPS } from './guide'
 import { GluStage } from '../stage/GluStage'
-import { GluStageProvider, useGluSpot } from '../stage/stageContext'
+import { GluStageProvider, useGluSpot, useRingSlot } from '../stage/stageContext'
 import type { GluSpotSpec } from '../stage/stageContext'
 
 const title = (id: string) => GUIDE.find((e) => e.id === id)!.title
@@ -134,6 +142,66 @@ describe('HelpChat', () => {
     fireEvent.click(screen.getByRole('dialog').parentElement!)
     expect(onClose).toHaveBeenCalledTimes(3)
   })
+  it('tastiera aperta: il foglio segue visualViewport (altezza e spostamento)', () => {
+    const vv = Object.assign(new EventTarget(), { height: 600, offsetTop: 0, width: 390 })
+    Object.defineProperty(window, 'visualViewport', { configurable: true, value: vv })
+    try {
+      const r = render(<MemoryRouter><HelpChat page="home" onClose={() => {}} /></MemoryRouter>)
+      const sheet = screen.getByRole('dialog') as HTMLElement
+      const overlay = sheet.parentElement as HTMLElement
+      expect(sheet.style.maxHeight).toBe('588px')
+      act(() => {
+        vv.height = 300
+        vv.offsetTop = 40
+        vv.dispatchEvent(new Event('resize'))
+      })
+      expect(sheet.style.maxHeight).toBe('288px')
+      expect(overlay.style.top).toBe('40px')
+      expect(overlay.style.height).toBe('300px')
+      const off = vi.spyOn(vv, 'removeEventListener')
+      r.unmount()
+      expect(off).toHaveBeenCalledWith('resize', expect.any(Function))
+      expect(off).toHaveBeenCalledWith('scroll', expect.any(Function))
+    } finally {
+      Object.defineProperty(window, 'visualViewport', { configurable: true, value: undefined })
+    }
+  })
+
+  it('senza visualViewport resta il CSS', () => {
+    renderChat()
+    expect((screen.getByRole('dialog') as HTMLElement).style.maxHeight).toBe('')
+  })
+
+  it('Tab resta nel dialogo: dall\'ultimo al primo e, con Maiusc, dal primo all\'ultimo', () => {
+    renderChat()
+    const first = screen.getByRole('button', { name: 'Chiudi' })
+    const last = screen.getByRole('button', { name: 'Invia' })
+    last.focus()
+    fireEvent.keyDown(last, { key: 'Tab' })
+    expect(document.activeElement).toBe(first)
+    fireEvent.keyDown(first, { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(last)
+  })
+
+  it('Esc non arriva oltre la chat', () => {
+    const outer = vi.fn()
+    window.addEventListener('keydown', outer)
+    try {
+      const { onClose } = renderChat()
+      fireEvent.keyDown(document, { key: 'Escape' })
+      expect(onClose).toHaveBeenCalledTimes(1)
+      expect(outer).not.toHaveBeenCalled()
+    } finally {
+      window.removeEventListener('keydown', outer)
+    }
+  })
+
+  it('«Portami lì» chiude dicendo che si naviga', () => {
+    const { onClose } = renderChat()
+    ask("come cambio l'obiettivo")
+    fireEvent.click(screen.getByRole('button', { name: 'Portami lì' }))
+    expect(onClose).toHaveBeenCalledWith('navigate')
+  })
 })
 
 // --- Tocco su Glu nel palcoscenico ---
@@ -243,5 +311,59 @@ describe('GluStage: tocco su Glu', () => {
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(document.activeElement).toBe(gluButton())
+  })
+  it('«Portami lì»: niente focus su Glu (sta viaggiando), va al titolo della pagina nuova', () => {
+    h.realNavigate = true
+    try {
+      function Home() {
+        useGluSpot({ spot: 'corner', mood: 'idle', help: 'home' })
+        return <main><h1>Oggi</h1></main>
+      }
+      function Profile() {
+        useGluSpot({ spot: 'corner', mood: 'idle', help: 'profilo' })
+        return <main><h1>Profilo</h1></main>
+      }
+      render(
+        <MemoryRouter initialEntries={['/home']}>
+          <GluStageProvider active>
+            <Routes>
+              <Route path="/home" element={<Home />} />
+              <Route path="/profilo" element={<Profile />} />
+            </Routes>
+            <GluStage />
+          </GluStageProvider>
+        </MemoryRouter>,
+      )
+      fireEvent.click(gluButton()!)
+      ask("come cambio l'obiettivo")
+      fireEvent.click(screen.getByRole('button', { name: 'Portami lì' }))
+      advance(50)
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Profilo' }))
+    } finally {
+      h.realNavigate = false
+    }
+  })
+
+  it('lo scorrimento dentro la chat non rimisura Glu', () => {
+    let top = 200
+    function Ring() {
+      useGluSpot({ spot: 'ring', mood: 'idle', help: 'home' })
+      const ref = useRingSlot()
+      return <div ref={(el) => { if (el) el.getBoundingClientRect = () => rect(100, top, 186, 186); ref(el) }} />
+    }
+    render(<App><Ring /></App>)
+    fireEvent.click(gluButton()!)
+    const y = () => Number(/translate\([-\d.]+px, ([-\d.]+)px\)/.exec(screen.getByTestId('glu-stage-box').style.transform)![1])
+    expect(y()).toBe(200)
+    top = 150
+    act(() => {
+      screen.getByRole('log').dispatchEvent(new Event('scroll'))
+    })
+    expect(y()).toBe(200)
+    act(() => {
+      document.dispatchEvent(new Event('scroll'))
+    })
+    expect(y()).toBe(150)
   })
 })

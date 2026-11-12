@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { GUIDE, PAGE_TIPS } from './guide'
-import { normalize, searchGuide } from './search'
+import { MIN_SCORE, normalize, rankGuide, searchGuide } from './search'
 
 // Rotte dichiarate in src/App.tsx (copiate qui: se App.tsx cambia, va aggiornata anche questa lista).
 const ROUTES = ['/home', '/classifica', '/storico', '/storico/calendario', '/tazze', '/profilo', '/promemoria', '/notifiche', '/feedback', '/privacy', '/novita', '/segnala']
@@ -183,5 +183,30 @@ describe('affinamenti di ricerca', () => {
   it('tema scuro e modalità notte trovano la stessa voce', () => {
     expect(searchGuide('tema scuro', GUIDE).best?.id).toBe('dark')
     expect(searchGuide('modalità notte', GUIDE).best?.id).toBe('dark')
+  })
+})
+
+describe('fix round 1: suggerimenti vicini e pulizie', () => {
+  it("«come cambio l'obiettivo»: niente argomenti scollegati in «Forse cercavi»", () => {
+    const r = searchGuide("come cambio l'obiettivo", GUIDE)
+    expect(r.best?.id).toBe('goal-change')
+    const ids = r.suggestions.map((s) => s.id)
+    expect(ids).not.toContain('signout')
+    expect(ids).not.toContain('news')
+  })
+  it('«cosa vuol dire almeno metà nel calendario» non risponde col cambio obiettivo', () => {
+    expect(searchGuide('cosa vuol dire almeno metà nel calendario', GUIDE).best?.id).not.toBe('goal-change')
+  })
+  it('nessuna domanda ripetuta nella stessa voce', () => {
+    for (const e of GUIDE) expect(new Set(e.questions).size, e.id).toBe(e.questions.length)
+  })
+  it('ogni suggerimento vale almeno metà soglia e il 35% del primo', () => {
+    for (const q of ["come cambio l'obiettivo", 'notifiche', 'serie', 'tazza', 'promemoria', 'caffè']) {
+      const ranked = rankGuide(q, GUIDE)
+      if (!ranked.length) continue
+      const floor = Math.max(MIN_SCORE * 0.5, ranked[0].score * 0.35)
+      const score = new Map(ranked.map((r) => [r.entry.id, r.score]))
+      for (const s of searchGuide(q, GUIDE).suggestions) expect(score.get(s.id)!, `${q}: ${s.id}`).toBeGreaterThanOrEqual(floor)
+    }
   })
 })

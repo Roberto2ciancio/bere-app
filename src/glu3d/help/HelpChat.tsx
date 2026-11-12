@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { GUIDE, PAGE_TIPS } from './guide'
 import { searchGuide, type GuideEntry } from './search'
@@ -16,11 +16,22 @@ type Msg = Draft & { id: number }
 
 const byId = (id: string) => GUIDE.find((e) => e.id === id)
 
+const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+
+/** Viewport visibile: con la tastiera aperta è più basso della finestra. null: vale il CSS. */
+function readView(): { h: number; top: number } | null {
+  const vv = typeof window === 'undefined' ? undefined : window.visualViewport
+  return vv ? { h: Math.round(vv.height), top: Math.round(vv.offsetTop) } : null
+}
+
+/** 'navigate': la chat si chiude perché si va a un'altra schermata («Portami lì», «Suggerimenti»). */
+export type HelpCloseReason = 'navigate'
+
 /**
  * La chat di Glu: un foglio dal basso che cerca nella guida scritta a mano (niente rete, niente salvataggi:
  * la conversazione vive finché il foglio è aperto).
  */
-export function HelpChat({ page, onClose }: { page: HelpPage; onClose: () => void }) {
+export function HelpChat({ page, onClose }: { page: HelpPage; onClose: (reason?: HelpCloseReason) => void }) {
   const navigate = useNavigate()
   const titleId = useId()
   const input = useRef<HTMLInputElement>(null)
@@ -29,6 +40,7 @@ export function HelpChat({ page, onClose }: { page: HelpPage; onClose: () => voi
   const nextId = useRef(1)
   const [text, setText] = useState('')
   const [msgs, setMsgs] = useState<Msg[]>([])
+  const [view, setView] = useState(readView)
   const tips = PAGE_TIPS[page].map(byId).filter((e): e is GuideEntry => !!e)
 
   useEffect(() => {
@@ -39,11 +51,42 @@ export function HelpChat({ page, onClose }: { page: HelpPage; onClose: () => voi
     // Il foglio sta ancora comparendo: senza preventScroll il browser proverebbe a portarlo in vista.
     input.current?.focus({ preventScroll: true })
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') close.current()
+      if (event.key !== 'Escape') return
+      event.stopPropagation()
+      close.current()
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [])
+
+  // Sui telefoni la tastiera restringe solo il viewport visibile: il foglio lo segue.
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const update = () => setView(readView())
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+    }
+  }, [])
+
+  // Tab e Maiusc+Tab girano dentro il dialogo.
+  function trapTab(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key !== 'Tab') return
+    const items = [...event.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE)]
+    if (!items.length) return
+    const first = items[0]
+    const last = items[items.length - 1]
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault()
+      last.focus()
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault()
+      first.focus()
+    }
+  }
 
   // A ogni risposta la conversazione scorre fino all'ultima domanda: si legge la risposta dall'inizio.
   useEffect(() => {
@@ -79,7 +122,7 @@ export function HelpChat({ page, onClose }: { page: HelpPage; onClose: () => voi
 
   function go(route: string) {
     navigate(route)
-    onClose()
+    onClose('navigate')
   }
 
   const chips = (list: GuideEntry[], label: string) => (
@@ -93,11 +136,22 @@ export function HelpChat({ page, onClose }: { page: HelpPage; onClose: () => voi
   )
 
   return (
-    <div className="sheet-overlay help-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="sheet help-sheet" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+    <div
+      className="sheet-overlay help-overlay"
+      style={view ? { top: view.top, bottom: 'auto', height: view.h } : undefined}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        className="sheet help-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        style={view ? { height: `min(34rem, ${view.h - 12}px)`, maxHeight: view.h - 12 } : undefined}
+        onKeyDown={trapTab}
+      >
         <div className="help-head">
           <h2 id={titleId}>Chiedi a Glu</h2>
-          <button type="button" className="ghost help-close" aria-label="Chiudi" onClick={onClose}>
+          <button type="button" className="ghost help-close" aria-label="Chiudi" onClick={() => onClose()}>
             ✕
           </button>
         </div>
@@ -149,7 +203,7 @@ export function HelpChat({ page, onClose }: { page: HelpPage; onClose: () => voi
               <div key={m.id} className="help-msg from-glu">
                 <p>
                   Non lo so ancora. Puoi scriverlo nei{' '}
-                  <Link to="/feedback" onClick={onClose}>
+                  <Link to="/feedback" onClick={() => onClose('navigate')}>
                     Suggerimenti
                   </Link>
                 </p>
