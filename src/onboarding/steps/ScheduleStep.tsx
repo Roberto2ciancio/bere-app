@@ -14,6 +14,7 @@ const DEFAULT_START = 8 * 60
 const DEFAULT_END = 22 * 60
 const EVERY_MIN = 30
 const EVERY_MAX = 180
+const EVERY_CHOICES = [30, 60, 90, 120, 180]
 const ALL_DAYS = [1, 2, 3, 4, 5, 6, 7]
 const SAVE_ERROR = 'Salvataggio non riuscito. Controlla la connessione e riprova.'
 
@@ -57,7 +58,12 @@ export function ScheduleStep({ goalMl, onNext }: Props) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const every = suggestEvery(start, end, goalMl, drinkMl)
+  const [picked, setPicked] = useState<number | null>(null)
+
+  const suggested = suggestEvery(start, end, goalMl, drinkMl)
+  const every = picked ?? suggested
+  // Il consigliato (multiplo di 30) può non essere tra i cinque ritmi fissi: lo si aggiunge.
+  const choices = EVERY_CHOICES.includes(suggested) ? EVERY_CHOICES : [...EVERY_CHOICES, suggested].sort((a, b) => a - b)
   const times = intervalMinutes(start, end, every)
   const problem = activeHoursError(start, end)
 
@@ -124,6 +130,17 @@ export function ScheduleStep({ goalMl, onNext }: Props) {
           <span className="ob-label">Vado a dormire · <span className="num">{formatTime(end)}</span></span>
           <input type="range" min={0} max={DAY_END} step={STEP_MIN} value={end} aria-valuetext={formatTime(end)} onChange={(e) => changeEnd(Number(e.target.value))} />
         </label>
+        <div className="ob-field">
+          <span className="ob-label" id="ob-every-label">Ogni quanto?</span>
+          <div className="ob-every" role="radiogroup" aria-labelledby="ob-every-label">
+            {choices.map((choice) => (
+              <button key={choice} type="button" role="radio" className="ob-every-option" aria-checked={choice === every} onClick={() => setPicked(choice)}>
+                <span>{intervalLabel(choice)}</span>
+                {choice === suggested && <span className="ob-every-tag">consigliato</span>}
+              </button>
+            ))}
+          </div>
+        </div>
         {times.length > 0 && (
           <p className="hint">
             {times.length} promemoria × {drinkMl} ml = {formatLiters(times.length * drinkMl)} su {formatLiters(goalMl)}

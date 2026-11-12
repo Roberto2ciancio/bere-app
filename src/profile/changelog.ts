@@ -12,6 +12,17 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '1.9.7',
+    date: '2026-11-12',
+    title: 'Ritocchi',
+    notes: [
+      'Dopo un caffè Glu si agita solo per qualche secondo.',
+      'Nel primo avvio puoi scegliere ogni quanto ricevere i promemoria.',
+      'Icone nuove per bicchieri e bottiglie nel primo avvio.',
+      "Il cerchio dell'avatar scelto ora è centrato.",
+    ],
+  },
+  {
     version: '1.9.6',
     date: '2026-11-12',
     title: 'Iscrizione e segnalazioni',

@@ -23,9 +23,11 @@ describe('thirstLevel', () => {
 })
 
 describe('coffeeActive', () => {
-  it('attivo per 20 minuti', () => {
-    expect(coffeeActive(at(10), at(10, 19))).toBe(true)
-    expect(coffeeActive(at(10), at(10, 21))).toBe(false)
+  it('attivo solo per 4 secondi', () => {
+    const t = at(10).getTime()
+    expect(coffeeActive(at(10), new Date(t + 3_900))).toBe(true)
+    expect(coffeeActive(at(10), new Date(t + 4_100))).toBe(false)
+    expect(coffeeActive(at(10), at(10, 19))).toBe(false)
     expect(coffeeActive(null, at(10))).toBe(false)
   })
 })

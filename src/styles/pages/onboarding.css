@@ -58,7 +58,8 @@
 .ob-activity span { font-size: 1.5rem; line-height: 1.1; }
 .ob-cups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .ob-cup { min-height: 92px; }
-.ob-cup-icon { font-size: 1.75rem; line-height: 1.1; }
+.ob-cup-icon { display: grid; place-items: center; height: 1.75rem; }
+.ob-cup-icon svg { width: 1.75rem; height: 1.75rem; }
 .ob-cup-ml { font-size: 0.85rem; font-weight: 600; }
 
 .ob-title { font-size: 1.35rem; text-align: center; margin: 0; }
@@ -70,6 +71,10 @@
 .ob-schedule input[type='range']::-moz-range-track { height: 8px; border-radius: 4px; background: var(--track); }
 .ob-schedule input[type='range']::-webkit-slider-thumb { -webkit-appearance: none; width: 44px; height: 44px; margin-top: -18px; border-radius: 50%; border: 10px solid transparent; background: var(--brand) padding-box; }
 .ob-schedule input[type='range']::-moz-range-thumb { box-sizing: border-box; width: 44px; height: 44px; border-radius: 50%; border: 10px solid transparent; background: var(--brand) padding-box; }
+.ob-every { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ob-every-option { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; min-height: 44px; padding: 4px 6px; border: 2px solid var(--line); border-radius: var(--radius); background: var(--surface); font-weight: 700; font-size: 0.9rem; line-height: 1.15; overflow-wrap: anywhere; }
+.ob-every-option[aria-checked='true'] { background: var(--brand); border-color: var(--brand-deep); color: var(--on-brand); }
+.ob-every-tag { font-size: 0.68rem; font-weight: 600; }
 .ob-sky { position: relative; height: 44px; border-radius: 22px; background: var(--surface); border: 2px solid var(--line); overflow: hidden; }
 .ob-sky-band { position: absolute; top: 0; bottom: 0; background: var(--track); opacity: 0.6; transition: left 0.15s, right 0.15s; }
 .ob-sky-icon { position: absolute; top: 50%; width: 28px; height: 28px; margin: -14px 0 0 -14px; display: grid; place-items: center; transition: left 0.15s; }

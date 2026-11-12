@@ -119,14 +119,23 @@ describe('Glu: obiettivo raggiunto', () => {
 })
 
 describe('Glu: caffè', () => {
-  it('nei 20 minuti dopo un caffè: coffee con la sua frase; dopo 21 no', async () => {
+  it('un caffè appena segnato: coffee con la sua frase per 4 secondi, poi basta', async () => {
     fake.tables.drinks = [drinkAt(10 * MIN)]
-    fake.tables.caffeine_intakes = [coffeeAt(5 * MIN)]
+    fake.tables.caffeine_intakes = [coffeeAt(1000)]
     renderHome()
     await waitFor(() => expect(mood()).toBe('coffee'))
     expect(PHRASES.coffee).toContain(bubble())
     expect(document.querySelector('.glu-jitter')).not.toBeNull()
-    await act(() => vi.advanceTimersByTimeAsync(16 * MIN + 1000))
+    await act(() => vi.advanceTimersByTimeAsync(4000))
+    expect(mood()).not.toBe('coffee')
+    expect(document.querySelector('.glu-jitter')).toBeNull()
+  })
+
+  it('un caffè di 5 minuti fa (all’apertura) non scatena niente', async () => {
+    fake.tables.drinks = [drinkAt(10 * MIN)]
+    fake.tables.caffeine_intakes = [coffeeAt(5 * MIN)]
+    renderHome()
+    await screen.findByTestId('glu')
     expect(mood()).not.toBe('coffee')
     expect(document.querySelector('.glu-jitter')).toBeNull()
   })
