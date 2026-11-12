@@ -155,8 +155,8 @@ export function HistoryPage() {
   useGluSpot(
     stage
       ? corner
-        ? { spot: 'corner', mood: corner.mood, text: corner.text, fill: corner.fill ?? 0.6, extras: { crown: corner.crown ?? accessories.crown, headband: accessories.headband } }
-        : { spot: 'corner', mood: 'idle' }
+        ? { spot: 'corner', mood: corner.mood, text: corner.text, fill: corner.fill ?? 0.6, extras: { crown: corner.crown ?? accessories.crown, headband: accessories.headband }, help: 'storico' }
+        : { spot: 'corner', mood: 'idle', help: 'storico' }
       : null,
   )
 

@@ -57,7 +57,7 @@ export function GluView(props: Props) {
   // Col palcoscenico (Glu 3D che viaggia tra le schede) qui si prenota solo il posto nell'anello.
   const stage = useGluStageActive()
   const ringSlot = useRingSlot()
-  useGluSpot(stage ? { spot: 'ring', mood, fill, extras: glu, calm } : null)
+  useGluSpot(stage ? { spot: 'ring', mood, fill, extras: glu, calm, help: 'home' } : null)
   return (
     <div className="glu-box" data-testid="glu-view">
       <Bubble text={text} />

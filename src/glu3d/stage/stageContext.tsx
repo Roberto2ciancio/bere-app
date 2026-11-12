@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useId, useMemo, useS
 import type { ReactNode } from 'react'
 import type { GluExtras } from '../../mascot/Glu'
 import type { GluMood } from '../../mascot/mood'
+import type { HelpPage } from '../help/HelpChat'
 import type { GluSpot } from './motion'
 
 /** Quello che una pagina chiede a Glu: dove stare, con che umore e (nell'angolo) che frase dire. */
@@ -12,6 +13,8 @@ export interface GluSpotSpec {
   extras?: GluExtras
   text?: string
   calm?: boolean
+  /** Pagina per la chat «Chiedi a Glu»: con questo, Glu fermo nell'anello o nell'angolo si può toccare. */
+  help?: HelpPage
 }
 
 interface Entry {

@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
+import { GUIDE, PAGE_TIPS } from '../src/glu3d/help/guide'
 
 /** Glu 3D dell'app di prova (Home e palcoscenico tra le schede): solo Chromium (il 3D su WebKit headless non è affidabile). */
 
@@ -171,4 +172,81 @@ test('senza 3D lo Storico ha il glu-corner di sempre e nessun palcoscenico', asy
   await openHome(page, 'nowebgl', '#/storico')
   await expect(page.locator('.glu-corner')).toBeVisible()
   await expect(page.getByTestId('glu-stage')).toHaveCount(0)
+})
+
+// --- «Chiedi a Glu»: tocco su Glu e chat (guida offline) ---
+
+const askGlu = (page: Page) => page.getByRole('button', { name: 'Glu, chiedi aiuto' })
+const helpDialog = (page: Page) => page.getByRole('dialog', { name: 'Chiedi a Glu' })
+const tipTitle = (id: string) => GUIDE.find((e) => e.id === id)!.title
+
+/** Tocca Glu (fermo) e aspetta la chat. */
+async function openHelp(page: Page) {
+  await settledBox(page)
+  await askGlu(page).click()
+  await expect(helpDialog(page)).toBeVisible()
+  await expect(helpDialog(page).getByRole('textbox', { name: 'La tua domanda' })).toBeFocused()
+}
+
+test('tocco su Glu nella Home: chat, domanda sull\'obiettivo, «Portami lì» apre il Profilo', async ({ page }) => {
+  await openHome(page, 'ok')
+  await openHelp(page)
+  for (const id of PAGE_TIPS.home) await expect(helpDialog(page).getByRole('button', { name: tipTitle(id) })).toBeVisible()
+  const input = helpDialog(page).getByRole('textbox', { name: 'La tua domanda' })
+  await input.fill("come cambio l'obiettivo")
+  await input.press('Enter')
+  const log = helpDialog(page).getByRole('log')
+  await expect(log.getByText("come cambio l'obiettivo")).toBeVisible()
+  await expect(log.getByText(GUIDE.find((e) => e.id === 'goal-change')!.answer[0])).toBeVisible()
+  await log.getByRole('button', { name: 'Portami lì' }).click()
+  await expect(page).toHaveURL(/#\/profilo$/)
+  await expect(helpDialog(page)).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Profilo', level: 1 })).toBeVisible()
+})
+
+test('tocco su Glu nello Storico: i suggerimenti dello Storico; Esc chiude e il focus torna su Glu', async ({ page }) => {
+  await openHome(page, 'ok', '#/storico')
+  await expect(page.getByTestId('glu-stage')).toHaveAttribute('data-spot', 'corner')
+  await openHelp(page)
+  for (const id of PAGE_TIPS.storico) await expect(helpDialog(page).getByRole('button', { name: tipTitle(id) })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(helpDialog(page)).toHaveCount(0)
+  await expect(askGlu(page)).toBeFocused()
+})
+
+for (const size of [{ width: 320, height: 640 }, { width: 320, height: 400 }]) {
+  test(`chat a ${size.width}×${size.height}: campo e ultima risposta visibili, niente esce di lato`, async ({ page }) => {
+    await page.setViewportSize(size)
+    await openHome(page, 'ok', '#/storico')
+    await expect(page.getByTestId('glu-stage')).toHaveAttribute('data-spot', 'corner')
+    await openHelp(page)
+    const input = helpDialog(page).getByRole('textbox', { name: 'La tua domanda' })
+    for (const q of ['come funziona il salva-serie', 'come tolgo una bevuta']) {
+      await input.fill(q)
+      await input.press('Enter')
+    }
+    const last = helpDialog(page).locator('.help-msg').last()
+    await expect(last).toBeInViewport()
+    await expect(input).toBeInViewport({ ratio: 1 })
+    const inputBox = (await input.boundingBox())!
+    expect(inputBox.y + inputBox.height).toBeLessThanOrEqual(size.height)
+    const overflow = await page.evaluate(() => {
+      const sheet = document.querySelector('.help-sheet')!
+      return { page: document.documentElement.scrollWidth - window.innerWidth, sheet: sheet.scrollWidth - sheet.clientWidth }
+    })
+    expect(overflow.page, 'la pagina scorre di lato').toBeLessThanOrEqual(1)
+    expect(overflow.sheet, 'la chat esce di lato').toBeLessThanOrEqual(1)
+  })
+}
+
+test('fuori dal riquadro di Glu i tocchi attraversano il palcoscenico', async ({ page }) => {
+  await openHome(page, 'ok', '#/storico')
+  const box = await settledBox(page)
+  // Al centro di Glu c'è il suo pulsante; accanto, la pagina sotto il livello.
+  const atGlu = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.getAttribute('aria-label'), { x: box.x + box.width / 2, y: box.y + box.height / 2 })
+  expect(atGlu).toBe('Glu, chiedi aiuto')
+  await goTab(page, 'Classifica', '#/classifica')
+  await page.getByRole('navigation', { name: 'Sezioni' }).getByRole('link', { name: 'Storico' }).click()
+  await expect(page).toHaveURL(/#\/storico$/)
+  await expect(helpDialog(page)).toHaveCount(0)
 })

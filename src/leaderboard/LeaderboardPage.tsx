@@ -133,8 +133,8 @@ export function LeaderboardPage() {
   useGluSpot(
     stage
       ? entries
-        ? { spot: 'corner', mood: leader ? 'goal' : 'idle', text: leader ? CORNER_PHRASES.boardLeader : CORNER_PHRASES.boardIdle, fill: 0.6, extras: accessories }
-        : { spot: 'corner', mood: 'idle' }
+        ? { spot: 'corner', mood: leader ? 'goal' : 'idle', text: leader ? CORNER_PHRASES.boardLeader : CORNER_PHRASES.boardIdle, fill: 0.6, extras: accessories, help: 'classifica' }
+        : { spot: 'corner', mood: 'idle', help: 'classifica' }
       : null,
   )
 

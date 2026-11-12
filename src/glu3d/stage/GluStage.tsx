@@ -5,6 +5,7 @@ import { reportError } from '../../lib/errorReporting'
 import { isGluCalm } from '../../mascot/calm'
 import { prefersReducedMotion } from '../../ui/motion/effects'
 import { Glu3D } from '../Glu3D'
+import { HelpChat, type HelpPage } from '../help/HelpChat'
 import { travelFor } from './motion'
 import type { GluSpot } from './motion'
 import { nextWalkDelay, walkTimeline, WALK_LEG_MS } from './walks'
@@ -59,11 +60,16 @@ function Stage() {
   const [walkDir, setWalkDir] = useState<Dir | null>(null)
   const [bubble, setBubble] = useState<string | null>(null)
   const [hopping, setHopping] = useState(false)
+  const [traveling, setTraveling] = useState(false)
+  // Chat «Chiedi a Glu» aperta: la pagina per cui è stata aperta.
+  const [chat, setChat] = useState<HelpPage | null>(null)
+  const tapRef = useRef<HTMLButtonElement>(null)
+  const refocus = useRef(false)
 
   // Stato vivo per i callback del ciclo (rAF e timer).
-  const live = useRef({ spot, ringEl, calm, text: spec?.text })
+  const live = useRef({ spot, ringEl, calm, text: spec?.text, chat })
   useLayoutEffect(() => {
-    live.current = { spot, ringEl, calm, text: spec?.text }
+    live.current = { spot, ringEl, calm, text: spec?.text, chat }
   })
 
   const anim = useRef({ raf: 0, mode: 'idle' as 'idle' | 'travel' | 'walk' })
@@ -103,6 +109,7 @@ function Stage() {
   const stopAnim = useCallback(() => {
     if (anim.current.raf) cancelAnimationFrame(anim.current.raf)
     anim.current = { raf: 0, mode: 'idle' }
+    setTraveling(false)
   }, [])
 
   /** Ciclo a fotogrammi: frame(t) riceve i ms dal primo fotogramma e torna true quando ha finito. */
@@ -114,12 +121,15 @@ function Stage() {
       if (start === null) start = now
       if (frame(now - start)) {
         anim.current.mode = 'idle'
+        setTraveling(false)
         done()
         return
       }
       anim.current.raf = requestAnimationFrame(step)
     }
     anim.current = { raf: requestAnimationFrame(step), mode }
+    // Durante un viaggio Glu non si tocca (le passeggiate sì).
+    if (mode === 'travel') setTraveling(true)
   }, [stopAnim])
 
   const clearTimer = (k: keyof typeof timers.current) => {
@@ -159,7 +169,7 @@ function Stage() {
       timers.current.walk = 0
       const l = live.current
       if (l.spot !== 'corner' || anim.current.mode !== 'idle') return
-      if (l.calm || document.visibilityState === 'hidden') {
+      if (l.calm || l.chat || document.visibilityState === 'hidden') {
         timers.current.walk = setTimeout(fire, nextWalkDelay(Math.random))
         return
       }
@@ -196,6 +206,7 @@ function Stage() {
     stopAnim()
     clearTimer('walk')
     setWalkDir(null)
+    setChat(null) // pagina nuova: la chat si chiude
     if (spot !== 'corner') showBubble(undefined)
 
     const arrive = () => {
@@ -340,6 +351,34 @@ function Stage() {
     [fail],
   )
 
+  const help = spec?.help
+  const tappable = !!help && (spot === 'ring' || spot === 'corner') && !traveling
+
+  const openChat = () => {
+    if (!help) return
+    showBubble(undefined)
+    if (anim.current.mode === 'walk') {
+      // A metà passeggiata: torna subito nell'angolo; le passeggiate riprendono a chat chiusa.
+      stopAnim()
+      setWalkDir(null)
+      setPos(measure(spot))
+      scheduleWalk()
+    }
+    live.current.chat = help
+    setChat(help)
+  }
+  const closeChat = useCallback(() => {
+    refocus.current = true
+    setChat(null)
+  }, [])
+
+  // Chiusa la chat, il focus torna su Glu (se è ancora lì: con «Portami lì» sta viaggiando).
+  useEffect(() => {
+    if (chat || !refocus.current) return
+    refocus.current = false
+    tapRef.current?.focus({ preventScroll: true })
+  }, [chat])
+
   const walk = useMemo(() => (walkDir === null ? null : { dir: walkDir }), [walkDir])
   const fill = Math.min(1, Math.max(0, shownSpec?.fill ?? 0.6))
   const w = typeof window === 'undefined' ? 0 : window.innerWidth
@@ -347,47 +386,54 @@ function Stage() {
   const boxPx = base * pos.s
 
   return (
-    <div className="glu-stage" data-testid="glu-stage" data-spot={spot}>
-      <div
-        data-testid="glu-stage-box"
-        className="glu-stage-box"
-        style={{
-          width: base,
-          height: base,
-          transform: `translate(${pos.x}px, ${pos.y}px) scale(${pos.s})`,
-          opacity: pos.o,
-        }}
-      >
-        <div className={hopping ? 'glu-stage-hop is-hopping' : 'glu-stage-hop'}>
-          <Glu3D
-            mood={shownSpec?.mood ?? 'idle'}
-            fill={fill}
-            size={base}
-            extras={shownSpec?.extras}
-            calm={calm}
-            walk={walk}
-            onFail={onFail}
-          />
+    <>
+      <div className="glu-stage" data-testid="glu-stage" data-spot={spot}>
+        <div
+          data-testid="glu-stage-box"
+          className="glu-stage-box"
+          style={{
+            width: base,
+            height: base,
+            transform: `translate(${pos.x}px, ${pos.y}px) scale(${pos.s})`,
+            opacity: pos.o,
+          }}
+        >
+          <div className={hopping ? 'glu-stage-hop is-hopping' : 'glu-stage-hop'}>
+            <Glu3D
+              mood={chat ? 'hello' : (shownSpec?.mood ?? 'idle')}
+              fill={fill}
+              size={base}
+              extras={shownSpec?.extras}
+              calm={calm}
+              walk={walk}
+              onFail={onFail}
+            />
+          </div>
+          {/* Solo il riquadro di Glu prende i tocchi; il resto del livello li lascia passare. */}
+          {tappable && (
+            <button ref={tapRef} type="button" className="glu-stage-tap" aria-label="Glu, chiedi aiuto" onClick={openChat} />
+          )}
+        </div>
+        <div
+          data-testid="glu-stage-bubble"
+          className="glu-stage-bubble"
+          aria-live="polite"
+          style={{ right: Math.max(0, w - (pos.x + boxPx)), bottom: Math.max(0, h - pos.y) }}
+        >
+          {bubble && !chat && (
+            <m.p
+              key={bubble}
+              className="glu-bubble"
+              initial={still ? false : { opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+            >
+              {bubble}
+            </m.p>
+          )}
         </div>
       </div>
-      <div
-        data-testid="glu-stage-bubble"
-        className="glu-stage-bubble"
-        aria-live="polite"
-        style={{ right: Math.max(0, w - (pos.x + boxPx)), bottom: Math.max(0, h - pos.y) }}
-      >
-        {bubble && (
-          <m.p
-            key={bubble}
-            className="glu-bubble"
-            initial={still ? false : { opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-          >
-            {bubble}
-          </m.p>
-        )}
-      </div>
-    </div>
+      {chat && <HelpChat page={chat} onClose={closeChat} />}
+    </>
   )
 }

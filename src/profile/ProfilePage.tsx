@@ -24,7 +24,7 @@ export function ProfilePage() {
   const stage = useGluStageActive()
   const accessories = useGluAccessories()
   const greeting = profile ? profileGreeting(profile.display_name) : undefined
-  useGluSpot(stage ? { spot: 'corner', mood: 'hello', text: greeting, fill: 0.6, extras: accessories } : null)
+  useGluSpot(stage ? { spot: 'corner', mood: 'hello', text: greeting, fill: 0.6, extras: accessories, help: 'profilo' } : null)
 
   return (
     <Stagger as="main" className={stage ? 'page profile has-glu-stage' : 'page profile'}>

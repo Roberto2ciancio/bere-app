@@ -121,3 +121,28 @@
 .glu-stage-bubble .glu-bubble { margin: 0 0 6px; padding: 10px 14px; font-size: 0.9375rem; text-align: left; transform-origin: calc(100% - 36px) 100%; }
 .glu-stage-bubble .glu-bubble::after { left: auto; right: 29px; margin-left: 0; }
 @media (prefers-reduced-motion: reduce) { .glu-stage-hop.is-hopping { animation: none; } }
+
+/* Glu si tocca solo nel suo riquadro: il pulsante prende i tocchi, il resto del livello no. */
+.glu-stage-tap { position: absolute; inset: 0; padding: 0; border: 0; border-radius: 50%; background: none; pointer-events: auto; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.glu-stage-tap:focus-visible { outline: 8px solid var(--brand); outline-offset: 4px; }
+
+/* «Chiedi a Glu»: foglio dal basso con la conversazione che scorre e il campo sempre in fondo. */
+.help-sheet { height: min(34rem, calc(100dvh - 12px)); max-height: none; overflow: hidden; gap: 10px; padding-top: 12px; }
+.help-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.help-head h2 { margin: 0; font-size: 1.25rem; }
+.help-close { flex: none; width: 44px; padding: 0; text-decoration: none; font-size: 1.125rem; }
+.help-log { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 10px; }
+.help-msg { max-width: 88%; padding: 10px 14px; border-radius: 18px; overflow-wrap: anywhere; }
+.help-msg p { margin: 0; }
+.help-msg.from-glu { align-self: flex-start; background: var(--surface-2); color: var(--ink); border-bottom-left-radius: 6px; }
+.help-msg.from-user { align-self: flex-end; background: var(--brand); color: var(--on-brand); border-bottom-right-radius: 6px; }
+.help-msg ol { display: grid; gap: 4px; margin: 6px 0 0; padding-left: 1.25rem; }
+.help-topic { font-weight: 800; }
+.help-more { margin-top: 12px !important; color: var(--ink-soft); font-size: 0.875rem; font-weight: 700; }
+.help-go { margin-top: 12px; min-height: 46px; }
+.help-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.help-chip { min-height: 44px; padding: 6px 14px; border: 1.5px solid var(--line-deep); border-radius: 22px; background: var(--surface); color: var(--ink); font-size: 0.875rem; font-weight: 700; text-align: left; }
+.help-chip:active { background: var(--surface-2); }
+.help-form { display: flex; gap: 8px; }
+.help-form input { flex: 1; min-width: 0; }
+.help-form .primary { flex: none; width: auto; min-height: 46px; padding: 0 16px; }
