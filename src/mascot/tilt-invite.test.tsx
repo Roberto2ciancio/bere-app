@@ -15,10 +15,14 @@ describe('invito a far muovere l’acqua', () => {
     view()
     fireEvent.click(screen.getByRole('button', { name: "Fai muovere l'acqua" }))
     await waitFor(() => expect(screen.queryByRole('button', { name: "Fai muovere l'acqua" })).toBeNull())
-    const event = new Event('deviceorientation')
-    Object.assign(event, { gamma: 20 })
-    act(() => void window.dispatchEvent(event))
-    await waitFor(() => expect(waterTransform()).toContain('rotate(-20'))
+    // L'ascolto dei sensori parte in un effetto dopo il consenso: sui computer lenti il primo evento
+    // può arrivare prima, quindi lo si ripete finché l'acqua non si inclina.
+    await waitFor(() => {
+      const event = new Event('deviceorientation')
+      Object.assign(event, { gamma: 20 })
+      act(() => void window.dispatchEvent(event))
+      expect(waterTransform()).toContain('rotate(-20')
+    })
   })
 
   it('con Glu pieno l’inclinazione si dimezza', async () => {
