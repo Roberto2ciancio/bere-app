@@ -88,6 +88,25 @@ describe('createGluScene', () => {
     expect(get('mouthSmile').visible).toBe(true)
   })
 
+  it('il ventaglio sta nella mano destra e non e bianco', () => {
+    const { get } = make()
+    const fan = get('fan')
+    expect(fan.parent).toBe(get('armR'))
+    const mat = fan.material as MeshStandardMaterial
+    expect(mat.color.getHexString()).not.toBe('ffffff')
+    expect(mat.color.getHexString()).not.toBe('f4f7fa')
+  })
+
+  it('releaseContext forza la perdita del contesto se il renderer la offre', () => {
+    const r = fakeRenderer() as ReturnType<typeof fakeRenderer> & { forceContextLoss: () => void }
+    r.forceContextLoss = vi.fn()
+    const s = createGluScene(document.createElement('canvas'), { makeRenderer: () => r })
+    s.releaseContext?.()
+    expect(r.forceContextLoss).toHaveBeenCalledTimes(1)
+    const { s: s2 } = make()
+    expect(() => s2.releaseContext?.()).not.toThrow()
+  })
+
   it('applyPose: il livello dell acqua sposta il piano di clipping', () => {
     const { s, get } = make()
     const plane = () => (get('water').material as MeshPhysicalMaterial).clippingPlanes![0]

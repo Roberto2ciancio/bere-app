@@ -5,7 +5,6 @@ import {
   Camera,
   CircleGeometry,
   ConeGeometry,
-  CylinderGeometry,
   DirectionalLight,
   DoubleSide,
   Group,
@@ -34,6 +33,7 @@ export interface RendererLike {
   dispose(): void
   localClippingEnabled: boolean
   getContext(): WebGLRenderingContext | WebGL2RenderingContext
+  forceContextLoss?(): void
 }
 
 export interface GluScene {
@@ -42,6 +42,8 @@ export interface GluScene {
   resize(cssPx: number, dpr: number): void
   setTheme(dark: boolean): void
   dispose(): void
+  /** Solo per la prova del telefono: restituisce subito il contesto WebGL. */
+  releaseContext?(): void
   readonly root: Group
   readonly gl: WebGLRenderingContext | WebGL2RenderingContext | null
 }
@@ -53,6 +55,15 @@ type Canvas = HTMLCanvasElement | OffscreenCanvas
 const U = 160
 const WATER_BOTTOM = -72
 const WATER_TOP = 85
+// Inquadratura. Il riquadro di Glu (.progress-ring-art) inquadra y BODY_CY ± ART_HALF, come il Glu 2D.
+// La tela è più grande del riquadro (home.css: inset -36% sopra, -18% ai lati, 0 sotto → 136%):
+// sopra c'è posto per il salto (ciuffo a 163) e la corona da 30 in salto (~190), ai lati per il ventaglio.
+const BODY_CY = 5
+const ART_HALF = 108
+const PAD_TOP = 0.36
+const PAD_SIDE = 0.18
+const VIEW_HALF = ART_HALF * (1 + 2 * PAD_SIDE)
+const VIEW_CY = BODY_CY + ART_HALF * (PAD_TOP - (2 * PAD_SIDE - PAD_TOP))
 const INK_LIGHT = 0x0b2545
 const INK_DARK = 0x071a33
 
@@ -77,9 +88,9 @@ export function createGluScene(
   const scene = new Scene()
   const fov = 25
   const camera = new PerspectiveCamera(fov, 1, 100, 4000)
-  // Inquadratura da y -125 a 155: Glu (da -93 a 100) grande come quello 2D, con spazio sopra per il salto.
-  camera.position.set(0, 15, 140 / Math.tan(((fov / 2) * Math.PI) / 180))
-  camera.lookAt(0, 15, 0)
+  // A riposo Glu (da -93 a 107) riempie l'anello come quello 2D; salto e corona usano il margine della tela.
+  camera.position.set(0, VIEW_CY, VIEW_HALF / Math.tan(((fov / 2) * Math.PI) / 180))
+  camera.lookAt(0, VIEW_CY, 0)
 
   scene.add(new AmbientLight(0xffffff, 1.6))
   const key = new DirectionalLight(0xffffff, 2.6)
@@ -248,16 +259,16 @@ export function createGluScene(
     return c
   })
 
+  // Ventaglio a spicchio nella mano destra (come quello 2D): segue la rotazione del braccio.
   const fan = named(
     new Mesh(
-      new CylinderGeometry(18, 18, 3, 24),
-      new MeshStandardMaterial({ color: 0xf4f7fa, roughness: 0.6 }),
+      new CircleGeometry(26, 24, -0.8 * Math.PI, 0.6 * Math.PI),
+      new MeshStandardMaterial({ color: 0xffe1a8, roughness: 0.6, transparent: true, opacity: 0.9, side: DoubleSide }),
     ),
     'fan',
   )
-  fan.rotation.x = Math.PI / 2
-  fan.position.set(-100, 50, 40)
-  g.add(fan)
+  fan.position.set(0, -26, 6)
+  arms[0].add(fan)
 
   const zzz = named(
     new Mesh(new TorusGeometry(10, 2.6, 8, 16, Math.PI * 1.5), new MeshBasicMaterial({ color: 0x47607d })),
@@ -339,6 +350,7 @@ export function createGluScene(
     resize,
     setTheme,
     dispose,
+    releaseContext: () => renderer.forceContextLoss?.(),
     root,
     gl,
   }

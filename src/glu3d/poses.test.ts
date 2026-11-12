@@ -42,6 +42,20 @@ describe('poseFor', () => {
     expect(p({ mood: 'sleep', extras: { thirst: 1 } }).eyeOpen).toBe(0)
     expect(p({ mood: 'goal', extras: { thirst: 1 } }).mouth).toBe('big')
   })
+  it('ventaglio: con sete 1 Glu si fa vento col braccio destro', () => {
+    const a = p({ extras: { thirst: 1 }, t: 1 })
+    const b = p({ extras: { thirst: 1 }, t: 1.1 })
+    expect(a.fan).toBe(true)
+    for (const x of [a, b]) {
+      expect(x.armR).toBeGreaterThan(1.5)
+      expect(x.armR).toBeLessThan(2.7)
+    }
+    expect(a.armR).not.toBe(b.armR)
+    expect(p({ extras: { fan: true } }).fan).toBe(true)
+    expect(p({ extras: { fan: true }, still: true }).armR).toBeCloseTo(0.6 * Math.PI)
+    // Gli umori che muovono le braccia da soli restano loro.
+    expect(p({ mood: 'drink', extras: { fan: true }, moodT: 0.3 }).armR).toBeCloseTo(Math.PI)
+  })
   it('corona', () => {
     for (const c of [7, 14, 30] as const) expect(p({ extras: { crown: c } }).crown).toBe(c)
     expect(p({ extras: { crown: 7, crownDrop: true }, moodT: 0 }).crownDropY).toBeGreaterThan(0)

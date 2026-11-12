@@ -201,6 +201,63 @@ describe('Glu3D', () => {
     expect(cbs.size).toBe(0)
   })
 
+  it('eccezione in un fotogramma: onFail una volta e ciclo fermo', () => {
+    const onFail = vi.fn()
+    mount({ onFail })
+    tick(1000)
+    const err = new Error('pose')
+    scene.applyPose.mockImplementation(() => {
+      throw err
+    })
+    expect(() => tick(1040)).not.toThrow()
+    expect(onFail).toHaveBeenCalledTimes(1)
+    expect(onFail).toHaveBeenCalledWith(err)
+    expect(cbs.size).toBe(0)
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+    expect(cbs.size).toBe(0)
+    expect(onFail).toHaveBeenCalledTimes(1)
+  })
+
+  it('movimento ridotto con render che lancia: onFail, nessuna eccezione esce', () => {
+    h.reduced = true
+    scene.render.mockImplementation(() => {
+      throw new Error('render')
+    })
+    const onFail = vi.fn()
+    let r: ReturnType<typeof mount> | undefined
+    expect(() => {
+      r = mount({ onFail })
+    }).not.toThrow()
+    expect(onFail).toHaveBeenCalledTimes(1)
+    expect(() => r!.rerender(<Glu3D mood="goal" fill={0.5} onFail={onFail} />)).not.toThrow()
+    expect(onFail).toHaveBeenCalledTimes(1)
+  })
+
+  it('resize o setTheme che lanciano al montaggio: onFail', () => {
+    scene.resize.mockImplementation(() => {
+      throw new Error('resize')
+    })
+    const onFail = vi.fn()
+    expect(() => mount({ onFail })).not.toThrow()
+    expect(onFail).toHaveBeenCalledTimes(1)
+    expect(cbs.size).toBe(0)
+    expect(scene.dispose).toHaveBeenCalled()
+  })
+
+  it('movimento ridotto: ridisegna dopo il ripristino del contesto', () => {
+    h.reduced = true
+    const { container } = mount()
+    expect(scene.render).toHaveBeenCalledTimes(1)
+    const canvas = container.querySelector('canvas')!
+    act(() => {
+      canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }))
+      canvas.dispatchEvent(new Event('webglcontextrestored'))
+    })
+    expect(scene.render).toHaveBeenCalledTimes(2)
+  })
+
   it('imposta tema e dimensione al montaggio', () => {
     mount({ size: 180 })
     expect(scene.setTheme).toHaveBeenCalled()

@@ -31,6 +31,9 @@ export async function probe(make: () => GluScene | null = defaultMake): Promise<
       const renderer = String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL))
       if (/swiftshader|llvmpipe/i.test(renderer)) return 'slow'
     }
+    // Primo fotogramma fuori dal cronometro: compila gli shader.
+    scene.render()
+    gl.finish()
     const t0 = performance.now()
     for (let i = 0; i < PROBE_FRAMES; i++) scene.render()
     gl.finish()
@@ -39,6 +42,12 @@ export async function probe(make: () => GluScene | null = defaultMake): Promise<
   } catch {
     return 'nowebgl'
   } finally {
+    // Solo la prova: restituisce subito il contesto WebGL al browser.
+    try {
+      scene.releaseContext?.()
+    } catch {
+      /* niente da fare */
+    }
     scene.dispose()
   }
 }

@@ -39,6 +39,9 @@ const BODY = [0xcf, 0xeb, 0xfb]
 const THIRSTY = [0x9d, 0xb4, 0xc4]
 const JUMP_H = 0.35
 
+/** Umori che muovono le braccia da soli: il ventaglio non li sovrascrive. */
+const ARM_MOODS = new Set<GluMood>(['hello', 'drink', 'goal', 'levelup', 'workout'])
+
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x))
 
 function mixColor(k: number): string {
@@ -130,6 +133,10 @@ export function poseFor(input: PoseInput): Pose {
 
   const shakeX = !calm && extras.jitter && !still ? 0.03 * Math.sin(t * 60) : 0
 
+  // Ventaglio: Glu si fa vento col braccio destro, se l'umore non muove già le braccia.
+  const fan = !calm && (!!extras.fan || (extras.thirst ?? 0) >= 1)
+  if (fan && !ARM_MOODS.has(mood)) armR = 0.6 * Math.PI + (still ? 0 : 0.25 * Math.sin(8 * t))
+
   const crown = extras.crown ?? 0
   const crownDropY = extras.crownDrop && moodT < 1.5 ? 1.2 * (1 - moodT / 1.5) ** 2 : 0
 
@@ -149,7 +156,7 @@ export function poseFor(input: PoseInput): Pose {
     sweat: !calm && !!extras.sweat,
     crown,
     crownDropY,
-    fan: !calm && (!!extras.fan || (extras.thirst ?? 0) >= 1),
+    fan,
     zzz,
   }
 }

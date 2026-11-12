@@ -2,8 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { probe } from './probe'
 import type { GluScene } from './scene'
 
-function fakeScene(opts: { renderer?: string; renderMs?: number; noGl?: boolean }) {
+function fakeScene(opts: { renderer?: string; renderMs?: number; firstMs?: number; noGl?: boolean }) {
   const dispose = vi.fn()
+  const releaseContext = vi.fn()
+  let calls = 0
   let now = 0
   vi.spyOn(performance, 'now').mockImplementation(() => now)
   const gl = {
@@ -14,11 +16,12 @@ function fakeScene(opts: { renderer?: string; renderMs?: number; noGl?: boolean 
   const scene = {
     gl: opts.noGl ? null : gl,
     render: () => {
-      now += opts.renderMs ?? 1
+      now += calls++ === 0 && opts.firstMs !== undefined ? opts.firstMs : (opts.renderMs ?? 1)
     },
     dispose,
+    releaseContext,
   } as unknown as GluScene
-  return { scene, dispose }
+  return { scene, dispose, releaseContext }
 }
 
 describe('probe', () => {
@@ -52,6 +55,19 @@ describe('probe', () => {
     const { scene, dispose } = fakeScene({ renderMs: 5 })
     expect(await probe(() => scene)).toBe('ok')
     expect(dispose).toHaveBeenCalled()
+  })
+  it('il primo fotogramma (compilazione shader) non conta', async () => {
+    const { scene } = fakeScene({ firstMs: 500, renderMs: 10 })
+    expect(await probe(() => scene)).toBe('ok')
+  })
+  it('dopo la prova libera il contesto WebGL', async () => {
+    const { scene, releaseContext, dispose } = fakeScene({ renderMs: 5 })
+    await probe(() => scene)
+    expect(releaseContext).toHaveBeenCalledTimes(1)
+    expect(dispose).toHaveBeenCalled()
+    const slow = fakeScene({ renderer: 'SwiftShader' })
+    await probe(() => slow.scene)
+    expect(slow.releaseContext).toHaveBeenCalledTimes(1)
   })
 })
 

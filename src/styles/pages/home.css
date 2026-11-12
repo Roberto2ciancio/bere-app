@@ -30,7 +30,11 @@
 .progress-ring-art.wide { width: 74%; height: 74%; }
 .progress-ring-art .glu { width: 100%; height: 100%; }
 /* Glu 3D nello stesso riquadro del 2D: la misura in linea (size) vale solo per la risoluzione del disegno. */
-.progress-ring-art .glu-3d { width: 100% !important; height: 100% !important; }
+/* Glu 3D: tela trasparente più grande del riquadro (136%, centrata in orizzontale, margine in alto)
+   per salto, corona e ventaglio senza tagli. Le misure vanno d'accordo con l'inquadratura in glu3d/scene.ts. */
+.progress-ring-art { position: relative; }
+.progress-ring-art .glu-3d { position: absolute; inset: -36% -18% 0; width: auto !important; height: auto !important; pointer-events: none; }
+.progress-ring-art .glu-3d canvas { pointer-events: none; }
 
 /* Litri, obiettivo e percentuale su una riga */
 .home-stats { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
