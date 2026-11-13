@@ -105,4 +105,15 @@ describe('poseFor', () => {
     expect(w.bob).toBe(0)
     expect(w.turnY).toBe(0.6)
   })
+
+  it('sete con variante: parte dalla tinta della variante e sbiadisce', () => {
+    const baseBody = '#D3F5E9'
+    expect(p({ baseBody, extras: { thirst: 0 } }).bodyColor).toBe(baseBody)
+    const full = p({ baseBody, extras: { thirst: 1 } }).bodyColor
+    expect(full).not.toBe(baseBody)
+    expect(full).not.toBe('#9DB4C4')
+    const half = p({ baseBody, extras: { thirst: 0.5 } }).bodyColor
+    expect(half).not.toBe(baseBody)
+    expect(half).not.toBe(full)
+  })
 })

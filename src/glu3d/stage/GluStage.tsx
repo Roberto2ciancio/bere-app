@@ -3,6 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useOptionalAuth } from '../../auth/AuthProvider'
 import { reportError } from '../../lib/errorReporting'
 import { isGluCalm } from '../../mascot/calm'
+import { useGluVariant } from '../../mascot/useGluVariant'
 import { prefersReducedMotion } from '../../ui/motion/effects'
 import { Glu3D } from '../Glu3D'
 import { HelpChat, type HelpCloseReason, type HelpPage } from '../help/HelpChat'
@@ -46,6 +47,7 @@ function Stage() {
   const spot: GluSpot = spec?.spot ?? 'away'
   const auth = useOptionalAuth()
   const userId = auth?.user?.id
+  const variant = useGluVariant()
   const calm = spec?.calm ?? (!!userId && isGluCalm(userId))
   const [still] = useState(() => prefersReducedMotion())
 
@@ -441,6 +443,7 @@ function Stage() {
               extras={shownSpec?.extras}
               calm={calm}
               walk={walk}
+              variant={variant}
               onFail={onFail}
             />
           </div>

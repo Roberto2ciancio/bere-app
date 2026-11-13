@@ -9,6 +9,7 @@ vi.mock('./capability', () => ({ getRuntime: () => h.runtime }))
 vi.mock('../ui/motion/effects', () => ({ prefersReducedMotion: () => h.reduced }))
 
 import { Glu3D } from './Glu3D'
+import { CLASSIC_VARIANT, GLU_VARIANTS_LIST, variantById } from '../mascot/variants'
 
 let cbs = new Map<number, FrameRequestCallback>()
 let nextId = 1
@@ -23,6 +24,7 @@ function makeScene() {
     render: vi.fn(),
     resize: vi.fn(),
     setTheme: vi.fn(),
+    setVariant: vi.fn(),
     dispose: vi.fn(),
   }
 }
@@ -282,5 +284,23 @@ describe('Glu3D', () => {
     expect(scene.setTheme).toHaveBeenCalled()
     expect(scene.resize).toHaveBeenCalledWith(180, window.devicePixelRatio)
   })
-})
 
+  it('passa la variante alla scena e a poseFor, e la aggiorna al cambio', () => {
+    const menta = variantById('menta')
+    const { rerender } = mount({ variant: menta })
+    expect(scene.setVariant).toHaveBeenLastCalledWith(menta)
+    tick(1000)
+    expect(lastPose().baseBody).toBe(menta.palette.body)
+    const notte = variantById('notte')
+    rerender(<Glu3D mood="idle" fill={0.5} variant={notte} onFail={() => {}} />)
+    expect(scene.setVariant).toHaveBeenLastCalledWith(notte)
+    tick(2000)
+    expect(lastPose().baseBody).toBe(notte.palette.body)
+  })
+
+  it('senza variante usa Glu classico', () => {
+    mount()
+    expect(scene.setVariant).toHaveBeenLastCalledWith(CLASSIC_VARIANT)
+    expect(GLU_VARIANTS_LIST[0]).toBe(CLASSIC_VARIANT)
+  })
+})

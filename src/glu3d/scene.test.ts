@@ -3,6 +3,7 @@ import { BufferGeometry, Mesh, MeshPhysicalMaterial, MeshStandardMaterial } from
 import type { Camera, Scene } from 'three'
 import { createGluScene, type RendererLike } from './scene'
 import type { Pose } from './poses'
+import { CLASSIC_VARIANT, GLU_VARIANTS_LIST, variantById } from '../mascot/variants'
 
 function fakeRenderer() {
   const r = {
@@ -172,5 +173,40 @@ describe('createGluScene', () => {
     expect(get('body').parent!.rotation.y).toBe(0.6)
     s.applyPose({ ...BASE, bob: 0.03 })
     expect(get('body').parent!.position.y).toBeGreaterThan(0)
+  })
+
+  it('setVariant: colori di acqua, braccia, ciuffo, piedi e corpo; solo il dettaglio della variante', () => {
+    const { s, get } = make()
+    const col = (n: string) => ((get(n).material as MeshPhysicalMaterial).color.getHexString())
+    s.setVariant(variantById('menta'))
+    expect(col('water')).toBe('1fb58f')
+    expect(col('tuft')).toBe('8fe0c6')
+    expect(col('footL')).toBe('1fb58f')
+    expect(col('body')).toBe('d3f5e9')
+    expect(((get('armL').children[0] as Mesh).material as MeshPhysicalMaterial).color.getHexString()).toBe('8fe0c6')
+    const names = ['mint', 'lemon', 'strawberry', 'straw', 'moon']
+    expect(names.filter((n) => get(n).visible)).toEqual(['mint'])
+    for (const v of GLU_VARIANTS_LIST) {
+      s.setVariant(v)
+      expect(names.filter((n) => get(n).visible)).toEqual(v.detail === 'none' ? [] : [v.detail])
+    }
+  })
+
+  it('setVariant(classico) ripristina i colori e nasconde i dettagli; i dettagli seguono il corpo', () => {
+    const { s, get } = make()
+    s.setVariant(variantById('fragola'))
+    s.setVariant(CLASSIC_VARIANT)
+    expect(((get('water').material) as MeshPhysicalMaterial).color.getHexString()).toBe('19a0e8')
+    expect(((get('tuft').material) as MeshPhysicalMaterial).color.getHexString()).toBe('8ccdf2')
+    expect(['mint', 'lemon', 'strawberry', 'straw', 'moon'].some((n) => get(n).visible)).toBe(false)
+    expect(get('moon').parent!.parent).toBe(get('body').parent)
+  })
+
+  it('dispose libera anche geometrie e materiali dei dettagli', () => {
+    const { s, get } = make()
+    const m = get('moon').children[0] as Mesh
+    const spy = vi.spyOn(m.geometry, 'dispose')
+    s.dispose()
+    expect(spy).toHaveBeenCalled()
   })
 })

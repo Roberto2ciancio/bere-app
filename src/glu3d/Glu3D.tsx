@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { GluMood } from '../mascot/mood'
 import type { GluExtras } from '../mascot/Glu'
+import { CLASSIC_VARIANT, type GluVariant } from '../mascot/variants'
 import { prefersReducedMotion } from '../ui/motion/effects'
 import { getRuntime } from './capability'
 import type { GluScene } from './scene'
@@ -20,12 +21,14 @@ interface Props {
   calm?: boolean
   /** Glu cammina nel verso `dir`; null/assente: fermo. */
   walk?: { dir: -1 | 0 | 1 } | null
+  /** Variante di Glu (tinte e dettaglio); assente: classico. */
+  variant?: GluVariant
   onFail: (error: unknown) => void
 }
 
-export function Glu3D({ mood, fill, size = 220, extras = NO_EXTRAS, calm = false, walk = null, onFail }: Props) {
+export function Glu3D({ mood, fill, size = 220, extras = NO_EXTRAS, calm = false, walk = null, variant = CLASSIC_VARIANT, onFail }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const props = useRef({ mood, fill, extras, calm, walk })
+  const props = useRef({ mood, fill, extras, calm, walk, variant })
   const onFailRef = useRef(onFail)
   const sizeRef = useRef(size)
   // Stato del ciclo: tempi in ms dell'orologio di requestAnimationFrame.
@@ -38,11 +41,12 @@ export function Glu3D({ mood, fill, size = 220, extras = NO_EXTRAS, calm = false
     walkPhase: 0,
     walkLast: null as number | null,
     draw: null as null | (() => void),
+    setVariant: null as null | ((v: GluVariant) => void),
     resize: null as null | ((cssPx: number) => void),
   })
 
   useLayoutEffect(() => {
-    props.current = { mood, fill, extras, calm, walk }
+    props.current = { mood, fill, extras, calm, walk, variant }
     onFailRef.current = onFail
     sizeRef.current = size
   })
@@ -66,6 +70,12 @@ export function Glu3D({ mood, fill, size = 220, extras = NO_EXTRAS, calm = false
   useEffect(() => {
     if (prefersReducedMotion()) st.current.draw?.()
   }, [mood, fill, extras, calm, walk])
+
+  // Cambio di variante: tinte e dettaglio sulla scena, poi un ridisegno se da fermo.
+  useEffect(() => {
+    st.current.setVariant?.(variant)
+    if (prefersReducedMotion()) st.current.draw?.()
+  }, [variant])
 
   useEffect(() => {
     st.current.resize?.(size)
@@ -112,6 +122,7 @@ export function Glu3D({ mood, fill, size = 220, extras = NO_EXTRAS, calm = false
     }
     try {
       scene.setTheme(!!dark?.matches)
+      scene.setVariant(props.current.variant)
       scene.resize(sizeRef.current, window.devicePixelRatio)
     } catch (e) {
       fail(e)
@@ -150,6 +161,7 @@ export function Glu3D({ mood, fill, size = 220, extras = NO_EXTRAS, calm = false
         moodT: still ? 0 : (now - s.moodStart!) / 1000,
         calm: p.calm,
         still,
+        baseBody: p.variant.palette.body,
         ...(walkInput ? { walk: walkInput } : {}),
       })
       scene.applyPose(pose)
@@ -165,6 +177,14 @@ export function Glu3D({ mood, fill, size = 220, extras = NO_EXTRAS, calm = false
       }
     }
     s.draw = () => draw(0)
+    s.setVariant = (v: GluVariant) => {
+      if (failed) return
+      try {
+        scene.setVariant(v)
+      } catch (e) {
+        fail(e)
+      }
+    }
     s.resize = (cssPx: number) => {
       if (failed) return
       try {
@@ -243,6 +263,7 @@ export function Glu3D({ mood, fill, size = 220, extras = NO_EXTRAS, calm = false
       clearTimeout(lostTimer)
       s.draw = null
       s.resize = null
+      s.setVariant = null
       scene.dispose()
     }
   }, [])

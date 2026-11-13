@@ -4,7 +4,10 @@ import {
   CapsuleGeometry,
   Camera,
   CircleGeometry,
+  BoxGeometry,
   ConeGeometry,
+  CylinderGeometry,
+  ExtrudeGeometry,
   DirectionalLight,
   DoubleSide,
   Group,
@@ -15,15 +18,18 @@ import {
   MeshPhysicalMaterial,
   MeshStandardMaterial,
   Object3D,
+  OctahedronGeometry,
   PerspectiveCamera,
   Plane,
   Scene,
+  Shape,
   SphereGeometry,
   TorusGeometry,
   Vector2,
   Vector3,
   WebGLRenderer,
 } from 'three'
+import type { GluVariant } from '../mascot/variants'
 import type { Pose } from './poses'
 
 export interface RendererLike {
@@ -41,6 +47,8 @@ export interface GluScene {
   render(): void
   resize(cssPx: number, dpr: number): void
   setTheme(dark: boolean): void
+  /** Tinte e dettaglio della variante: una volta sola (il corpo passa da applyPose con baseBody). */
+  setVariant(v: GluVariant): void
   dispose(): void
   /** Solo per la prova del telefono: restituisce subito il contesto WebGL. */
   releaseContext?(): void
@@ -124,13 +132,8 @@ export function createGluScene(
   const bodyGeo = new LatheGeometry(pts, 64)
   const plane = new Plane(new Vector3(0, -1, 0), WATER_TOP)
 
-  const water = named(
-    new Mesh(
-      bodyGeo,
-      new MeshPhysicalMaterial({ color: 0x19a0e8, roughness: 0.3, side: DoubleSide, clippingPlanes: [plane] }),
-    ),
-    'water',
-  )
+  const waterMat = new MeshPhysicalMaterial({ color: 0x19a0e8, roughness: 0.3, side: DoubleSide, clippingPlanes: [plane] })
+  const water = named(new Mesh(bodyGeo, waterMat), 'water')
   water.scale.setScalar(0.94)
   g.add(water)
 
@@ -280,6 +283,83 @@ export function createGluScene(
   zzz.position.set(70, 85, 40)
   g.add(zzz)
 
+  // Dettagli delle varianti: sul lato alto destro della testa (come nel 2D), figli di g così seguono i salti;
+  // lontani da corona (x 0, y 104+) e fascia (y 47-57).
+  const detailRoot = named(new Group(), 'detailRoot')
+  detailRoot.position.set(30, 72, 30)
+  detailRoot.rotation.y = Math.PI / 4
+  g.add(detailRoot)
+  const dpart = (geo: BufferGeometry, color: number, parent: Object3D, x = 0, y = 0, z = 0) => {
+    const m = new Mesh(geo, new MeshStandardMaterial({ color, roughness: 0.45 }))
+    m.position.set(x, y, z)
+    parent.add(m)
+    return m
+  }
+  const detailGroup = (name: string) => {
+    const d = named(new Group(), name)
+    d.visible = false
+    detailRoot.add(d)
+    return d
+  }
+
+  const mintG = detailGroup('mint')
+  const leafA = dpart(new SphereGeometry(1, 14, 10), 0x1fb58f, mintG, 5, 6, 1)
+  leafA.scale.set(5, 10, 1.4)
+  leafA.rotation.z = -0.55
+  const leafB = dpart(new SphereGeometry(1, 14, 10), 0x46cda4, mintG, -5, 4, 1)
+  leafB.scale.set(4.5, 9, 1.4)
+  leafB.rotation.z = 0.6
+
+  const lemonG = detailGroup('lemon')
+  for (const [r, h, color] of [[11, 3, 0xf2c014], [8.5, 3.4, 0xfff6c9]] as const) {
+    dpart(new CylinderGeometry(r, r, h, 24), color, lemonG).rotation.x = Math.PI / 2
+  }
+  for (const a of [0, Math.PI / 3, (2 * Math.PI) / 3]) {
+    dpart(new BoxGeometry(15, 1.4, 0.6), 0xf2c014, lemonG, 0, 0, 1.9).rotation.z = a
+  }
+
+  const strawberryG = detailGroup('strawberry')
+  dpart(new SphereGeometry(10, 18, 14), 0xe03a5a, strawberryG).scale.set(1, 1.15, 0.7)
+  for (const [x, y] of [[-3.5, -1], [3.5, -1], [0, 5]]) dpart(new SphereGeometry(1.2, 8, 6), 0xffe0e6, strawberryG, x, y, 6.8)
+  dpart(new SphereGeometry(1, 12, 8), 0x1fb58f, strawberryG, 0, 11, 1).scale.set(7, 2.5, 1.4)
+
+  const strawG = detailGroup('straw')
+  const strawAxis = new Group()
+  strawAxis.rotation.z = (-28 * Math.PI) / 180
+  strawG.add(strawAxis)
+  dpart(new CylinderGeometry(3.5, 3.5, 32, 14), 0xffffff, strawAxis, 0, 0, 3)
+  for (const y of [-7.5, 2.5, 12]) dpart(new CylinderGeometry(3.7, 3.7, 5, 14), 0xc9a27e, strawAxis, 0, y, 3)
+
+  const moonG = detailGroup('moon')
+  // Falce: disco di raggio R meno il disco di raggio r centrato in (cx, cy).
+  const crescent = new Shape()
+  {
+    const R = 12, r = 10, cx = 6, cy = 3, N = 20, tau = 2 * Math.PI
+    const phi = Math.atan2(cy, cx)
+    const th = Math.acos((cx * cx + cy * cy + R * R - r * r) / (2 * Math.hypot(cx, cy) * R))
+    const a0 = phi + th
+    const a1 = phi - th + tau
+    for (let i = 0; i <= N; i++) {
+      const a = a0 + ((a1 - a0) * i) / N
+      if (i === 0) crescent.moveTo(R * Math.cos(a), R * Math.sin(a))
+      else crescent.lineTo(R * Math.cos(a), R * Math.sin(a))
+    }
+    // Arco interno, da P- a P+ passando dal lato del disco piccolo più vicino all'origine.
+    const b0 = Math.atan2(R * Math.sin(phi - th) - cy, R * Math.cos(phi - th) - cx)
+    const norm = (x: number) => ((x % tau) + tau) % tau
+    let delta = norm(Math.atan2(R * Math.sin(phi + th) - cy, R * Math.cos(phi + th) - cx) - b0)
+    if (norm(phi + Math.PI - b0) >= delta) delta -= tau
+    for (let i = 1; i <= N; i++) {
+      const a = b0 + (delta * i) / N
+      crescent.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a))
+    }
+  }
+  dpart(new ExtrudeGeometry(crescent, { depth: 3, bevelEnabled: false }), 0xffe27a, moonG, -4, -2, 0)
+  for (const [x, y, k] of [[14, 8, 1], [9, -13, 0.8], [-12, 14, 0.7]]) {
+    dpart(new OctahedronGeometry(2.6), 0xffe27a, moonG, x, y, 3).scale.set(k, k, 0.5)
+  }
+  const detailGroups: Record<string, Group> = { mint: mintG, lemon: lemonG, strawberry: strawberryG, straw: strawG, moon: moonG }
+
   headband.visible = sweat.visible = fan.visible = zzz.visible = false
   crowns.forEach((c) => (c.visible = false))
   mouth.visible = false
@@ -326,6 +406,14 @@ export function createGluScene(
     })
   }
 
+  function setVariant(v: GluVariant) {
+    waterMat.color.set(v.palette.water)
+    limb.color.set(v.palette.limb)
+    footMat.color.set(v.palette.feet)
+    ;(body.material as MeshPhysicalMaterial).color.set(v.palette.body)
+    for (const k of Object.keys(detailGroups)) detailGroups[k].visible = k === v.detail
+  }
+
   function setTheme(dark: boolean) {
     ink.color.setHex(dark ? INK_DARK : INK_LIGHT)
     rim.intensity = dark ? 2.0 : 1.0
@@ -356,6 +444,7 @@ export function createGluScene(
     render: () => renderer.render(scene, camera),
     resize,
     setTheme,
+    setVariant,
     dispose,
     releaseContext: () => renderer.forceContextLoss?.(),
     root,

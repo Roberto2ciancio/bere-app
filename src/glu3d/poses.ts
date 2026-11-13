@@ -12,6 +12,8 @@ export interface PoseInput {
   still: boolean
   /** Camminata: fase in cicli (due passi per ciclo) e verso. */
   walk?: { phase: number; dir: -1 | 0 | 1 }
+  /** Tinta del corpo della variante (hex); assente: Glu classico. */
+  baseBody?: string
 }
 
 export interface Pose {
@@ -42,19 +44,23 @@ export const HELLO_S = 2
 export const JUMP_S = 0.6
 export const WALK_TURN = 0.6
 
-const BODY = [0xcf, 0xeb, 0xfb]
+const BODY_CLASSIC = '#CFEBFB'
 const THIRSTY = [0x9d, 0xb4, 0xc4]
 const JUMP_H = 0.35
+// Le varianti non diventano grigie del tutto: con sete 1 conservano un po' della loro tinta.
+const VARIANT_THIRST = 0.8
 
 /** Umori che muovono le braccia da soli: il ventaglio non li sovrascrive. */
 const ARM_MOODS = new Set<GluMood>(['hello', 'drink', 'goal', 'levelup', 'workout'])
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x))
 
-function mixColor(k: number): string {
+function mixColor(base: string, k: number): string {
+  const n = parseInt(base.slice(1), 16)
+  const body = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
   return (
     '#' +
-    BODY.map((c, i) => Math.round(c + (THIRSTY[i] - c) * k).toString(16).padStart(2, '0'))
+    body.map((c, i) => Math.round(c + (THIRSTY[i] - c) * k).toString(16).padStart(2, '0'))
       .join('')
       .toUpperCase()
   )
@@ -164,7 +170,7 @@ export function poseFor(input: PoseInput): Pose {
     armR,
     eyeOpen,
     mouth,
-    bodyColor: mixColor(thirst),
+    bodyColor: mixColor(input.baseBody ?? BODY_CLASSIC, input.baseBody ? thirst * VARIANT_THIRST : thirst),
     waterLevel: fill,
     waterTilt: calm ? 0 : -(extras.tilt ?? 0),
     headband: !!extras.headband,
