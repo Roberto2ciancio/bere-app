@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" role="img" aria-label="Glu" style="display: block; overflow: visible">
+<defs><clipPath id="c"><path d="M100 28C60 28 30 70 30 118c0 42 28 64 70 64s70-22 70-64c0-48-30-90-70-90z"/><path d="M96 36C88 14 104 2 118 12c-9 2-11 11-7 22z"/><ellipse cx="30" cy="128" rx="10" ry="19" transform="rotate(25 30 128)"/><ellipse cx="178" cy="86" rx="10" ry="19" transform="rotate(35 178 86)"/><ellipse cx="76" cy="183" rx="18" ry="9"/><ellipse cx="124" cy="183" rx="18" ry="9"/></clipPath></defs>
+<ellipse cx="100" cy="194" rx="56" ry="6" fill="rgba(11,37,69,.14)"/>
+<g clip-path="url(#c)"><rect width="200" height="200" fill="#CFEBFB"/>
+<path d="M0 135q25-9 50 0t50 0 50 0 50 0V200H0z" fill="#19A0E8"/>
+<ellipse cx="62" cy="70" rx="9" ry="20" transform="rotate(28 62 70)" fill="#fff" opacity=".55"/></g>
+<ellipse cx="74" cy="104" rx="9" ry="12" fill="#0B2545"/><circle cx="77" cy="99" r="3.2" fill="#fff"/><ellipse cx="126" cy="104" rx="9" ry="12" fill="#0B2545"/><circle cx="129" cy="99" r="3.2" fill="#fff"/><path d="M86 122q14 16 28 0" fill="none" stroke="#0B2545" stroke-width="5" stroke-linecap="round"/></svg>

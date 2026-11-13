@@ -21,6 +21,7 @@ import { useGluSpot, useGluStageActive } from '../glu3d/stage/stageContext'
 import { CORNER_PHRASES, historyStreakPhrase } from '../mascot/phrases'
 import { streakAccessory } from '../mascot/reactions'
 import { achievements, challenges, computeStats, dayResults, jollyThisWeek, type CaffeineByDay, type DayTotal } from './stats'
+import { ShareWeekButton } from './ShareWeekButton'
 import { CountUp } from '../ui/motion/CountUp'
 import { Stagger } from '../ui/motion/Stagger'
 
@@ -230,6 +231,8 @@ export function HistoryPage() {
           </div>
         )}
         <p className="hint">Tocca una barra per vedere quel giorno.</p>
+        {/* L'immagine mostra sempre gli ultimi 7 giorni, anche con il grafico a 30. */}
+        <ShareWeekButton week={days.slice(-7)} currentStreak={stats.currentStreak} units={units} today={today} />
         <details className="fold">
           <summary>Vedi come tabella</summary>
           <div className="fold-body">

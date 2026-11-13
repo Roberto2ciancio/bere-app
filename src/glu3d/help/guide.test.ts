@@ -88,6 +88,8 @@ const REAL: [string, string][] = [
   ['cosa significa il numero accanto al nome', 'levels'],
   ['vedere il grafico dei giorni', 'history-chart'],
   ['come vedo quanto ho bevuto la settimana scorsa', 'history-chart'],
+  ['come condivido i miei progressi', 'share-week'],
+  ['posso mandare la settimana su whatsapp', 'share-week'],
   ['guardare il mese intero', 'history-calendar'],
   ["statistiche dell'anno", 'history-calendar'],
   ['cosa sono le sfide', 'challenges'],

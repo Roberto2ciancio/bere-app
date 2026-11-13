@@ -887,6 +887,24 @@ export const GUIDE: GuideSource[] = [
     route: '/storico',
   },
   {
+    id: 'share-week',
+    title: 'Condividere la settimana',
+    questions: [
+      'come condivido la mia settimana',
+      'posso mandare i miei risultati a un amico',
+      'come faccio un\'immagine della settimana',
+      'condividere su instagram',
+    ],
+    keywords: ['condividere', 'condividi', 'condivido', 'whatsapp', 'instagram', 'storie', 'mandare', 'inviare', 'immagine', 'foto della settimana', 'progressi', 'risultati', 'social', 'giorni a obiettivo'],
+    answer: [
+      'Apri la scheda «Storico» e, sotto il grafico, tocca «Condividi la settimana».',
+      'Si prepara un\'immagine con gli ultimi 7 giorni: giorni a obiettivo, litri bevuti e serie.',
+      'Sul telefono scegli dove mandarla (WhatsApp, Instagram…); dove non si può condividere, l\'immagine si scarica.',
+      'L\'immagine non mostra il tuo nome né la tua foto.',
+    ],
+    route: '/storico',
+  },
+  {
     id: 'history-calendar',
     title: 'Calendario e statistiche del mese',
     questions: [

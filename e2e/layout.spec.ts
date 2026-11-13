@@ -366,6 +366,29 @@ for (const [name, path, heading] of PAGES) {
   })
 }
 
+test('Storico: «Condividi la settimana» sta nello schermo e prepara il PNG', async ({ page, browserName }, testInfo) => {
+  await openApp(page, '/storico', { streak: 5 })
+  const button = page.getByRole('button', { name: 'Condividi la settimana' })
+  await button.scrollIntoViewIfNeeded()
+  await expect(button).toBeVisible()
+  const b = (await button.boundingBox())!
+  expect(b.height, 'area di tocco sotto i 44 px').toBeGreaterThanOrEqual(43.5)
+  await expectNoHorizontalScroll(page)
+  // Chromium dei test non condivide file: l'immagine si scarica. WebKit lo provano i telefoni veri.
+  if (browserName !== 'chromium') return
+  const [download] = await Promise.all([page.waitForEvent('download'), button.click()])
+  expect(download.suggestedFilename()).toBe('bere-settimana.png')
+  const file = await download.path()
+  const png = readFileSync(file)
+  // Intestazione PNG e misure 1080×1350 (campo IHDR).
+  expect(png.subarray(1, 4).toString()).toBe('PNG')
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1350])
+  await expect(button).toBeEnabled()
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  // Per guardarla: SHARE_SHOTS=cartella npx playwright test …
+  if (process.env.SHARE_SHOTS) await download.saveAs(`${process.env.SHARE_SHOTS}/settimana-${testInfo.project.name.replace(/\W+/g, '-')}.png`)
+})
+
 const SECTIONS = [
   ['Obiettivo', 'obiettivo'],
   ['Promemoria e notifiche', 'avvisi'],
