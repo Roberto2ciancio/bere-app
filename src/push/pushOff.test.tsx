@@ -220,7 +220,7 @@ describe('spegnere le notifiche da Stato notifiche', () => {
 
 describe('riepilogo nel Profilo', () => {
   const summary = () => screen.getByRole('link', { name: /^Promemoria e notifiche/ })
-  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome' }).format(new Date())
+  const today = new Intl.DateTimeFormat('en-CA').format(new Date())
 
   beforeEach(() => {
     window.location.hash = '#/profilo'
