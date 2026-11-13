@@ -42,7 +42,7 @@ export function GluStage() {
 
 function Stage() {
   const ctx = useStageInternals()!
-  const { spec, specId, ringEl, fail } = ctx
+  const { spec, specId, ringEl, fail, helpRequest, takeHelp } = ctx
   const spot: GluSpot = spec?.spot ?? 'away'
   const auth = useOptionalAuth()
   const userId = auth?.user?.id
@@ -65,6 +65,8 @@ function Stage() {
   const [chat, setChat] = useState<HelpPage | null>(null)
   const tapRef = useRef<HTMLButtonElement>(null)
   const refocus = useRef(false)
+  // Chat aperta da un pulsante della pagina («Chiedi a Glu»): chiusa, il focus torna lì.
+  const opener = useRef<HTMLElement | null>(null)
 
   // Stato vivo per i callback del ciclo (rAF e timer).
   const live = useRef({ spot, ringEl, calm, text: spec?.text, chat })
@@ -356,19 +358,34 @@ function Stage() {
   const help = spec?.help
   const tappable = !!help && (spot === 'ring' || spot === 'corner') && !traveling
 
+  const startChat = useCallback(
+    (page: HelpPage) => {
+      showBubble(undefined)
+      if (anim.current.mode === 'walk') {
+        // A metà passeggiata: torna subito nell'angolo; le passeggiate riprendono a chat chiusa.
+        stopAnim()
+        setWalkDir(null)
+        setPos(measure(live.current.spot))
+        scheduleWalk()
+      }
+      live.current.chat = page
+      setChat(page)
+    },
+    [showBubble, stopAnim, setPos, measure, scheduleWalk],
+  )
   const openChat = () => {
     if (!help) return
-    showBubble(undefined)
-    if (anim.current.mode === 'walk') {
-      // A metà passeggiata: torna subito nell'angolo; le passeggiate riprendono a chat chiusa.
-      stopAnim()
-      setWalkDir(null)
-      setPos(measure(spot))
-      scheduleWalk()
-    }
-    live.current.chat = help
-    setChat(help)
+    opener.current = null
+    startChat(help)
   }
+
+  // «Chiedi a Glu» da un pulsante della pagina (es. Profilo › Aiuto): la chat si apre anche con Glu fuori scena.
+  useEffect(() => {
+    if (!helpRequest) return
+    takeHelp(helpRequest.seq)
+    opener.current = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null
+    startChat(helpRequest.page)
+  }, [helpRequest, takeHelp, startChat])
   const closeChat = useCallback((reason?: HelpCloseReason) => {
     setChat(null)
     if (reason !== 'navigate') {
@@ -385,11 +402,14 @@ function Stage() {
     }, 0)
   }, [])
 
-  // Chiusa la chat, il focus torna su Glu (se è ancora lì: con «Portami lì» sta viaggiando).
+  // Chiusa la chat, il focus torna su chi l'ha aperta: il pulsante in pagina, altrimenti Glu
+  // (se è ancora lì: con «Portami lì» sta viaggiando).
   useEffect(() => {
     if (chat || !refocus.current) return
     refocus.current = false
-    tapRef.current?.focus({ preventScroll: true })
+    const back = opener.current?.isConnected ? opener.current : tapRef.current
+    opener.current = null
+    back?.focus({ preventScroll: true })
   }, [chat])
 
   const walk = useMemo(() => (walkDir === null ? null : { dir: walkDir }), [walkDir])

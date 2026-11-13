@@ -29,6 +29,8 @@ input, textarea, select {
 }
 input:focus-visible, textarea:focus-visible, select:focus-visible { border-color: var(--brand-deep); }
 input[type='checkbox'] { width: 22px; min-height: 22px; accent-color: var(--water-deep); }
+/* Accanto a un'etichetta lunga la casella non si restringe: tutte uguali e allineate. */
+label.row > input[type='checkbox'] { flex: none; }
 input[type='time'] { width: auto; }
 select { width: 100%; min-height: 46px; padding: 10px 12px; border: 2px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); font: inherit; font-size: 16px; }
 

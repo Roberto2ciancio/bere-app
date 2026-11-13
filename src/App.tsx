@@ -62,11 +62,11 @@ export default function App() {
                 <Route path="/tazze" element={<CupsPage />} />
                 <Route path="/profilo" element={<ProfilePage />} />
                 <Route path="/profilo/obiettivo" element={<GoalSettingsPage />} />
-                <Route path="/avvisi" element={<NotificationSettingsPage />} />
-                <Route path="/bevute" element={<DrinkSettingsPage />} />
-                <Route path="/aspetto" element={<AppearanceSettingsPage />} />
-                <Route path="/account" element={<AccountSettingsPage />} />
-                <Route path="/aiuto" element={<HelpSettingsPage />} />
+                <Route path="/profilo/avvisi" element={<NotificationSettingsPage />} />
+                <Route path="/profilo/bevute" element={<DrinkSettingsPage />} />
+                <Route path="/profilo/aspetto" element={<AppearanceSettingsPage />} />
+                <Route path="/profilo/account" element={<AccountSettingsPage />} />
+                <Route path="/profilo/aiuto" element={<HelpSettingsPage />} />
                 <Route path="/promemoria" element={<SchedulesPage />} />
                 <Route path="/notifiche" element={<NotificationStatusPage />} />
                 <Route path="/feedback" element={<FeedbackForm />} />

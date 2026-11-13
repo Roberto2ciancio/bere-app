@@ -61,10 +61,10 @@ export function CupsPage() {
 
   return (
     <main className="page">
-      <div className="row">
+      <header className="profile-section-head">
+        <Link className="back-link" to="/profilo/bevute">‹ Bevute e tazze</Link>
         <h1>Tazze e bevande</h1>
-        <Link to="/bevute">Bevute</Link>
-      </div>
+      </header>
       {error && <p role="alert" className="error">{error}</p>}
 
       <section className="section">

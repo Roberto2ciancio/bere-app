@@ -13,12 +13,13 @@ export interface Release {
 export const CHANGELOG: Release[] = [
   {
     version: '1.11.0',
-    date: '2026-11-12',
+    date: '2026-11-13',
     title: 'Profilo più semplice',
     notes: [
-      'Il Profilo ora è un elenco di sei argomenti, ognuno con una breve descrizione.',
-      'Obiettivo, avvisi, bevute, aspetto, account e aiuto hanno una pagina dedicata: meno impostazioni tutte insieme.',
-      'Anche la guida di Glu conosce le nuove pagine e ti porta direttamente nel posto giusto.',
+      'Il Profilo ora è un elenco di sei voci: Obiettivo, Promemoria e notifiche, Bevute e tazze, Aspetto e Glu, Account e privacy, Aiuto e suggerimenti.',
+      'Ogni voce ha la sua pagina e, nell’elenco, un riepilogo di com’è impostata: l’obiettivo di oggi, se le notifiche sono attive o in pausa, la quantità per bevuta.',
+      'In cima trovi la tua immagine, il nome e il livello: tocca l’immagine per cambiarla.',
+      'Con Glu in 3D, in «Aiuto e suggerimenti» c’è «Chiedi a Glu»; la guida di Glu conosce le nuove pagine e ti porta nel posto giusto.',
     ],
   },
   {

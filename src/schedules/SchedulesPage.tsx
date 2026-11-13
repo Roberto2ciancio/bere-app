@@ -117,10 +117,10 @@ export function SchedulesPage() {
 
   return (
     <main className="page">
-      <div className="row">
+      <header className="profile-section-head">
+        <Link className="back-link" to="/profilo/avvisi">‹ Promemoria e notifiche</Link>
         <h1>Promemoria</h1>
-        <Link to="/avvisi">Avvisi</Link>
-      </div>
+      </header>
 
       {error && <p role="alert" className="error">{error}</p>}
       {message && <p role="status" className="hint">{message}</p>}

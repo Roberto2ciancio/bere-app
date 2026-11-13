@@ -220,6 +220,20 @@ test('tocco su Glu nello Storico: i suggerimenti dello Storico; Esc chiude e il 
   await expect(askGlu(page)).toBeFocused()
 })
 
+test('Profilo › Aiuto e suggerimenti: «Chiedi a Glu» apre la chat del Profilo con Glu fuori scena', async ({ page }) => {
+  await openHome(page, 'ok', '#/profilo/aiuto')
+  await expect(page.getByRole('heading', { name: 'Aiuto e suggerimenti', level: 1 })).toBeVisible()
+  await expect(page.getByTestId('glu-stage')).toHaveAttribute('data-spot', 'away')
+  const ask = page.getByRole('button', { name: 'Chiedi a Glu' })
+  await ask.click()
+  await expect(helpDialog(page)).toBeVisible()
+  for (const id of PAGE_TIPS.profilo) await expect(helpDialog(page).getByRole('button', { name: tipTitle(id) })).toBeVisible()
+  await expectNoHorizontalScroll(page)
+  await page.keyboard.press('Escape')
+  await expect(helpDialog(page)).toHaveCount(0)
+  await expect(ask).toBeFocused()
+})
+
 for (const size of [{ width: 320, height: 640 }, { width: 320, height: 400 }]) {
   test(`chat a ${size.width}×${size.height}: campo e ultima risposta visibili, niente esce di lato`, async ({ page }) => {
     await page.setViewportSize(size)

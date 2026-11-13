@@ -4,10 +4,10 @@ import { DeleteAccount } from './DeleteAccount'
 export function PrivacyPage() {
   return (
     <main className="page">
-      <div className="row">
+      <header className="profile-section-head">
+        <Link className="back-link" to="/profilo/account">‹ Account e privacy</Link>
         <h1>Privacy</h1>
-        <Link to="/account">Account</Link>
-      </div>
+      </header>
 
       <section className="section">
         <h2>Cosa salviamo</h2>

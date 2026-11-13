@@ -56,7 +56,7 @@ beforeEach(() => {
   fake.tables.push_subscriptions = [{ user_id: 'u1', endpoint: ENDPOINT }]
   fake.tables.push_log = []
   fake.tables.service_status = [{ id: 1, last_run_at: new Date().toISOString() }]
-  window.location.hash = '#/avvisi'
+  window.location.hash = '#/profilo/avvisi'
 })
 
 afterEach(() => {
@@ -127,7 +127,7 @@ describe('spegnere le notifiche dal profilo', () => {
   })
 
   it('uscire dall\'account non equivale a spegnerle: al prossimo accesso tornano', async () => {
-    window.location.hash = '#/account'
+    window.location.hash = '#/profilo/account'
     browser()
     render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: 'Esci' }))
@@ -174,7 +174,7 @@ describe('spegnere le notifiche da Stato notifiche', () => {
 
   it('dopo la riattivazione un vecchio invio mancato non fa scattare il falso allarme', async () => {
     browser()
-    window.location.hash = '#/avvisi'
+    window.location.hash = '#/profilo/avvisi'
     await turnOff()
     await userEvent.click(screen.getByRole('button', { name: 'Attiva le notifiche' }))
     await screen.findByRole('button', { name: 'Disattiva le notifiche' })
@@ -189,7 +189,7 @@ describe('spegnere le notifiche da Stato notifiche', () => {
 
   it('un invio mancato dopo la riattivazione invece avvisa', async () => {
     browser()
-    window.location.hash = '#/avvisi'
+    window.location.hash = '#/profilo/avvisi'
     await turnOff()
     await userEvent.click(screen.getByRole('button', { name: 'Attiva le notifiche' }))
     await screen.findByRole('button', { name: 'Disattiva le notifiche' })
@@ -206,5 +206,47 @@ describe('spegnere le notifiche da Stato notifiche', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Disattiva le notifiche' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Attiva le notifiche' }))
     expect(await screen.findByRole('button', { name: /invia notifica di prova/i })).toBeInTheDocument()
+  })
+})
+
+describe('riepilogo nel Profilo', () => {
+  const summary = () => screen.getByRole('link', { name: /^Promemoria e notifiche/ })
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome' }).format(new Date())
+
+  beforeEach(() => {
+    window.location.hash = '#/profilo'
+    fake.tables.schedules = [
+      { id: 's1', user_id: 'u1', name: 'Lavoro', weekdays: [1, 2, 3, 4, 5], enabled: true },
+      { id: 's2', user_id: 'u1', name: 'Spento', weekdays: [6], enabled: false },
+    ]
+    fake.tables.schedule_times = [
+      { id: 't1', schedule_id: 's1', minutes: 600 },
+      { id: 't2', schedule_id: 's1', minutes: 900 },
+      { id: 't3', schedule_id: 's2', minutes: 700 },
+    ]
+  })
+
+  it('attive: conta gli orari dei programmi accesi', async () => {
+    browser()
+    render(<App />)
+    await screen.findByRole('link', { name: /^Promemoria e notifiche/ })
+    await waitFor(() => expect(summary()).toHaveTextContent('Attive · 2 promemoria'))
+  })
+
+  it('in pausa: dice fino a quando', async () => {
+    browser()
+    fake.tables.pause_periods = [{ id: 'p', user_id: 'u1', start_date: today, end_date: '2099-11-14' }]
+    render(<App />)
+    await screen.findByRole('link', { name: /^Promemoria e notifiche/ })
+    await waitFor(() => expect(summary()).toHaveTextContent('In pausa fino al 14/11'))
+  })
+
+  it('spente dalla pagina della voce: tornando al Profilo lo dice', async () => {
+    browser()
+    window.location.hash = '#/profilo/avvisi'
+    await turnOff()
+    await userEvent.click(screen.getByRole('link', { name: '‹ Profilo' }))
+    await screen.findByRole('link', { name: /^Promemoria e notifiche/ })
+    expect(summary()).toHaveTextContent('Spente')
   })
 })

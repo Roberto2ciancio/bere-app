@@ -3,7 +3,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { Avatar } from '../avatars/Avatar'
 import { useProfile } from '../auth/ProfileProvider'
 import { addDays } from '../domain/time'
-import { levelOf } from '../levels/levels'
+import { LevelBadge } from '../levels/LevelBadge'
 import { useLevels } from '../levels/useLevels'
 import { supabase } from '../lib/supabase'
 import { EmptyState } from '../mascot/EmptyState'
@@ -35,15 +35,6 @@ const days = (n: number) => (n === 1 ? '1 giorno' : `${n} giorni`)
 /** Pari punteggio, pari posizione: 1, 1, 3. */
 function ranks(entries: Entry[]): number[] {
   return entries.map((entry, index) => entries.findIndex((e) => e.days_met === entry.days_met && e.streak === entry.streak) + 1 || index + 1)
-}
-
-function LevelBadge({ points }: { points: number }) {
-  const lv = levelOf(points)
-  return (
-    <span className="level-badge" title={`Livello ${lv.level} · ${lv.name}`} aria-label={`livello ${lv.level}, ${lv.name}`}>
-      <span aria-hidden="true">{lv.emoji} {lv.level}</span>
-    </span>
-  )
 }
 
 function WeekBar({ met }: { met: number }) {

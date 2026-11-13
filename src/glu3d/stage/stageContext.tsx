@@ -22,6 +22,12 @@ interface Entry {
   spec: GluSpotSpec | null
 }
 
+/** Richiesta di aprire la chat da fuori (un pulsante in pagina): seq la rende nuova anche per la stessa pagina. */
+export interface HelpRequest {
+  page: HelpPage
+  seq: number
+}
+
 interface StageValue {
   active: boolean
   spec: GluSpotSpec | null
@@ -32,6 +38,10 @@ interface StageValue {
   removeEntry(id: string): void
   setRing(el: HTMLElement | null): void
   fail(): void
+  helpRequest: HelpRequest | null
+  openHelp(page: HelpPage): void
+  /** Il palcoscenico ha preso in carico la richiesta. */
+  takeHelp(seq: number): void
 }
 
 const StageContext = createContext<StageValue | null>(null)
@@ -56,13 +66,16 @@ export function GluStageProvider({ active, children }: { active: boolean; childr
     setEntries((list) => list.filter((e) => e.id !== id))
   }, [])
   const fail = useCallback(() => setFailed(true), [])
+  const [helpRequest, setHelpRequest] = useState<HelpRequest | null>(null)
+  const openHelp = useCallback((page: HelpPage) => setHelpRequest((r) => ({ page, seq: (r?.seq ?? 0) + 1 })), [])
+  const takeHelp = useCallback((seq: number) => setHelpRequest((r) => (r && r.seq === seq ? null : r)), [])
 
   const current = entries.length ? entries[entries.length - 1] : null
   const spec = current ? current.spec : null
   const specId = current ? current.id : null
   const value = useMemo<StageValue>(
-    () => ({ active: active && !failed, spec, specId, ringEl, setEntry, removeEntry, setRing: setRingEl, fail }),
-    [active, failed, spec, specId, ringEl, setEntry, removeEntry, fail],
+    () => ({ active: active && !failed, spec, specId, ringEl, setEntry, removeEntry, setRing: setRingEl, fail, helpRequest, openHelp, takeHelp }),
+    [active, failed, spec, specId, ringEl, setEntry, removeEntry, fail, helpRequest, openHelp, takeHelp],
   )
   return <StageContext.Provider value={value}>{children}</StageContext.Provider>
 }
@@ -95,6 +108,15 @@ export function useGluStageActive(): boolean {
 export function useGluStageShowsGlu(): boolean {
   const ctx = useContext(StageContext)
   return !!ctx?.active && !!ctx.spec && ctx.spec.spot !== 'away'
+}
+
+/**
+ * Apre la chat «Chiedi a Glu» da un pulsante della pagina, con i suggerimenti di `page`.
+ * null se il palcoscenico non c'è (2D o 3D spento): senza palcoscenico la chat non esiste.
+ */
+export function useOpenGluHelp(): ((page: HelpPage) => void) | null {
+  const ctx = useContext(StageContext)
+  return ctx?.active ? ctx.openHelp : null
 }
 
 const noop = () => {}

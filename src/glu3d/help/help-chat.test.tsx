@@ -30,8 +30,9 @@ vi.mock('../../lib/errorReporting', () => ({ reportError: vi.fn() }))
 import { HelpChat } from './HelpChat'
 import { GUIDE, PAGE_TIPS } from './guide'
 import { GluStage } from '../stage/GluStage'
-import { GluStageProvider, useGluSpot, useRingSlot } from '../stage/stageContext'
+import { GluStageProvider, useGluSpot, useOpenGluHelp, useRingSlot } from '../stage/stageContext'
 import type { GluSpotSpec } from '../stage/stageContext'
+import { HelpSettingsPage } from '../../profile/ProfileSections'
 
 const title = (id: string) => GUIDE.find((e) => e.id === id)!.title
 
@@ -375,5 +376,71 @@ describe('GluStage: tocco su Glu', () => {
       document.dispatchEvent(new Event('scroll'))
     })
     expect(y()).toBe(150)
+  })
+})
+
+// --- «Chiedi a Glu» da un pulsante della pagina (Profilo › Aiuto e suggerimenti) ---
+
+function AskButton() {
+  const openHelp = useOpenGluHelp()
+  return openHelp ? <button onClick={() => openHelp('profilo')}>Chiedi a Glu</button> : <p>nessun palcoscenico</p>
+}
+
+describe('openHelp: la chat aperta da fuori', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    h.props = []
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: W })
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: H })
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  it('con Glu fuori scena apre la chat coi suggerimenti del Profilo; chiusa, il focus torna al pulsante', () => {
+    render(<App><Page spec={null} /><AskButton /></App>)
+    expect(gluButton()).toBeNull()
+    const ask = screen.getByRole('button', { name: 'Chiedi a Glu' })
+    ask.focus()
+    fireEvent.click(ask)
+    const dialog = screen.getByRole('dialog', { name: 'Chiedi a Glu' })
+    for (const id of PAGE_TIPS.profilo) expect(within(dialog).getByRole('button', { name: title(id) })).toBeTruthy()
+    // Glu resta fuori scena: nessun viaggio, nessun pulsante su di lui.
+    expect(screen.getByTestId('glu-stage').getAttribute('data-spot')).toBe('away')
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(document.activeElement).toBe(ask)
+  })
+
+  it('Profilo › Aiuto e suggerimenti: il pulsante «Chiedi a Glu» apre la chat del Profilo', () => {
+    render(<App><HelpSettingsPage /></App>)
+    fireEvent.click(screen.getByRole('button', { name: 'Chiedi a Glu' }))
+    const dialog = screen.getByRole('dialog', { name: 'Chiedi a Glu' })
+    expect(within(dialog).getByRole('button', { name: title(PAGE_TIPS.profilo[0]) })).toBeTruthy()
+    expect(screen.queryByText(/Con «Glu in 3D» acceso/)).toBeNull()
+  })
+
+  it('si può riaprire dopo averla chiusa', () => {
+    render(<App><Page spec={null} /><AskButton /></App>)
+    const ask = screen.getByRole('button', { name: 'Chiedi a Glu' })
+    fireEvent.click(ask)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    fireEvent.click(ask)
+    expect(screen.getByRole('dialog', { name: 'Chiedi a Glu' })).toBeTruthy()
+  })
+
+  it('senza palcoscenico attivo non c’è modo di aprirla', () => {
+    render(
+      <MemoryRouter>
+        <GluStageProvider active={false}>
+          <AskButton />
+          <GluStage />
+        </GluStageProvider>
+      </MemoryRouter>,
+    )
+    expect(screen.getByText('nessun palcoscenico')).toBeTruthy()
+    render(<MemoryRouter><AskButton /></MemoryRouter>)
+    expect(screen.getAllByText('nessun palcoscenico')).toHaveLength(2)
   })
 })

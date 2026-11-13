@@ -287,7 +287,7 @@ describe('calcolo dell\'obiettivo', () => {
 
 describe('preferenze nel profilo', () => {
   beforeEach(() => {
-    window.location.hash = '#/avvisi'
+    window.location.hash = '#/profilo/avvisi'
   })
 
   it('i promemoria si possono fermare a obiettivo raggiunto', async () => {
@@ -303,7 +303,7 @@ describe('preferenze nel profilo', () => {
   })
 
   it('si scelgono unità e suono', async () => {
-    window.location.hash = '#/bevute'
+    window.location.hash = '#/profilo/bevute'
     render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: 'Once' }))
     await userEvent.click(screen.getByRole('button', { name: 'Bolla' }))
@@ -371,7 +371,7 @@ describe('copia dei dati', () => {
   })
 
   it('il pulsante di ripristino è nel profilo', async () => {
-    window.location.hash = '#/account'
+    window.location.hash = '#/profilo/account'
     render(<App />)
     expect(await screen.findByLabelText('Ripristina da una copia')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Scarica copia (JSON)' })).toBeInTheDocument()

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
+import { useOpenGluHelp } from '../glu3d/stage/stageContext'
 import { PauseForm } from '../pause/PauseForm'
 import { NotificationPrefs } from '../push/NotificationPrefs'
 import { PushToggle } from '../push/PushToggle'
@@ -53,7 +54,6 @@ export function NotificationSettingsPage() {
         <NotificationPrefs />
       </section>
       <section className="card">
-        <h2>Pausa</h2>
         <PauseForm />
       </section>
       <nav className="card link-list" aria-label="Gestione degli avvisi">
@@ -99,9 +99,19 @@ export function AccountSettingsPage() {
 }
 
 export function HelpSettingsPage() {
+  // «Chiedi a Glu» esiste solo col palcoscenico (Glu in 3D scelto e acceso). Qui Glu è fuori scena:
+  // la chat si apre comunque, senza farlo tornare (vedi GluStage, richiesta openHelp).
+  const openHelp = useOpenGluHelp()
   return (
     <ProfileSectionPage title="Aiuto e suggerimenti" description="Novità di Bere, idee per migliorarla e segnalazioni.">
-      <p className="hint">Per una risposta rapida torna al Profilo e tocca Glu: può guidarti passo passo.</p>
+      {openHelp ? (
+        <section className="card help-ask">
+          <p>Glu risponde alle domande sull'app: dove trovare un'impostazione, come segnare una bevuta, come funziona la serie.</p>
+          <button type="button" className="primary" onClick={() => openHelp('profilo')}>Chiedi a Glu</button>
+        </section>
+      ) : (
+        <p className="hint">Con «Glu in 3D» acceso puoi anche chiedere a Glu come si fa qualcosa: lo trovi in «Aspetto e Glu», se il telefono lo permette.</p>
+      )}
       <nav className="card link-list" aria-label="Aiuto">
         <Link className="link-row" to="/novita">Leggi le novità</Link>
         <Link className="link-row" to="/feedback">Suggerisci un miglioramento</Link>

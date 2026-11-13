@@ -77,8 +77,71 @@ describe('ProfilePage', () => {
     expect(await screen.findByLabelText('Obiettivo giornaliero (litri)')).toBeInTheDocument()
   })
 
+  it('in cima avatar (porta ad Aspetto e Glu), nome e livello', async () => {
+    fake.rpcResults.get_levels = [{ user_id: 'u1', points: 40 }]
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Profilo', level: 1 })).toBeInTheDocument()
+    expect(await screen.findByText('Anna')).toBeInTheDocument()
+    expect(await screen.findByLabelText(/^livello \d+/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('link', { name: 'Cambia avatar e aspetto' }))
+    expect(await screen.findByRole('heading', { name: 'Aspetto e Glu', level: 1 })).toBeInTheDocument()
+  })
+
+  it('senza punti dal server niente livello', async () => {
+    render(<App />)
+    await screen.findByText('Anna')
+    expect(screen.queryByLabelText(/^livello/)).toBeNull()
+  })
+
+  it('i riepiloghi sono quelli veri: obiettivo, bevuta, email', async () => {
+    fake.tables.goal_changes = [{ user_id: 'u1', effective_from: '2026-01-01', goal_ml: 2700 }]
+    render(<App />)
+    const row = (name: string) => screen.getByRole('link', { name: new RegExp(`^${name}`) })
+    await waitFor(() => expect(row('Obiettivo')).toHaveTextContent('2,7 L al giorno'))
+    expect(row('Bevute e tazze')).toHaveTextContent('200 ml · litri')
+    expect(row('Aspetto e Glu')).toHaveTextContent('Avatar, sfondo e Glu')
+    expect(row('Account e privacy')).toHaveTextContent('a@b.it')
+    expect(row('Aiuto e suggerimenti')).toHaveTextContent('Chiedi a Glu, idee e novità')
+    // jsdom non ha le notifiche push: come dice PushToggle.
+    expect(row('Promemoria e notifiche')).toHaveTextContent('Non disponibili su questo browser')
+  })
+
+  it('obiettivo: un trattino finché non arriva', async () => {
+    fake.tables.goal_changes = []
+    fake.failures.select = 'offline'
+    render(<App />)
+    expect(await screen.findByRole('link', { name: /^Obiettivo/ })).toHaveTextContent('—')
+  })
+
+  it('le voci sono sotto /profilo e ogni pagina torna al Profilo', async () => {
+    render(<App />)
+    const paths = ['#/profilo/obiettivo', '#/profilo/avvisi', '#/profilo/bevute', '#/profilo/aspetto', '#/profilo/account', '#/profilo/aiuto']
+    const links = await screen.findAllByRole('link', { name: /^(Obiettivo|Promemoria|Bevute|Aspetto|Account|Aiuto)/ })
+    expect(links.map((l) => l.getAttribute('href'))).toEqual(paths)
+    await userEvent.click(screen.getByRole('link', { name: /^Bevute e tazze/ }))
+    expect(await screen.findByRole('heading', { name: 'Bevute e tazze', level: 1 })).toBeInTheDocument()
+    // La linguetta «Profilo» resta attiva nelle pagine delle voci.
+    expect(screen.getByRole('link', { name: 'Profilo' })).toHaveClass('active')
+    await userEvent.click(screen.getByRole('link', { name: '‹ Profilo' }))
+    expect(await screen.findByRole('heading', { name: 'Profilo', level: 1 })).toBeInTheDocument()
+  })
+
+  it('Tazze e bevande torna a «Bevute e tazze»', async () => {
+    window.location.hash = '#/tazze'
+    render(<App />)
+    expect(await screen.findByRole('link', { name: '‹ Bevute e tazze' })).toHaveAttribute('href', '#/profilo/bevute')
+  })
+
+  it('Aiuto senza Glu in 3D: niente «Chiedi a Glu», solo il suggerimento', async () => {
+    window.location.hash = '#/profilo/aiuto'
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Aiuto e suggerimenti', level: 1 })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Chiedi a Glu' })).toBeNull()
+    expect(screen.getByText(/Con «Glu in 3D» acceso/)).toBeInTheDocument()
+  })
+
   it('gli avvisi sociali sono accesi di default e si spengono uno per uno', async () => {
-    window.location.hash = '#/avvisi'
+    window.location.hash = '#/profilo/avvisi'
     render(<App />)
     const labels = [
       ["Avvisa gli amici quando raggiungo l'obiettivo", 'share_goal'],
@@ -96,7 +159,7 @@ describe('ProfilePage', () => {
   })
 
   it('le due quantità nel promemoria sono spente di default e si accendono', async () => {
-    window.location.hash = '#/avvisi'
+    window.location.hash = '#/profilo/avvisi'
     render(<App />)
     const box = await screen.findByRole('checkbox', { name: 'Nel promemoria «Bevuto 200 ml» e «Bevuto 500 ml»' })
     expect(box).not.toBeChecked()
@@ -107,7 +170,7 @@ describe('ProfilePage', () => {
   })
 
   it('in Aspetto non c’è più la scelta dello stile della home', async () => {
-    window.location.hash = '#/aspetto'
+    window.location.hash = '#/profilo/aspetto'
     render(<App />)
     await screen.findByDisplayValue('Anna')
     expect(screen.queryByRole('group', { name: 'Stile della home' })).not.toBeInTheDocument()
@@ -115,14 +178,14 @@ describe('ProfilePage', () => {
   })
 
   it('cambia nome, suono e quantità', async () => {
-    window.location.hash = '#/aspetto'
+    window.location.hash = '#/profilo/aspetto'
     render(<App />)
     const name = await screen.findByDisplayValue('Anna')
     await userEvent.clear(name)
     await userEvent.type(name, 'Annina')
     await userEvent.click(screen.getByRole('button', { name: 'Salva nome' }))
     await waitFor(() => expect(fake.tables.profiles[0].display_name).toBe('Annina'))
-    window.location.hash = '#/bevute'
+    window.location.hash = '#/profilo/bevute'
     await screen.findByRole('heading', { name: 'Bevute e tazze', level: 1 })
     await userEvent.click(screen.getByRole('button', { name: 'Campanella' }))
     await waitFor(() => expect(fake.tables.profiles[0].sound).toBe('campanella'))
@@ -131,7 +194,7 @@ describe('ProfilePage', () => {
   })
 
   it('un nome vuoto non si salva', async () => {
-    window.location.hash = '#/aspetto'
+    window.location.hash = '#/profilo/aspetto'
     render(<App />)
     await userEvent.clear(await screen.findByDisplayValue('Anna'))
     await userEvent.click(screen.getByRole('button', { name: 'Salva nome' }))
@@ -140,7 +203,7 @@ describe('ProfilePage', () => {
   })
 
   it('un file non immagine mostra un messaggio', async () => {
-    window.location.hash = '#/aspetto'
+    window.location.hash = '#/profilo/aspetto'
     render(<App />)
     const input = await screen.findByLabelText('Foto del profilo')
     await userEvent.upload(input, image(10, 'application/pdf'), { applyAccept: false })
@@ -149,7 +212,7 @@ describe('ProfilePage', () => {
   })
 
   it('con uno sfondo mostra immagine e velo di leggibilità nell\'app', async () => {
-    window.location.hash = '#/aspetto'
+    window.location.hash = '#/profilo/aspetto'
     fake.tables.profiles[0].background_path = 'u1/sfondo.jpg'
     const { container } = render(<App />)
     await waitFor(() => {
@@ -159,7 +222,7 @@ describe('ProfilePage', () => {
   })
 
   it('rimuovere lo sfondo torna a quello predefinito e cancella il file', async () => {
-    window.location.hash = '#/aspetto'
+    window.location.hash = '#/profilo/aspetto'
     fake.tables.profiles[0].background_path = 'u1/sfondo.jpg'
     const { container } = render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: 'Rimuovi sfondo' }))
@@ -169,7 +232,7 @@ describe('ProfilePage', () => {
   })
 
   it('scegliere un avatar pronto cancella la foto caricata prima', async () => {
-    window.location.hash = '#/aspetto'
+    window.location.hash = '#/profilo/aspetto'
     fake.tables.profiles[0].avatar_path = 'u1/foto.jpg'
     render(<App />)
     await userEvent.click((await screen.findAllByRole('radio'))[0])
@@ -178,7 +241,7 @@ describe('ProfilePage', () => {
   })
 
   it('scegliere un avatar pronto dopo un altro non cancella nulla', async () => {
-    window.location.hash = '#/aspetto'
+    window.location.hash = '#/profilo/aspetto'
     fake.tables.profiles[0].avatar_path = 'preset:altro'
     render(<App />)
     await userEvent.click((await screen.findAllByRole('radio'))[0])
@@ -187,7 +250,7 @@ describe('ProfilePage', () => {
   })
 
   it('se il salvataggio dell avatar fallisce la foto resta', async () => {
-    window.location.hash = '#/aspetto'
+    window.location.hash = '#/profilo/aspetto'
     fake.tables.profiles[0].avatar_path = 'u1/foto.jpg'
     render(<App />)
     const radios = await screen.findAllByRole('radio')
@@ -198,7 +261,7 @@ describe('ProfilePage', () => {
   })
 
   it('il pulsante esci chiude la sessione', async () => {
-    window.location.hash = '#/account'
+    window.location.hash = '#/profilo/account'
     render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: 'Esci' }))
     expect(await screen.findByRole('heading', { name: 'Accedi' })).toBeInTheDocument()

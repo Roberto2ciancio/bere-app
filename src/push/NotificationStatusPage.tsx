@@ -130,10 +130,10 @@ export function NotificationStatusPage() {
 
   return (
     <main className="page">
-      <div className="row">
+      <header className="profile-section-head">
+        <Link className="back-link" to="/profilo/avvisi">‹ Promemoria e notifiche</Link>
         <h1>Stato notifiche</h1>
-        <Link to="/avvisi">Avvisi</Link>
-      </div>
+      </header>
 
       {state === 'needs-install' && <InstallGuide />}
       {state === 'unsupported' && (

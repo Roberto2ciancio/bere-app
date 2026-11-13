@@ -1,32 +1,38 @@
 /* Profilo: indice essenziale e pagine separate per argomento. */
 .profile { gap: 18px; }
-.profile-index-head { display: flex; flex-direction: column; gap: 6px; }
+.profile-index-head { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.profile-index-avatar { flex: none; display: inline-flex; border-radius: 50%; }
+.profile-index-avatar:focus-visible { outline: 3px solid var(--water); outline-offset: 3px; }
+.profile-index-who { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.profile-index-name { margin: 0; font-size: 1.2rem; font-weight: 700; overflow-wrap: anywhere; }
+.profile-index-level { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.profile-index-level .hint { margin: 0; }
 .profile-menu { padding-block: 4px; gap: 0; }
 .profile-menu-row {
   display: flex;
   align-items: center;
-  min-height: 72px;
-  padding: 12px 0;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 0;
   color: inherit;
   text-decoration: none;
   border-top: 1px solid var(--line);
 }
 .profile-menu-row:first-child { border-top: 0; }
-.profile-menu-row::after {
-  content: '›';
-  flex: none;
-  margin-left: 12px;
-  color: var(--ink-soft);
-  font-size: 1.6rem;
-  line-height: 1;
-  transition: transform 0.18s var(--ease-out);
-}
-.profile-menu-row:hover::after, .profile-menu-row:focus-visible::after { transform: translateX(3px); }
-.profile-menu-text { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 4px; }
+.profile-menu-icon { flex: none; display: inline-flex; color: var(--water-deep); }
+.profile-menu-chevron { flex: none; display: inline-flex; color: var(--ink-soft); transition: transform 0.18s var(--ease-out); }
+.profile-menu-row:hover .profile-menu-chevron, .profile-menu-row:focus-visible .profile-menu-chevron { transform: translateX(3px); }
+.profile-menu-text { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 2px; }
 .profile-menu-text strong { font-size: 1.02rem; overflow-wrap: anywhere; }
 .profile-menu-summary { color: var(--ink-soft); font-size: 0.86rem; line-height: 1.35; overflow-wrap: anywhere; }
-.profile-section-head { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
-.profile-section-head .back-link { min-height: 44px; display: inline-flex; align-items: center; font-weight: 600; }
+.profile-section-head { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+/* Il link «indietro» resta alto 44 px da toccare, ma occupa poco: sale nel margine alto della pagina e
+   lascia il titolo dove stava quando era accanto (sulle pagine lunghe, come Promemoria, conta). */
+.profile-section-head h1 { margin: 0; }
+.profile-section-head .hint { margin: 0; }
+.profile-section-head .back-link { min-height: 44px; margin: -18px 0 -8px; display: inline-flex; align-items: center; font-weight: 600; overflow-wrap: anywhere; }
+.help-ask { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.help-ask p { margin: 0; }
 .account-email { overflow-wrap: anywhere; }
 .pause { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .pause .hint, .pause-on { margin: 0; }
@@ -59,6 +65,8 @@
   text-decoration: none;
 }
 .link-row::after { content: '›'; font-size: 1.4rem; color: var(--ink-soft); }
+/* In una scheda tutta di link la prima riga non ha la linea sopra. */
+.card.link-list > .link-row:first-child { border-top: 0; }
 .fold { border-top: 1px solid var(--line); }
 .fold summary { min-height: 48px; display: flex; align-items: center; justify-content: space-between; font-weight: 600; cursor: pointer; list-style: none; }
 .fold summary::-webkit-details-marker { display: none; }

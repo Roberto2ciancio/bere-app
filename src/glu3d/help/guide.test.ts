@@ -3,7 +3,7 @@ import { GUIDE, PAGE_TIPS } from './guide'
 import { MIN_SCORE, normalize, rankGuide, searchGuide } from './search'
 
 // Rotte dichiarate in src/App.tsx (copiate qui: se App.tsx cambia, va aggiornata anche questa lista).
-const ROUTES = ['/home', '/classifica', '/storico', '/storico/calendario', '/tazze', '/profilo', '/profilo/obiettivo', '/avvisi', '/bevute', '/aspetto', '/account', '/aiuto', '/promemoria', '/notifiche', '/feedback', '/privacy', '/novita', '/segnala']
+const ROUTES = ['/home', '/classifica', '/storico', '/storico/calendario', '/tazze', '/profilo', '/profilo/obiettivo', '/profilo/avvisi', '/profilo/bevute', '/profilo/aspetto', '/profilo/account', '/profilo/aiuto', '/promemoria', '/notifiche', '/feedback', '/privacy', '/novita', '/segnala']
 
 // Frasi scritte diversamente dalle `questions`: sinonimi, errori comuni, frasi lunghe.
 const REAL: [string, string][] = [
@@ -136,6 +136,35 @@ describe('GUIDE', () => {
 
   it('ogni route è una rotta di App.tsx', () => {
     for (const e of GUIDE) if (e.route) expect(ROUTES, e.id).toContain(e.route)
+  })
+
+  it('i percorsi «Profilo» › «…» usano i nomi delle sei voci del Profilo', () => {
+    const sections = ['Obiettivo', 'Promemoria e notifiche', 'Bevute e tazze', 'Aspetto e Glu', 'Account e privacy', 'Aiuto e suggerimenti']
+    const wrong: string[] = []
+    for (const e of GUIDE) {
+      for (const step of e.answer) {
+        if (/«Profilo», sezione|scheda «Profilo»|nel «Profilo»/.test(step)) wrong.push(`${e.id}: «${step}»`)
+        for (const m of step.matchAll(/«Profilo» › «([^»]+)»/g)) if (!sections.includes(m[1])) wrong.push(`${e.id}: ${m[1]}`)
+      }
+    }
+    expect(wrong).toEqual([])
+  })
+
+  it('chi apre una voce del Profilo porta alla sua pagina (o a una pagina raggiunta da lì)', () => {
+    const pages: Record<string, string[]> = {
+      Obiettivo: ['/profilo/obiettivo'],
+      'Promemoria e notifiche': ['/profilo/avvisi', '/promemoria', '/notifiche'],
+      'Bevute e tazze': ['/profilo/bevute', '/tazze'],
+      'Aspetto e Glu': ['/profilo/aspetto'],
+      'Account e privacy': ['/profilo/account', '/privacy'],
+      'Aiuto e suggerimenti': ['/profilo/aiuto', '/feedback', '/novita', '/segnala'],
+    }
+    const wrong: string[] = []
+    for (const e of GUIDE) {
+      const m = /^Apri «Profilo» › «([^»]+)»/.exec(e.answer[0])
+      if (m && !pages[m[1]]?.includes(e.route ?? '')) wrong.push(`${e.id}: ${m[1]} → ${e.route}`)
+    }
+    expect(wrong).toEqual([])
   })
 
   it('ogni domanda di ogni voce porta a quella voce', () => {

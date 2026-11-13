@@ -343,11 +343,11 @@ const PAGES = [
   ['Classifica', '/classifica', 'Classifica'],
   ['Profilo', '/profilo', 'Profilo'],
   ['Obiettivo', '/profilo/obiettivo', 'Obiettivo'],
-  ['Avvisi', '/avvisi', 'Promemoria e notifiche'],
-  ['Bevute', '/bevute', 'Bevute e tazze'],
-  ['Aspetto', '/aspetto', 'Aspetto e Glu'],
-  ['Account', '/account', 'Account e privacy'],
-  ['Aiuto', '/aiuto', 'Aiuto e suggerimenti'],
+  ['Avvisi', '/profilo/avvisi', 'Promemoria e notifiche'],
+  ['Bevute', '/profilo/bevute', 'Bevute e tazze'],
+  ['Aspetto', '/profilo/aspetto', 'Aspetto e Glu'],
+  ['Account', '/profilo/account', 'Account e privacy'],
+  ['Aiuto', '/profilo/aiuto', 'Aiuto e suggerimenti'],
   ['Newsletter', '/novita', 'Newsletter'],
   ['Promemoria', '/promemoria', null],
   ['Tazze e bevande', '/tazze', null],
@@ -365,6 +365,42 @@ for (const [name, path, heading] of PAGES) {
     await expectNoHorizontalScroll(page)
   })
 }
+
+const SECTIONS = [
+  ['Obiettivo', 'obiettivo'],
+  ['Promemoria e notifiche', 'avvisi'],
+  ['Bevute e tazze', 'bevute'],
+  ['Aspetto e Glu', 'aspetto'],
+  ['Account e privacy', 'account'],
+  ['Aiuto e suggerimenti', 'aiuto'],
+] as const
+
+test('Profilo → voce → «‹ Profilo»: la linguetta Profilo resta accesa', async ({ page }) => {
+  await openApp(page, '/profilo')
+  const tab = page.getByRole('navigation', { name: 'Sezioni' }).getByRole('link', { name: 'Profilo' })
+  for (const [title, slug] of SECTIONS) {
+    await page.getByRole('link', { name: new RegExp(`^${title}`) }).click()
+    await expect(page).toHaveURL(new RegExp(`#/profilo/${slug}$`))
+    await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
+    await expect(tab).toHaveClass(/active/)
+    await page.getByRole('link', { name: '‹ Profilo' }).click()
+    await expect(page.getByRole('heading', { level: 1, name: 'Profilo' })).toBeVisible()
+  }
+  // L'avatar porta ad «Aspetto e Glu».
+  await page.getByRole('link', { name: 'Cambia avatar e aspetto' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Aspetto e Glu' })).toBeVisible()
+})
+
+test('dalle pagine di dettaglio si torna alla voce giusta', async ({ page }) => {
+  await openApp(page, '/profilo/bevute')
+  await page.getByRole('link', { name: 'Tazze e bevande' }).click()
+  await page.getByRole('link', { name: '‹ Bevute e tazze' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Bevute e tazze' })).toBeVisible()
+  await page.goto('./#/profilo/avvisi')
+  await page.getByRole('link', { name: 'Gestisci i promemoria' }).click()
+  await page.getByRole('link', { name: '‹ Promemoria e notifiche' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Promemoria e notifiche' })).toBeVisible()
+})
 
 test('senza promemoria Glu è compatto e gli orari del modulo restano sopra la barra', async ({ page }) => {
   await openApp(page, '/promemoria', { noSchedules: true })

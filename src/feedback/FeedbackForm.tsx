@@ -30,10 +30,10 @@ export function FeedbackForm() {
 
   return (
     <main className="page">
-      <div className="row">
+      <header className="profile-section-head">
+        <Link className="back-link" to="/profilo/aiuto">‹ Aiuto e suggerimenti</Link>
         <h1>Suggerimenti</h1>
-        <Link to="/aiuto">Aiuto</Link>
-      </div>
+      </header>
       <form className="stack" onSubmit={submit} noValidate>
         <label>
           Cosa miglioreresti?
