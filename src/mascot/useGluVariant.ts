@@ -1,5 +1,5 @@
 import { useOptionalAuth } from '../auth/AuthProvider'
-import { useProfile } from '../auth/ProfileProvider'
+import { useOptionalProfile } from '../auth/ProfileProvider'
 import { readCache } from '../lib/cache'
 import { levelOf } from '../levels/levels'
 import { useLevels } from '../levels/useLevels'
@@ -11,7 +11,7 @@ import { GLU_VARIANTS } from './variantsFlag'
  * Finché il livello non è noto si usa l'ultimo salvato sul telefono; senza niente, classico.
  */
 export function useGluVariant(): GluVariant {
-  const { profile } = useProfile()
+  const profile = useOptionalProfile()?.profile
   const userId = useOptionalAuth()?.user?.id ?? null
   const points = useLevels()
   if (!GLU_VARIANTS || !userId) return CLASSIC_VARIANT

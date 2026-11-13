@@ -3,6 +3,7 @@ import { LazyMotion, domAnimation } from 'motion/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Glu } from './Glu'
 import type { GluMood } from './mood'
+import { CLASSIC_VARIANT, GLU_VARIANTS_LIST } from './variants'
 
 function renderGlu(props: Parameters<typeof Glu>[0]) {
   return render(
@@ -276,5 +277,48 @@ describe('Glu: extras delle reazioni', () => {
     unmount()
     renderGlu({ mood: 'idle', fill: 0.5, extras: { crown: 7 } })
     expect(svg().querySelector('.glu-crown-drop')).toBeNull()
+  })
+})
+
+describe('Glu: varianti', () => {
+  it.each(GLU_VARIANTS_LIST)('$id: variabili CSS della palette e dettaglio', (variant) => {
+    renderGlu({ mood: 'idle', fill: 0.5, variant })
+    const el = svg()
+    expect(el).toHaveAttribute('data-variant', variant.id)
+    expect(el.style.getPropertyValue('--glu-body').toLowerCase()).toBe(variant.palette.body.toLowerCase())
+    expect(el.style.getPropertyValue('--glu-water').toLowerCase()).toBe(variant.palette.water.toLowerCase())
+    expect(el.style.getPropertyValue('--glu-limb').toLowerCase()).toBe(variant.palette.limb.toLowerCase())
+    expect(el.style.getPropertyValue('--glu-feet').toLowerCase()).toBe(variant.palette.feet.toLowerCase())
+    const detail = el.querySelector('.glu-detail')
+    if (variant.detail === 'none') expect(detail).toBeNull()
+    else expect(detail).toHaveAttribute('data-detail', variant.detail)
+  })
+
+  it('senza variante è il Glu classico', () => {
+    renderGlu({ mood: 'idle', fill: 0.5 })
+    expect(svg()).toHaveAttribute('data-variant', CLASSIC_VARIANT.id)
+    expect(svg().querySelector('.glu-detail')).toBeNull()
+  })
+
+  it('ids SVG unici anche con varianti diverse', () => {
+    const { container } = render(
+      <LazyMotion features={domAnimation} strict>
+        <Glu mood="idle" fill={0.5} variant={GLU_VARIANTS_LIST[1]} />
+        <Glu mood="idle" fill={0.5} variant={GLU_VARIANTS_LIST[5]} />
+      </LazyMotion>,
+    )
+    const ids = [...container.querySelectorAll('[id]')].map((n) => n.id)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('sete 1 con menta: il colore parte dal corpo della menta', () => {
+    renderGlu({ mood: 'thirsty', fill: 0.3, extras: { thirst: 1 }, variant: GLU_VARIANTS_LIST[1] })
+    expect(svg().querySelector('.glu-body')?.getAttribute('style') ?? '').toMatch(/color-mix\(in srgb, var\(--glu-body/)
+    expect(svg().style.getPropertyValue('--glu-body').toLowerCase()).toBe('#d3f5e9')
+  })
+
+  it('il dettaglio convive con corona e fascia', () => {
+    renderGlu({ mood: 'idle', fill: 0.5, variant: GLU_VARIANTS_LIST[2], extras: { crown: 14, headband: true } })
+    for (const part of ['.glu-detail', '.glu-crown', '.glu-headband']) expect(svg().querySelector(part), part).not.toBeNull()
   })
 })

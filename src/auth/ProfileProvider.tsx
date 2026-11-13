@@ -120,6 +120,11 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   return <ProfileContext.Provider value={{ profile, loading, updateProfile, saveProfile }}>{children}</ProfileContext.Provider>
 }
 
+/** Come useProfile, ma senza errore fuori dal provider (per i pezzi che vivono anche senza profilo). */
+export function useOptionalProfile(): ProfileValue | null {
+  return useContext(ProfileContext)
+}
+
 export function useProfile(): ProfileValue {
   const value = useContext(ProfileContext)
   if (!value) throw new Error('useProfile fuori da ProfileProvider')

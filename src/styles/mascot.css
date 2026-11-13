@@ -73,7 +73,7 @@
 .glu-crown-gold { fill: #ffc21a; stroke: #ffc21a; stroke-width: 3; stroke-linejoin: round; }
 .glu-crown-band { fill: #f2a50c; }
 .glu-crown-gem { fill: #e8466b; }
-.glu-cape { fill: #7cc4ef; }
+.glu-cape { fill: var(--glu-limb, #7cc4ef); }
 .glu-fan-paper { fill: #ffe1a8; }
 .glu-fan-pleats { fill: none; stroke: #f0a640; stroke-width: 2; stroke-linecap: round; }
 .glu-fan-handle { fill: none; stroke: #c97a2b; stroke-width: 4; stroke-linecap: round; }

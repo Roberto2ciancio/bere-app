@@ -13,7 +13,7 @@ vi.mock('./variantsFlag', () => ({
     return state.flag
   },
 }))
-vi.mock('../auth/ProfileProvider', () => ({ useProfile: () => ({ profile: { home_style: state.homeStyle } }) }))
+vi.mock('../auth/ProfileProvider', () => ({ useOptionalProfile: () => ({ profile: { home_style: state.homeStyle } }) }))
 vi.mock('../auth/AuthProvider', () => ({ useOptionalAuth: () => (state.userId ? { user: { id: state.userId } } : null) }))
 vi.mock('../levels/useLevels', () => ({ useLevels: () => state.points }))
 

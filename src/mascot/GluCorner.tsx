@@ -3,6 +3,7 @@ import { useGluAccessories } from './accessories'
 import { Glu } from './Glu'
 import type { CrownTier } from './reactions'
 import type { GluMood } from './mood'
+import { useGluVariant } from './useGluVariant'
 
 interface Props {
   mood: GluMood
@@ -16,9 +17,10 @@ interface Props {
 /** Glu in piccolo in cima alle pagine: una frase sul contesto, senza coprire niente. */
 export function GluCorner({ mood, text, fill = 0.6, crown }: Props) {
   const accessories = useGluAccessories()
+  const variant = useGluVariant()
   return (
     <div className="glu-corner">
-      <Glu mood={mood} fill={Math.min(1, Math.max(0, fill))} size={64} extras={{ crown: crown ?? accessories.crown, headband: accessories.headband }} />
+      <Glu mood={mood} fill={Math.min(1, Math.max(0, fill))} size={64} variant={variant} extras={{ crown: crown ?? accessories.crown, headband: accessories.headband }} />
       <Bubble text={text} />
     </div>
   )

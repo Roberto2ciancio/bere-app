@@ -2,6 +2,7 @@ import { m } from 'motion/react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { prefersReducedMotion } from '../ui/motion/effects'
 import { Glu } from './Glu'
+import { useGluVariant } from './useGluVariant'
 
 interface Props {
   kind: 'goal' | 'level'
@@ -15,6 +16,7 @@ interface Props {
  * torna dov'era. Si chiude subito (senza animazione d'uscita), come gli altri pannelli.
  */
 export function Celebration({ kind, title, detail, onClose }: Props) {
+  const variant = useGluVariant()
   const titleId = useId()
   const button = useRef<HTMLButtonElement>(null)
   const close = useRef(onClose)
@@ -57,7 +59,7 @@ export function Celebration({ kind, title, detail, onClose }: Props) {
         transition={{ type: 'spring', stiffness: 320, damping: 32 }}
       >
         <div className="celebration-glu">
-          <Glu mood={kind === 'goal' ? 'goal' : 'levelup'} fill={1} size={180} />
+          <Glu mood={kind === 'goal' ? 'goal' : 'levelup'} fill={1} size={180} variant={variant} />
         </div>
         <h2 id={titleId}>{title}</h2>
         {detail && <p>{detail}</p>}

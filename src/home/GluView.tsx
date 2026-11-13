@@ -6,6 +6,7 @@ import type { GluMood } from '../mascot/mood'
 import { phraseFor, specialPhraseFor, type SpecialPhrase } from '../mascot/phrases'
 import type { CrownTier } from '../mascot/reactions'
 import { TiltInvite } from '../mascot/TiltInvite'
+import { useGluVariant } from '../mascot/useGluVariant'
 import { useTilt } from '../mascot/useTilt'
 import { prefersReducedMotion } from '../ui/motion/effects'
 import { ProgressRing } from './ProgressRing'
@@ -38,6 +39,7 @@ function variantFor({ mood, extras, streakCelebrate, workoutText, coffeeOver }: 
 
 /** Glu dentro l'anello del progresso, che si riempie d'acqua e dice la sua nel fumetto. */
 export function GluView(props: Props) {
+  const gluVariant = useGluVariant()
   const { fill, mood, name, now, extras, workoutText, calm = false } = props
   const variant = variantFor(props)
   const pick = () => (variant === 'workout' ? (workoutText ?? '') : variant ? specialPhraseFor(variant, now) : phraseFor(mood, name, now))
@@ -66,7 +68,7 @@ export function GluView(props: Props) {
           {stage ? (
             <div ref={ringSlot} className="glu-ring-slot" data-testid="glu-ring-slot" aria-hidden="true" />
           ) : (
-            <Glu mood={mood} fill={fill} size={186} extras={glu} />
+            <Glu mood={mood} fill={fill} size={186} variant={gluVariant} extras={glu} />
           )}
         </ProgressRing>
       </div>

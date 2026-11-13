@@ -1,7 +1,8 @@
 import { m, useSpring, useTransform, type Transition } from 'motion/react'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { prefersReducedMotion } from '../ui/motion/effects'
 import type { GluMood } from './mood'
+import { CLASSIC_VARIANT, type GluDetail, type GluVariant } from './variants'
 import type { CrownTier } from './reactions'
 
 /** Reazioni che si sommano all'umore: sete (0..1), accessori, inclinazione dell'acqua in gradi. */
@@ -22,6 +23,8 @@ export interface GluProps {
   size?: number
   onTap?: () => void
   extras?: GluExtras
+  /** Tinta e dettaglio; senza, Glu classico. */
+  variant?: GluVariant
 }
 
 // Forme della «bolla» (docs/superpowers/specs/glu-proposta/03-glu-svg): niente contorni, tutto si riempie d'acqua.
@@ -181,7 +184,47 @@ const SPARKLES: [number, number, number][] = [
   [190, 150, 1],
 ]
 
-export function Glu({ mood, fill, size = 160, onTap, extras = {} }: GluProps) {
+// Dettagli delle varianti: piccoli, piatti, senza contorni, sul lato alto destro della testa (origine = centro del dettaglio),
+// lontani da corona (x 76-124) e fascia (y 77-88).
+const DETAILS: Record<Exclude<GluDetail, 'none'>, ReactNode> = {
+  mint: (
+    <>
+      <path d="M0 2C-2-8 6-14 14-14 14-6 8 2 0 2z" fill="#1FB58F" />
+      <path d="M-1 4C-10 2-15-6-13-13-5-12 1-6-1 4z" fill="#46CDA4" />
+    </>
+  ),
+  lemon: (
+    <>
+      <circle r="11" fill="#F2C014" />
+      <circle r="8.5" fill="#FFF6C9" />
+      <path d="M0 0V-8M0 0L7-4M0 0L7 4M0 0V8M0 0L-7 4M0 0L-7-4" stroke="#F2C014" strokeWidth="1.6" strokeLinecap="round" />
+    </>
+  ),
+  strawberry: (
+    <>
+      <path d="M0 12C-12 4-11-8-4-9Q0-7 4-9C11-8 12 4 0 12z" fill="#E03A5A" />
+      <path d="M-7-9Q0-18 7-9Q0-12-7-9z" fill="#1FB58F" />
+      <circle cx="-3.5" cy="-1" r="1.2" fill="#FFE0E6" />
+      <circle cx="3.5" cy="-1" r="1.2" fill="#FFE0E6" />
+      <circle cx="0" cy="5" r="1.2" fill="#FFE0E6" />
+    </>
+  ),
+  straw: (
+    <g transform="rotate(28)">
+      <rect x="-3.5" y="-16" width="7" height="32" rx="3.5" fill="#fff" />
+      <path d="M-3.5-10h7v5h-7zM-3.5 0h7v5h-7zM-3.5 10h7v3.5q0 2.5-3.5 2.5t-3.5-2.5z" fill="#C9A27E" />
+    </g>
+  ),
+  moon: (
+    <>
+      <path d="M6-12A13 13 0 1 0 12 6 10 10 0 0 1 6-12z" fill="#FFE27A" />
+      <path d="M12-10l1.6 3.4 3.4 1.6-3.4 1.6L12 0l-1.6-3.4L7-5l3.4-1.6z" fill="#FFE27A" />
+    </>
+  ),
+}
+const DETAIL_AT = 'translate(130 54)'
+
+export function Glu({ mood, fill, size = 160, onTap, extras = {}, variant = CLASSIC_VARIANT }: GluProps) {
   const clip = useId()
   const [reduced] = useState(prefersReducedMotion)
   const [blink, setBlink] = useState(false)
@@ -198,6 +241,13 @@ export function Glu({ mood, fill, size = 160, onTap, extras = {} }: GluProps) {
   const tilt = round(-Math.min(TILT_MAX, Math.max(-TILT_MAX, rawTilt))) || 0
   const sweat = extras.sweat || mood === 'workout'
   const crown = extras.crown ?? 0
+  const { palette } = variant
+  const varStyle = {
+    '--glu-body': palette.body,
+    '--glu-water': palette.water,
+    '--glu-limb': palette.limb,
+    '--glu-feet': palette.feet,
+  } as CSSProperties
 
   // Braccia: una molla per lato; il saluto la fa oscillare. Col ventaglio il braccio sinistro resta alzato.
   const leftTarget = extras.fan ? 1 : LIFT[mood][0]
@@ -359,6 +409,8 @@ export function Glu({ mood, fill, size = 160, onTap, extras = {} }: GluProps) {
       aria-hidden="true"
       data-testid="glu"
       data-mood={mood}
+      data-variant={variant.id}
+      style={varStyle}
       data-tappable={onTap ? '' : undefined}
       onClick={handleTap}
     >
@@ -405,6 +457,11 @@ export function Glu({ mood, fill, size = 160, onTap, extras = {} }: GluProps) {
                 </g>
                 <ellipse className="glu-highlight" cx="62" cy="70" rx="9" ry="20" transform="rotate(28 62 70)" />
               </g>
+              {variant.detail !== 'none' && (
+                <g className="glu-detail" data-detail={variant.detail} transform={DETAIL_AT}>
+                  {DETAILS[variant.detail]}
+                </g>
+              )}
               {extras.headband && (
                 <g className="glu-headband">
                   <path d="M37 77Q100 88 163 77" />
