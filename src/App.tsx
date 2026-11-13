@@ -18,6 +18,7 @@ import { OnboardingPage } from './onboarding/OnboardingPage'
 import { PrivacyPage } from './profile/PrivacyPage'
 import { NotificationStatusPage } from './push/NotificationStatusPage'
 import { ProfilePage } from './profile/ProfilePage'
+import { AccountSettingsPage, AppearanceSettingsPage, DrinkSettingsPage, GoalSettingsPage, HelpSettingsPage, NotificationSettingsPage } from './profile/ProfileSections'
 import { SchedulesPage } from './schedules/SchedulesPage'
 import { TabsLayout } from './ui/tabs'
 
@@ -60,6 +61,12 @@ export default function App() {
                 <Route path="/storico/calendario" element={<CalendarPage />} />
                 <Route path="/tazze" element={<CupsPage />} />
                 <Route path="/profilo" element={<ProfilePage />} />
+                <Route path="/profilo/obiettivo" element={<GoalSettingsPage />} />
+                <Route path="/avvisi" element={<NotificationSettingsPage />} />
+                <Route path="/bevute" element={<DrinkSettingsPage />} />
+                <Route path="/aspetto" element={<AppearanceSettingsPage />} />
+                <Route path="/account" element={<AccountSettingsPage />} />
+                <Route path="/aiuto" element={<HelpSettingsPage />} />
                 <Route path="/promemoria" element={<SchedulesPage />} />
                 <Route path="/notifiche" element={<NotificationStatusPage />} />
                 <Route path="/feedback" element={<FeedbackForm />} />

@@ -32,7 +32,7 @@ export function FeedbackForm() {
     <main className="page">
       <div className="row">
         <h1>Suggerimenti</h1>
-        <Link to="/profilo">Profilo</Link>
+        <Link to="/aiuto">Aiuto</Link>
       </div>
       <form className="stack" onSubmit={submit} noValidate>
         <label>

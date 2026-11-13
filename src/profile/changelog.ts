@@ -12,6 +12,16 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '1.11.0',
+    date: '2026-11-12',
+    title: 'Profilo più semplice',
+    notes: [
+      'Il Profilo ora è un elenco di sei argomenti, ognuno con una breve descrizione.',
+      'Obiettivo, avvisi, bevute, aspetto, account e aiuto hanno una pagina dedicata: meno impostazioni tutte insieme.',
+      'Anche la guida di Glu conosce le nuove pagine e ti porta direttamente nel posto giusto.',
+    ],
+  },
+  {
     version: '1.10.0',
     date: '2026-11-12',
     title: 'Glu in 3D',

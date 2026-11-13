@@ -252,7 +252,7 @@ describe('«Glu tranquillo»', () => {
   })
 
   it('l’interruttore in Profilo › Aspetto lo salva sul telefono', async () => {
-    window.location.hash = '#/profilo'
+    window.location.hash = '#/aspetto'
     render(<App />)
     const toggle = await screen.findByRole('checkbox', { name: /glu tranquillo/i })
     expect(toggle).not.toBeChecked()

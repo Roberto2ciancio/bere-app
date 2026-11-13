@@ -1,0 +1,98 @@
+name: Pubblica dev
+
+# Aggiorna solo il ramo di prova: l'app vera viene ricostruita da main, senza migrazioni.
+on:
+  push:
+    branches: [profile-redesign]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: production
+      - uses: actions/checkout@v4
+        with:
+          path: devapp
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: devapp/package-lock.json
+      - run: npm ci
+        working-directory: production
+      - run: npm run build
+        working-directory: production
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+      - run: npm ci
+        working-directory: devapp
+      - run: npm test
+        working-directory: devapp
+      - run: npm run lint
+        working-directory: devapp
+      - run: npm run build:dev
+        working-directory: devapp
+        env:
+          VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+      - name: Unisci app vera di main e nuova dev app
+        run: |
+          mkdir -p dist/dev
+          cp -a production/dist/. dist/
+          cp -a devapp/dist/dev/. dist/dev/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  phones:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble
+      options: --ipc=host
+    env:
+      HOME: /root
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:e2e
+        timeout-minutes: 20
+        env:
+          VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-telefoni-dev
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  deploy:
+    needs: [build, phones]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

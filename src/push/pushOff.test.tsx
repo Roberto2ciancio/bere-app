@@ -56,7 +56,7 @@ beforeEach(() => {
   fake.tables.push_subscriptions = [{ user_id: 'u1', endpoint: ENDPOINT }]
   fake.tables.push_log = []
   fake.tables.service_status = [{ id: 1, last_run_at: new Date().toISOString() }]
-  window.location.hash = '#/profilo'
+  window.location.hash = '#/avvisi'
 })
 
 afterEach(() => {
@@ -127,6 +127,7 @@ describe('spegnere le notifiche dal profilo', () => {
   })
 
   it('uscire dall\'account non equivale a spegnerle: al prossimo accesso tornano', async () => {
+    window.location.hash = '#/account'
     browser()
     render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: 'Esci' }))
@@ -173,7 +174,7 @@ describe('spegnere le notifiche da Stato notifiche', () => {
 
   it('dopo la riattivazione un vecchio invio mancato non fa scattare il falso allarme', async () => {
     browser()
-    window.location.hash = '#/profilo'
+    window.location.hash = '#/avvisi'
     await turnOff()
     await userEvent.click(screen.getByRole('button', { name: 'Attiva le notifiche' }))
     await screen.findByRole('button', { name: 'Disattiva le notifiche' })
@@ -188,7 +189,7 @@ describe('spegnere le notifiche da Stato notifiche', () => {
 
   it('un invio mancato dopo la riattivazione invece avvisa', async () => {
     browser()
-    window.location.hash = '#/profilo'
+    window.location.hash = '#/avvisi'
     await turnOff()
     await userEvent.click(screen.getByRole('button', { name: 'Attiva le notifiche' }))
     await screen.findByRole('button', { name: 'Disattiva le notifiche' })

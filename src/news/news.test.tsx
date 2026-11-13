@@ -41,7 +41,7 @@ describe('Newsletter', () => {
     for (const note of CHANGELOG.at(-1)!.notes) expect(within(cards.at(-1)!).getByText(note)).toBeInTheDocument()
     expect(localStorage.getItem(NEWS_READ_KEY)).toBe(__APP_VERSION__)
     expect(hasUnreadNews()).toBe(false)
-    expect(screen.getByRole('link', { name: '‹ Oggi' })).toHaveAttribute('href', '/home')
+    expect(screen.getByRole('link', { name: '‹ Aiuto' })).toHaveAttribute('href', '/aiuto')
   })
 
   it('una versione nuova riaccende il pallino, una già letta no', () => {

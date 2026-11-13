@@ -63,7 +63,7 @@ export function CupsPage() {
     <main className="page">
       <div className="row">
         <h1>Tazze e bevande</h1>
-        <Link to="/profilo">Profilo</Link>
+        <Link to="/bevute">Bevute</Link>
       </div>
       {error && <p role="alert" className="error">{error}</p>}
 

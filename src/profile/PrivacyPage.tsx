@@ -6,7 +6,7 @@ export function PrivacyPage() {
     <main className="page">
       <div className="row">
         <h1>Privacy</h1>
-        <Link to="/profilo">Profilo</Link>
+        <Link to="/account">Account</Link>
       </div>
 
       <section className="section">

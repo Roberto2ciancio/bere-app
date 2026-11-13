@@ -18,12 +18,12 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['giornaliero', 'litri', 'abbassare', 'alzare', 'aumentare', 'diminuire', 'impostare', 'meno', 'al giorno', 'quantità', 'modificare'],
     answer: [
-      'Apri la scheda «Profilo» e vai alla sezione «Obiettivo».',
+      'Apri «Profilo» › «Obiettivo».',
       'Scrivi i litri nel campo «Obiettivo giornaliero (litri)»: da 0,1 a 10.',
       'Tocca «Salva obiettivo». Vale da domani.',
       'Con un obiettivo sotto 1,5 L non entri in classifica.',
     ],
-    route: '/profilo',
+    route: '/profilo/obiettivo',
   },
   {
     id: 'goal-calc',
@@ -36,13 +36,13 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['calcolare', 'calcolo', 'calcolalo', 'calcolatore', 'peso', 'kg', 'chili', 'suggerito', 'stima', 'attività', 'sedentaria', 'litri giusti', 'automatico', 'acqua', 'devo bere', 'quanto bere'],
     answer: [
-      'Apri la scheda «Profilo», sezione «Obiettivo», e tocca «Calcolalo per me».',
+      'Apri «Profilo» › «Obiettivo» e tocca «Calcolalo per me».',
       'Scrivi il tuo «Peso (kg)» e scegli l\'«Attività»: Sedentaria, Leggera, Moderata o Intensa.',
       'Spunta «Oggi fa caldo», oppure tocca «Controlla il meteo di oggi».',
       'Leggi il «Suggerito» e tocca «Usa questo obiettivo»; poi «Salva obiettivo» per confermarlo.',
       'È solo una stima, non un consiglio medico.',
     ],
-    route: '/profilo',
+    route: '/profilo/obiettivo',
   },
   {
     id: 'goal-heat',
@@ -55,12 +55,12 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['caldo', 'giorni caldi', 'temperatura', 'gradi', 'meteo', 'città', 'estate', 'afa', 'aumento', 'automatico'],
     answer: [
-      'Apri la scheda «Profilo», sezione «Obiettivo», e trova «Giorni caldi».',
+      'Apri «Profilo» › «Obiettivo» e trova «Giorni caldi».',
       'Attiva «Più acqua nei giorni caldi».',
       'Scegli la città: scrivila e tocca «Cerca», oppure tocca «Usa la mia posizione». Con «Cambia» la modifichi.',
       "Nei giorni caldi l'obiettivo sale: +250 ml dai 25 °C, +500 ml dai 30 °C, +750 ml dai 35 °C. Lo vedi nella scheda «Oggi».",
     ],
-    route: '/profilo',
+    route: '/profilo/obiettivo',
   },
   {
     id: 'workout',
@@ -94,7 +94,7 @@ export const GUIDE: GuideEntry[] = [
     answer: [
       'Nella scheda «Oggi» tocca il pulsante grande «Ho bevuto», con la quantità scritta accanto.',
       "Il totale sale e Glu si riempie. Un secondo tocco subito dopo viene ignorato, per evitare doppioni.",
-      'Per cambiare la quantità del pulsante vai su «Profilo», sezione «Bevute».',
+      'Per cambiare la quantità del pulsante vai su «Profilo» › «Bevute e tazze».',
     ],
     route: '/home',
   },
@@ -109,11 +109,11 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['quantità', 'millilitri', 'ml', 'predefinita', 'pulsante', 'grande', 'piccolo', '150', '250', '300', '500'],
     answer: [
-      'Apri la scheda «Profilo» e vai alla sezione «Bevute».',
+      'Apri «Profilo» › «Bevute e tazze».',
       'In «Quantità per bevuta» scegli 150, 200, 250, 300 o 500 ml.',
       'Il pulsante «Ho bevuto» nella scheda «Oggi» userà quella quantità.',
     ],
-    route: '/profilo',
+    route: '/bevute',
   },
   {
     id: 'drink-other',
@@ -193,7 +193,7 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['tazza', 'tazze', 'bottiglia', 'borraccia', 'bicchiere', 'personalizzata', 'creare', 'creo', 'crea', 'aggiungere', 'tazze e bevande', 'capienza', '330', '750'],
     answer: [
-      'Apri «Tazze e bevande»: dal «Profilo», sezione «Bevute».',
+      'Apri «Profilo» › «Bevute e tazze» › «Tazze e bevande».',
       'In «Le tue tazze» scrivi il «Nome della tazza» e i «Millilitri», scegli la bevanda e tocca «Aggiungi tazza».',
       "Con «Elimina» la togli. Senza tazze tue l'app propone Bicchiere, Tazza e Bottiglia.",
     ],
@@ -210,7 +210,7 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['bevanda', 'bevande', 'personalizzata', 'creare', 'creo', 'crea', 'aggiungere', 'nuova', 'tisana', 'spremuta', 'inventare', 'non c\'è', 'idrata', 'tazze e bevande'],
     answer: [
-      'Apri «Tazze e bevande»: dal «Profilo», sezione «Bevute».',
+      'Apri «Profilo» › «Bevute e tazze» › «Tazze e bevande».',
       'In «Le tue bevande» scrivi il «Nome della bevanda» e «Quanto idrata (%)», da 0 a 150.',
       'Tocca «Aggiungi bevanda»: la trovi poi tra le bevande quando segni una bevuta.',
     ],
@@ -390,7 +390,7 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['programma', 'programmi', 'spegnere', 'spengo', 'attivo', 'eliminare', 'cancellare', 'doppie', 'doppio', 'uguali', 'due', 'duplicate', 'disattivare', 'elimina programma', 'senza cancellarlo', 'notifiche', 'meno', 'troppi'],
     answer: [
-      'Apri la pagina «Promemoria» (Profilo › «Gestisci i promemoria»).',
+      'Apri «Profilo» › «Promemoria e notifiche» › «Gestisci i promemoria».',
       'In «I tuoi programmi» togli la spunta per spegnere un programma senza perderlo.',
       '«Modifica» apre il programma; da lì puoi cambiare orari e giorni, oppure toccare «Elimina programma».',
       'Se due programmi attivi hanno gli stessi orari compare «Stai ricevendo notifiche doppie»: spegni o elimina uno dei due.',
@@ -408,12 +408,12 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['fascia attiva', 'fascia', 'ore attive', 'notte', 'dormo', 'solo', 'dividi', 'limitare', 'certe ore', 'limito', '20'],
     answer: [
-      'Apri la scheda «Profilo», sezione «Obiettivo», e trova «Fascia attiva».',
+      'Apri «Profilo» › «Obiettivo» e trova «Fascia attiva».',
       "Attiva «Dividi l'obiettivo sulle ore attive» e scegli «Dalle» e «Alle».",
       'Tocca «Salva fascia».',
       "L'app conta e manda promemoria solo dentro la fascia, e nella scheda «Oggi» ricalcola quanto bere ogni ora.",
     ],
-    route: '/profilo',
+    route: '/profilo/obiettivo',
   },
   {
     id: 'reminders-snooze',
@@ -458,12 +458,12 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['pausa', 'vacanza', 'malattia', 'malato', 'male', 'sto male', 'sospendere', 'sospendo', 'sospensione', 'riprendi', 'riprendere', 'giorni di stop', 'stop', 'rompere', 'malata', 'influenza'],
     answer: [
-      'Apri la scheda «Profilo», sezione «Promemoria e notifiche», e trova «Pausa».',
+      'Apri «Profilo» › «Promemoria e notifiche», e trova «Pausa».',
       'Scegli la durata: «Oggi», «3 giorni», «7 giorni» o «14 giorni».',
       'Le notifiche si fermano e la serie non si rompe.',
       'Per finire prima tocca «Riprendi adesso».',
     ],
-    route: '/profilo',
+    route: '/avvisi',
   },
 
   // --- Notifiche ---
@@ -478,7 +478,7 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['notifiche', 'attivare', 'abilitare', 'permesso', 'consentire', 'push', 'ricevere', 'accendere', 'bloccate', 'attivo'],
     answer: [
-      'Apri la scheda «Profilo», sezione «Promemoria e notifiche», e tocca «Attiva le notifiche» (anche in «Stato notifiche»).',
+      'Apri «Profilo» › «Promemoria e notifiche», e tocca «Attiva le notifiche» (anche in «Stato notifiche»).',
       'Accetta la richiesta del telefono.',
       'Se sono bloccate, riattivale da Impostazioni › Notifiche › Bere e riapri l\'app.',
       'I promemoria si creano in «Gestisci i promemoria».',
@@ -496,12 +496,12 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['notifiche', 'disattivare', 'spegnere', 'spengo', 'smettere', 'silenziare', 'disattiva', 'basta'],
     answer: [
-      'Apri la scheda «Profilo», sezione «Promemoria e notifiche».',
+      'Apri «Profilo» › «Promemoria e notifiche».',
       'Tocca «Disattiva le notifiche» (c\'è anche in «Stato notifiche»).',
       'I tuoi programmi restano salvati: per riaccenderle tocca «Attiva le notifiche».',
       'Per fermarle solo per qualche giorno usa «Pausa».',
     ],
-    route: '/profilo',
+    route: '/avvisi',
   },
   {
     id: 'push-problems',
@@ -533,11 +533,11 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['bevuto 200', 'bevuto 500', '200', '500', 'due pulsanti', 'quantità nella notifica', 'bevuto ✓', 'posto', 'al posto'],
     answer: [
-      'Apri la scheda «Profilo», sezione «Promemoria e notifiche».',
+      'Apri «Profilo» › «Promemoria e notifiche».',
       'Attiva «Nel promemoria «Bevuto 200 ml» e «Bevuto 500 ml»».',
       'Su Android i pulsanti sono al massimo due: le quantità prendono il posto di «Bevuto ✓» e «Tra 15 min».',
     ],
-    route: '/profilo',
+    route: '/avvisi',
   },
   {
     id: 'push-stop',
@@ -549,11 +549,11 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['fermati', 'fermare', 'finito', 'completato', 'smettere', 'fermo'],
     answer: [
-      'Apri la scheda «Profilo», sezione «Promemoria e notifiche».',
+      'Apri «Profilo» › «Promemoria e notifiche».',
       "Attiva «Fermati quando raggiungo l'obiettivo».",
       "Una volta raggiunto l'obiettivo di oggi, i promemoria si fermano.",
     ],
-    route: '/profilo',
+    route: '/avvisi',
   },
   {
     id: 'push-friends',
@@ -566,12 +566,12 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['sproni', 'spronarmi', 'avvisare', 'bloccare', 'blocco', 'condividere', 'sapere', 'avvisami'],
     answer: [
-      'Apri la scheda «Profilo», sezione «Promemoria e notifiche».',
+      'Apri «Profilo» › «Promemoria e notifiche».',
       '«Gli amici possono spronarmi»: spegnilo per non ricevere sproni.',
       '«Avvisa gli amici quando raggiungo l\'obiettivo»: decidi se loro lo sanno.',
       '«Avvisami quando un amico raggiunge l\'obiettivo»: decidi se lo sai tu.',
     ],
-    route: '/profilo',
+    route: '/avvisi',
   },
   {
     id: 'push-summary',
@@ -584,10 +584,10 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['riepilogo', 'serale', 'sera', 'resoconto', 'settimana', 'lunedì', 'settimanale', 'inattivo', 'non apro', 'un giorno', 'mancato', 'messaggi del lunedì'],
     answer: [
-      'Apri la scheda «Profilo», sezione «Promemoria e notifiche».',
+      'Apri «Profilo» › «Promemoria e notifiche».',
       '«Ricordami di bere se non apro l\'app da un giorno», «Riepilogo serale se oggi mi è mancato parecchio» e «Resoconto della settimana il lunedì» si accendono e spengono qui.',
     ],
-    route: '/profilo',
+    route: '/avvisi',
   },
   {
     id: 'iphone',
@@ -813,11 +813,11 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['nome', 'chiamo', 'chiamarmi', 'nickname', 'nomignolo', 'username', 'rinominare', 'chiama'],
     answer: [
-      'Apri la scheda «Profilo»: in alto, nel campo «Nome», scrivi il nuovo nome (massimo 40 caratteri).',
+      'Apri «Profilo» › «Aspetto e Glu»: nel campo «Nome», scrivi il nuovo nome (massimo 40 caratteri).',
       'Tocca «Salva nome».',
       'Nome e foto sono visibili agli altri utenti nella classifica.',
     ],
-    route: '/profilo',
+    route: '/aspetto',
   },
   {
     id: 'photo',
@@ -830,11 +830,11 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['foto', 'avatar', 'immagine', 'fotografia', 'faccia', 'carica', 'togliere foto'],
     answer: [
-      'Apri la scheda «Profilo»: in alto trovi la tua immagine.',
+      'Apri «Profilo» › «Aspetto e Glu»: trovi la tua immagine.',
       'Tocca «Cambia foto» per caricarne una tua, oppure scegli un avatar in «Oppure scegli un avatar».',
       'Per togliere la foto scegli uno degli avatar. Nome e foto sono visibili a tutti in classifica.',
     ],
-    route: '/profilo',
+    route: '/aspetto',
   },
   {
     id: 'background',
@@ -847,11 +847,11 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['sfondo', 'wallpaper', 'scegli uno sfondo', 'rimuovi sfondo', 'foto di sfondo'],
     answer: [
-      'Apri la scheda «Profilo» e vai alla sezione «Aspetto».',
+      'Apri «Profilo» › «Aspetto e Glu».',
       'In «Sfondo dell\'app» tocca «Scegli uno sfondo» (poi diventa «Cambia sfondo») e scegli un\'immagine.',
       'Per toglierlo tocca «Rimuovi sfondo». Lo sfondo lo vedi solo tu.',
     ],
-    route: '/profilo',
+    route: '/aspetto',
   },
   {
     id: 'units',
@@ -864,10 +864,10 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['unità', 'misura', 'litri', 'once', 'oz', 'ml', 'millilitri', 'americane', 'unità di misura'],
     answer: [
-      'Apri la scheda «Profilo» e vai alla sezione «Bevute».',
+      'Apri «Profilo» › «Bevute e tazze».',
       'In «Unità di misura» scegli «Litri» oppure «Once».',
     ],
-    route: '/profilo',
+    route: '/bevute',
   },
   {
     id: 'sound',
@@ -880,11 +880,11 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['suono', 'suoni', 'rumore', 'audio', 'campanella', 'bolla', 'gong', 'nessuno', 'muto', 'silenzioso', 'volume'],
     answer: [
-      'Apri la scheda «Profilo» e vai alla sezione «Bevute».',
+      'Apri «Profilo» › «Bevute e tazze».',
       'In «Suono» scegli Goccia, Campanella, Bolla, Gong oppure Nessuno: toccandolo lo senti subito.',
       'Il suono si sente solo con l\'app aperta; le notifiche usano il suono scelto nelle impostazioni del telefono.',
     ],
-    route: '/profilo',
+    route: '/bevute',
   },
   {
     id: 'glu-calm',
@@ -897,10 +897,10 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['glu tranquillo', 'tranquillo', 'scenette', 'tremarelle', 'animazioni', 'movimento', 'calmo', 'fermo', 'disturba'],
     answer: [
-      'Apri la scheda «Profilo» e vai alla sezione «Aspetto».',
+      'Apri «Profilo» › «Aspetto e Glu».',
       'Attiva «Glu tranquillo»: Glu resta, ma senza scenette e tremarelle.',
     ],
-    route: '/profilo',
+    route: '/aspetto',
   },
   {
     id: 'glu-3d',
@@ -913,10 +913,10 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['3d', 'tre dimensioni', 'tridimensionale', 'batteria', 'risparmiare', 'consumare', 'consumo', 'glu in 3d', 'grafica'],
     answer: [
-      "Apri la scheda «Profilo» e vai alla sezione «Aspetto».",
+      "Apri «Profilo» › «Aspetto e Glu».",
       'Con «Glu in 3D» attivo Glu si muove in tre dimensioni. Spegnilo per risparmiare batteria: vale subito.',
     ],
-    route: '/profilo',
+    route: '/aspetto',
   },
   {
     id: 'dark',
@@ -946,11 +946,11 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['copia', 'backup', 'ripristino', 'ripristinare', 'esportare', 'esporto', 'scaricare', 'csv', 'json', 'excel', 'file'],
     answer: [
-      'Apri la scheda «Profilo», sezione «Account», e tocca «Copia e ripristino dei dati».',
+      'Apri «Profilo» › «Account e privacy», e tocca «Copia e ripristino dei dati».',
       '«Scarica copia (JSON)» salva tutto in un file; «Scarica bevute (CSV)» salva solo le bevute, apribili in un foglio di calcolo.',
       '«Ripristina da una copia» aggiunge le bevute, la caffeina, le tazze e le bevande che mancano, senza duplicarle. Non cambia programmi e obiettivi.',
     ],
-    route: '/profilo',
+    route: '/account',
   },
   {
     id: 'password',
@@ -963,11 +963,11 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['password', 'recuperare', 'recupero', 'reset', 'nuova', 'accesso', 'credenziali', 'ricordo'],
     answer: [
-      'Apri la scheda «Profilo», sezione «Account», e tocca «Password».',
+      'Apri «Profilo» › «Account e privacy», e tocca «Password».',
       'Scrivi la «Password attuale» e la «Nuova password» (almeno 8 caratteri), poi tocca «Cambia password».',
       'Se non la ricordi tocca «Non la ricordo: inviami un link». Da fuori dall\'app, nella pagina di accesso, usa «Password dimenticata?».',
     ],
-    route: '/profilo',
+    route: '/account',
   },
   {
     id: 'signout',
@@ -980,10 +980,10 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['uscire', 'esci', 'esco', 'logout', 'disconnettere', 'disconnettermi', 'utente', 'sloggare'],
     answer: [
-      'Apri la scheda «Profilo», in fondo alla sezione «Account».',
+      'Apri «Profilo» › «Account e privacy».',
       'Tocca «Esci».',
     ],
-    route: '/profilo',
+    route: '/account',
   },
   {
     id: 'delete',
@@ -996,7 +996,7 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['profilo', 'account', 'definitivamente', 'per sempre', 'cancellazione', 'disiscrivere', 'chiudere', 'elimina', 'cancellare', 'eliminare'],
     answer: [
-      'Apri la scheda «Profilo», sezione «Account», e tocca «Privacy e cancellazione dell\'account».',
+      'Apri «Profilo» › «Account e privacy», e tocca «Privacy e cancellazione dell\'account».',
       'Nella sezione «Cancellare il profilo» scrivi ELIMINA.',
       'Tocca «Elimina definitivamente il profilo»: cancella subito profilo, foto, bevute, caffeina e promemoria. Non si può annullare.',
     ],
@@ -1013,7 +1013,7 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['privacy', 'chi vede', 'vede', 'vedere', 'visibile', 'privati', 'supabase', 'età', 'anni', '14', 'condivisi', 'sicurezza', 'pubblico', 'conservati', 'conserva', 'informazioni', 'personali'],
     answer: [
-      'La pagina «Privacy» spiega cosa salviamo, chi lo vede, dove sono conservati i dati e l\'età minima (14 anni). La trovi nel «Profilo», sezione «Account».',
+      'La pagina «Privacy» spiega cosa salviamo, chi lo vede, dove sono conservati i dati e l\'età minima (14 anni). La trovi in «Profilo» › «Account e privacy».',
       'Nome, foto e giorni a obiettivo sono visibili a tutti; acqua, caffè, orari e sfondo restano privati.',
     ],
     route: '/privacy',
@@ -1031,7 +1031,7 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['suggerimento', 'suggerimenti', 'miglioramento', 'idea', 'proposta', 'feedback', 'consiglio', 'contattare', 'problema', 'bug', 'migliorare', 'proporre'],
     answer: [
-      'Apri la scheda «Profilo», sezione «Account», e tocca «Suggerisci un miglioramento».',
+      'Apri «Profilo» › «Account e privacy», e tocca «Suggerisci un miglioramento».',
       'Scrivi nel campo «Cosa miglioreresti?» (fino a 2000 caratteri) e tocca «Invia».',
     ],
     route: '/feedback',
@@ -1064,7 +1064,7 @@ export const GUIDE: GuideEntry[] = [
     ],
     keywords: ['newsletter', 'novità', 'nuovo', 'versione', 'aggiornamento', 'changelog', 'pallino', 'ultima versione', 'release'],
     answer: [
-      "Nella scheda «Oggi», in alto a destra, tocca l'icona «Newsletter»: ha un pallino se ci sono novità da leggere.",
+      "Nella scheda «Oggi», in alto a destra, tocca l'icona «Newsletter»: ha un pallino se ci sono novità da leggere. La trovi anche in «Profilo» › «Aiuto e suggerimenti».",
       'La pagina elenca le novità di Bere, versione per versione, dalla più recente.',
     ],
     route: '/novita',

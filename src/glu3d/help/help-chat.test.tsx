@@ -94,7 +94,7 @@ describe('HelpChat', () => {
     expect(steps).toEqual(entry.answer)
     expect(within(log).getByText('Forse cercavi')).toBeTruthy()
     fireEvent.click(within(log).getByRole('button', { name: 'Portami lì' }))
-    expect(h.navigate).toHaveBeenCalledWith('/profilo')
+    expect(h.navigate).toHaveBeenCalledWith('/profilo/obiettivo')
     expect(onClose).toHaveBeenCalled()
     expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe('')
   })
@@ -330,16 +330,15 @@ describe('GluStage: tocco su Glu', () => {
         useGluSpot({ spot: 'corner', mood: 'idle', help: 'home' })
         return <main><h1>Oggi</h1></main>
       }
-      function Profile() {
-        useGluSpot({ spot: 'corner', mood: 'idle', help: 'profilo' })
-        return <main><h1>Profilo</h1></main>
+      function Goal() {
+        return <main><h1>Obiettivo</h1></main>
       }
       render(
         <MemoryRouter initialEntries={['/home']}>
           <GluStageProvider active>
             <Routes>
               <Route path="/home" element={<Home />} />
-              <Route path="/profilo" element={<Profile />} />
+              <Route path="/profilo/obiettivo" element={<Goal />} />
             </Routes>
             <GluStage />
           </GluStageProvider>
@@ -350,7 +349,7 @@ describe('GluStage: tocco su Glu', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Portami lì' }))
       advance(50)
       expect(screen.queryByRole('dialog')).toBeNull()
-      expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Profilo' }))
+      expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Obiettivo' }))
     } finally {
       h.realNavigate = false
     }

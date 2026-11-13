@@ -458,7 +458,8 @@ describe('passi 1-4', () => {
     await click('Avanti')
     expect(await screen.findByText(/Da domani/)).toBeInTheDocument()
     const goal = suggestGoal(70, 'light', false)
-    expect(fake.tables.goal_changes).toContainEqual(expect.objectContaining({ user_id: 'u1', effective_from: goalChangeDate(new Date(), 'Europe/Rome'), goal_ml: goal }))
+    const deviceTz = new Intl.DateTimeFormat().resolvedOptions().timeZone
+    expect(fake.tables.goal_changes).toContainEqual(expect.objectContaining({ user_id: 'u1', effective_from: goalChangeDate(new Date(), deviceTz), goal_ml: goal }))
     await click('Avanti')
     expect(await screen.findByRole('progressbar', { name: 'Passo 4 di 7' })).toBeInTheDocument()
   })

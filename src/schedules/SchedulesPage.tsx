@@ -119,7 +119,7 @@ export function SchedulesPage() {
     <main className="page">
       <div className="row">
         <h1>Promemoria</h1>
-        <Link to="/profilo">Profilo</Link>
+        <Link to="/avvisi">Avvisi</Link>
       </div>
 
       {error && <p role="alert" className="error">{error}</p>}

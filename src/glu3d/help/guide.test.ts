@@ -3,7 +3,7 @@ import { GUIDE, PAGE_TIPS } from './guide'
 import { MIN_SCORE, normalize, rankGuide, searchGuide } from './search'
 
 // Rotte dichiarate in src/App.tsx (copiate qui: se App.tsx cambia, va aggiornata anche questa lista).
-const ROUTES = ['/home', '/classifica', '/storico', '/storico/calendario', '/tazze', '/profilo', '/promemoria', '/notifiche', '/feedback', '/privacy', '/novita', '/segnala']
+const ROUTES = ['/home', '/classifica', '/storico', '/storico/calendario', '/tazze', '/profilo', '/profilo/obiettivo', '/avvisi', '/bevute', '/aspetto', '/account', '/aiuto', '/promemoria', '/notifiche', '/feedback', '/privacy', '/novita', '/segnala']
 
 // Frasi scritte diversamente dalle `questions`: sinonimi, errori comuni, frasi lunghe.
 const REAL: [string, string][] = [

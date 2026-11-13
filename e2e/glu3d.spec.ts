@@ -135,6 +135,7 @@ test('un solo Glu viaggia tra le schede: angolo sopra la barra, fuori scena nei 
   await expectNoHorizontalScroll(page)
 
   await goTab(page, 'Profilo', '#/profilo')
+  await page.getByRole('link', { name: /^Promemoria e notifiche/ }).click()
   await page.getByRole('link', { name: 'Gestisci i promemoria' }).click()
   await expect(page).toHaveURL(/#\/promemoria$/)
   await expect(page.getByTestId('glu-stage')).toHaveAttribute('data-spot', 'away')
@@ -193,7 +194,7 @@ async function openHelp(page: Page) {
   await expect(focused).toBeFocused()
 }
 
-test('tocco su Glu nella Home: chat, domanda sull\'obiettivo, «Portami lì» apre il Profilo', async ({ page }) => {
+test('tocco su Glu nella Home: chat, domanda sull\'obiettivo, «Portami lì» apre la pagina Obiettivo', async ({ page }) => {
   await openHome(page, 'ok')
   await openHelp(page)
   for (const id of PAGE_TIPS.home) await expect(helpDialog(page).getByRole('button', { name: tipTitle(id) })).toBeVisible()
@@ -204,9 +205,9 @@ test('tocco su Glu nella Home: chat, domanda sull\'obiettivo, «Portami lì» ap
   await expect(log.getByText("come cambio l'obiettivo")).toBeVisible()
   await expect(log.getByText(GUIDE.find((e) => e.id === 'goal-change')!.answer[0])).toBeVisible()
   await log.getByRole('button', { name: 'Portami lì' }).click()
-  await expect(page).toHaveURL(/#\/profilo$/)
+  await expect(page).toHaveURL(/#\/profilo\/obiettivo$/)
   await expect(helpDialog(page)).toHaveCount(0)
-  await expect(page.getByRole('heading', { name: 'Profilo', level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Obiettivo', level: 1 })).toBeVisible()
 })
 
 test('tocco su Glu nello Storico: i suggerimenti dello Storico; Esc chiude e il focus torna su Glu', async ({ page }) => {

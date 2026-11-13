@@ -18,7 +18,7 @@ beforeEach(() => {
   fake.signIn()
   fake.tables.profiles = [{ id: 'u1', display_name: 'Anna', home_style: 'bottle', drink_ml: 200, tz: 'Europe/Rome', sound: 'none' }]
   fake.tables.goal_changes = [{ user_id: 'u1', effective_from: '2026-01-01', goal_ml: 3000 }]
-  window.location.hash = '#/profilo'
+  window.location.hash = '#/account'
 })
 
 async function change(current: string, next: string) {

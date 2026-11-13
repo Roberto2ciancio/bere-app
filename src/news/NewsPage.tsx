@@ -13,7 +13,7 @@ export function NewsPage() {
   return (
     <main className="page news">
       <header className="news-head">
-        <Link className="back-link" to="/home">‹ Oggi</Link>
+        <Link className="back-link" to="/aiuto">‹ Aiuto</Link>
         <h1>Newsletter</h1>
         <p className="hint">Tutte le novità di Bere, versione per versione. Stai usando la {__APP_VERSION__}.</p>
       </header>

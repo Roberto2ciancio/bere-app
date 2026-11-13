@@ -132,7 +132,7 @@ export function NotificationStatusPage() {
     <main className="page">
       <div className="row">
         <h1>Stato notifiche</h1>
-        <Link to="/profilo">Profilo</Link>
+        <Link to="/avvisi">Avvisi</Link>
       </div>
 
       {state === 'needs-install' && <InstallGuide />}

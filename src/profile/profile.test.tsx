@@ -67,7 +67,18 @@ describe('prepareImage', () => {
 })
 
 describe('ProfilePage', () => {
+  it('mostra le sei sezioni e apre la pagina Obiettivo', async () => {
+    render(<App />)
+    for (const name of ['Obiettivo', 'Promemoria e notifiche', 'Bevute e tazze', 'Aspetto e Glu', 'Account e privacy', 'Aiuto e suggerimenti']) {
+      expect(await screen.findByRole('link', { name: new RegExp(`^${name}`) })).toBeInTheDocument()
+    }
+    await userEvent.click(screen.getByRole('link', { name: /^Obiettivo/ }))
+    expect(await screen.findByRole('heading', { name: 'Obiettivo', level: 1 })).toBeInTheDocument()
+    expect(await screen.findByLabelText('Obiettivo giornaliero (litri)')).toBeInTheDocument()
+  })
+
   it('gli avvisi sociali sono accesi di default e si spengono uno per uno', async () => {
+    window.location.hash = '#/avvisi'
     render(<App />)
     const labels = [
       ["Avvisa gli amici quando raggiungo l'obiettivo", 'share_goal'],
@@ -85,6 +96,7 @@ describe('ProfilePage', () => {
   })
 
   it('le due quantità nel promemoria sono spente di default e si accendono', async () => {
+    window.location.hash = '#/avvisi'
     render(<App />)
     const box = await screen.findByRole('checkbox', { name: 'Nel promemoria «Bevuto 200 ml» e «Bevuto 500 ml»' })
     expect(box).not.toBeChecked()
@@ -95,6 +107,7 @@ describe('ProfilePage', () => {
   })
 
   it('in Aspetto non c’è più la scelta dello stile della home', async () => {
+    window.location.hash = '#/aspetto'
     render(<App />)
     await screen.findByDisplayValue('Anna')
     expect(screen.queryByRole('group', { name: 'Stile della home' })).not.toBeInTheDocument()
@@ -102,12 +115,15 @@ describe('ProfilePage', () => {
   })
 
   it('cambia nome, suono e quantità', async () => {
+    window.location.hash = '#/aspetto'
     render(<App />)
     const name = await screen.findByDisplayValue('Anna')
     await userEvent.clear(name)
     await userEvent.type(name, 'Annina')
     await userEvent.click(screen.getByRole('button', { name: 'Salva nome' }))
     await waitFor(() => expect(fake.tables.profiles[0].display_name).toBe('Annina'))
+    window.location.hash = '#/bevute'
+    await screen.findByRole('heading', { name: 'Bevute e tazze', level: 1 })
     await userEvent.click(screen.getByRole('button', { name: 'Campanella' }))
     await waitFor(() => expect(fake.tables.profiles[0].sound).toBe('campanella'))
     await userEvent.click(screen.getByRole('button', { name: '300 ml' }))
@@ -115,6 +131,7 @@ describe('ProfilePage', () => {
   })
 
   it('un nome vuoto non si salva', async () => {
+    window.location.hash = '#/aspetto'
     render(<App />)
     await userEvent.clear(await screen.findByDisplayValue('Anna'))
     await userEvent.click(screen.getByRole('button', { name: 'Salva nome' }))
@@ -123,6 +140,7 @@ describe('ProfilePage', () => {
   })
 
   it('un file non immagine mostra un messaggio', async () => {
+    window.location.hash = '#/aspetto'
     render(<App />)
     const input = await screen.findByLabelText('Foto del profilo')
     await userEvent.upload(input, image(10, 'application/pdf'), { applyAccept: false })
@@ -131,6 +149,7 @@ describe('ProfilePage', () => {
   })
 
   it('con uno sfondo mostra immagine e velo di leggibilità nell\'app', async () => {
+    window.location.hash = '#/aspetto'
     fake.tables.profiles[0].background_path = 'u1/sfondo.jpg'
     const { container } = render(<App />)
     await waitFor(() => {
@@ -140,6 +159,7 @@ describe('ProfilePage', () => {
   })
 
   it('rimuovere lo sfondo torna a quello predefinito e cancella il file', async () => {
+    window.location.hash = '#/aspetto'
     fake.tables.profiles[0].background_path = 'u1/sfondo.jpg'
     const { container } = render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: 'Rimuovi sfondo' }))
@@ -149,6 +169,7 @@ describe('ProfilePage', () => {
   })
 
   it('scegliere un avatar pronto cancella la foto caricata prima', async () => {
+    window.location.hash = '#/aspetto'
     fake.tables.profiles[0].avatar_path = 'u1/foto.jpg'
     render(<App />)
     await userEvent.click((await screen.findAllByRole('radio'))[0])
@@ -157,6 +178,7 @@ describe('ProfilePage', () => {
   })
 
   it('scegliere un avatar pronto dopo un altro non cancella nulla', async () => {
+    window.location.hash = '#/aspetto'
     fake.tables.profiles[0].avatar_path = 'preset:altro'
     render(<App />)
     await userEvent.click((await screen.findAllByRole('radio'))[0])
@@ -165,6 +187,7 @@ describe('ProfilePage', () => {
   })
 
   it('se il salvataggio dell avatar fallisce la foto resta', async () => {
+    window.location.hash = '#/aspetto'
     fake.tables.profiles[0].avatar_path = 'u1/foto.jpg'
     render(<App />)
     const radios = await screen.findAllByRole('radio')
@@ -175,6 +198,7 @@ describe('ProfilePage', () => {
   })
 
   it('il pulsante esci chiude la sessione', async () => {
+    window.location.hash = '#/account'
     render(<App />)
     await userEvent.click(await screen.findByRole('button', { name: 'Esci' }))
     expect(await screen.findByRole('heading', { name: 'Accedi' })).toBeInTheDocument()
