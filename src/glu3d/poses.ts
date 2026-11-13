@@ -79,6 +79,8 @@ export function poseFor(input: PoseInput): Pose {
   const t = still ? 0 : input.t
   const moodT = still ? 1e6 : input.moodT
   const thirst = calm ? 0 : clamp01(extras.thirst ?? 0)
+  const base = input.baseBody ?? BODY_CLASSIC
+  const isClassic = base.toUpperCase() === BODY_CLASSIC
 
   let jumpY = 0
   let armL = 0
@@ -170,7 +172,7 @@ export function poseFor(input: PoseInput): Pose {
     armR,
     eyeOpen,
     mouth,
-    bodyColor: mixColor(input.baseBody ?? BODY_CLASSIC, input.baseBody ? thirst * VARIANT_THIRST : thirst),
+    bodyColor: mixColor(base, isClassic ? thirst : thirst * VARIANT_THIRST),
     waterLevel: fill,
     waterTilt: calm ? 0 : -(extras.tilt ?? 0),
     headband: !!extras.headband,

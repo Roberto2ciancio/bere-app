@@ -116,4 +116,10 @@ describe('poseFor', () => {
     expect(half).not.toBe(baseBody)
     expect(half).not.toBe(full)
   })
+
+  it('sete: Glu classico (con o senza baseBody) arriva esattamente al grigio', () => {
+    expect(p({ extras: { thirst: 1 } }).bodyColor).toBe('#9DB4C4')
+    expect(p({ baseBody: '#CFEBFB', extras: { thirst: 1 } }).bodyColor).toBe('#9DB4C4')
+    expect(p({ baseBody: '#cfebfb', extras: { thirst: 1 } }).bodyColor).toBe('#9DB4C4')
+  })
 })
