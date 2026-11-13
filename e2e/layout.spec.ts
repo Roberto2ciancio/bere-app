@@ -389,6 +389,29 @@ test('Storico: «Condividi la settimana» sta nello schermo e prepara il PNG', a
   if (process.env.SHARE_SHOTS) await download.saveAs(`${process.env.SHARE_SHOTS}/settimana-${testInfo.project.name.replace(/\W+/g, '-')}.png`)
 })
 
+test('Aspetto e Glu: «Il tuo Glu» sta nello schermo e Glu Menta arriva in Home', async ({ page }) => {
+  // Tre giorni a obiettivo: 150 punti, livello 2 (Glu Menta sbloccato).
+  await openApp(page, '/profilo/aspetto', { streak: 3 })
+  const group = page.getByRole('radiogroup', { name: 'Il tuo Glu' })
+  await group.scrollIntoViewIfNeeded()
+  await expect(group.getByRole('radio')).toHaveCount(6)
+  const menta = group.getByRole('radio', { name: /^Glu Menta/ })
+  await expect(menta).not.toHaveAttribute('data-locked', 'true')
+  await expectNoHorizontalScroll(page)
+  // Aree di tocco di almeno 44 px.
+  for (const radio of await group.getByRole('radio').all()) {
+    const b = (await radio.boundingBox())!
+    expect(Math.min(b.width, b.height), 'area di tocco sotto i 44 px').toBeGreaterThanOrEqual(43.5)
+  }
+  // Una bloccata dice quanto manca.
+  await group.getByRole('radio', { name: /^Glu Limone/ }).click()
+  await expect(page.getByText('Ti mancano 150 punti al livello 3.')).toBeVisible()
+  await menta.click()
+  await expect(menta).toHaveAttribute('aria-checked', 'true')
+  await page.getByRole('navigation', { name: 'Sezioni' }).getByRole('link', { name: 'Oggi' }).click()
+  await expect(page.locator('.home-view [data-testid="glu"]').first()).toHaveAttribute('data-variant', 'menta')
+})
+
 const SECTIONS = [
   ['Obiettivo', 'obiettivo'],
   ['Promemoria e notifiche', 'avvisi'],

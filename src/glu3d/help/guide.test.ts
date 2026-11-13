@@ -10,6 +10,7 @@ const NEW_PROFILE_ROUTES = ['/profilo/obiettivo', '/profilo/avvisi', '/profilo/b
 // La guida si prova in entrambe le forme: Profilo nuovo (app di prova) e Profilo di sempre (app vera).
 const VARIANTS = [
   { name: 'app di prova, Profilo nuovo', guide: guideFor(true), routes: [...ROUTES, ...NEW_PROFILE_ROUTES] },
+  { name: 'app di prova con le varianti di Glu', guide: guideFor(true, true), routes: [...ROUTES, ...NEW_PROFILE_ROUTES] },
   { name: 'app vera, Profilo di sempre', guide: guideFor(false), routes: ROUTES },
 ]
 
@@ -232,6 +233,38 @@ describe('GUIDE: app vera (Profilo di sempre)', () => {
   it('stesse domande, parole chiave e titoli del Profilo nuovo: cambiano solo risposte e rotte', () => {
     const strip = (g: ReturnType<typeof guideFor>) => g.map(({ answer: _a, route: _r, ...rest }) => rest)
     expect(strip(guideFor(false))).toEqual(strip(guideFor(true)))
+  })
+})
+
+describe('GUIDE: «Cambiare Glu» solo con le varianti (app di prova)', () => {
+  const REAL_VARIANTS = [
+    'come cambio Glu?',
+    'voglio Glu di colore verde',
+    'come si sblocca Glu Fragola',
+    'dove scelgo il mio Glu',
+    'cosa vuol dire il lucchetto sui Glu',
+  ]
+  it('frasi reali, scritte a parte, trovano «Cambiare Glu»', () => {
+    const guide = guideFor(true, true)
+    const own = new Set(guide.flatMap((e) => e.questions.map((q) => q.toLowerCase())))
+    const failures: string[] = []
+    for (const phrase of REAL_VARIANTS) {
+      if (own.has(phrase.toLowerCase())) failures.push(`«${phrase}» è già una question`)
+      const got = searchGuide(phrase, guide).best?.id ?? null
+      if (got !== 'glu-variants') failures.push(`«${phrase}» → ${got}`)
+    }
+    expect(failures).toEqual([])
+  })
+
+  it('in produzione la voce non c’è e la guida resta quella di prima', () => {
+    for (const guide of [guideFor(true), guideFor(false)]) {
+      expect(guide.some((e) => e.id === 'glu-variants')).toBe(false)
+      expect(searchGuide('come cambio Glu', guide).best?.id).not.toBe('glu-variants')
+    }
+    expect(guideFor(true).length).toBe(guideFor(true, true).length - 1)
+    // Le frasi delle altre voci non cambiano risposta per la voce nuova.
+    expect(searchGuide('spegnere il 3d per consumare meno batteria', guideFor(true, true)).best?.id).toBe('glu-3d')
+    expect(searchGuide('modalità notte', guideFor(true, true)).best?.id).toBe('dark')
   })
 })
 

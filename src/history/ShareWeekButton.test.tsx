@@ -1,8 +1,15 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { CLASSIC_VARIANT, variantById, type GluVariant } from '../mascot/variants'
 import type { DayResult } from './stats'
 import { ShareWeekButton } from './ShareWeekButton'
+
+const glu = vi.hoisted(() => ({ variant: null as GluVariant | null }))
+vi.mock('../mascot/useGluVariant', async () => {
+  const { CLASSIC_VARIANT } = await import('../mascot/variants')
+  return { useGluVariant: () => glu.variant ?? CLASSIC_VARIANT }
+})
 
 const prepareWeek = vi.fn()
 const shareWeekImage = vi.fn()
@@ -29,6 +36,7 @@ const LATE = 60_000
 
 describe('ShareWeekButton', () => {
   afterEach(() => {
+    glu.variant = null
     prepareWeek.mockReset()
     shareWeekImage.mockReset()
   })
@@ -37,7 +45,7 @@ describe('ShareWeekButton', () => {
     prepareWeek.mockResolvedValue(PREPARED)
     shareWeekImage.mockResolvedValue('shared')
     render(<ShareWeekButton week={WEEK} currentStreak={4} units="ml" today="2026-11-13" prepareDelayMs={0} />)
-    await waitFor(() => expect(prepareWeek).toHaveBeenCalledWith(WEEK, 4, 'ml', '2026-11-13'))
+    await waitFor(() => expect(prepareWeek).toHaveBeenCalledWith(WEEK, 4, 'ml', '2026-11-13', CLASSIC_VARIANT.palette))
     // Il caricamento del modulo e il disegno finiscono in un attimo (finti).
     await new Promise((r) => setTimeout(r, 20))
     await userEvent.click(screen.getByRole('button', { name: LABEL }))
@@ -45,6 +53,13 @@ describe('ShareWeekButton', () => {
     expect(prepareWeek).toHaveBeenCalledTimes(1)
     // Già pronta: nessun «Preparo l'immagine…».
     expect(screen.queryByRole('button', { name: BUSY })).toBeNull()
+  })
+
+  it('con Glu Menta l’immagine si prepara nei colori della menta', async () => {
+    glu.variant = variantById('menta')
+    prepareWeek.mockResolvedValue(PREPARED)
+    render(<ShareWeekButton week={WEEK} currentStreak={4} units="ml" today="2026-11-13" prepareDelayMs={0} />)
+    await waitFor(() => expect(prepareWeek).toHaveBeenCalledWith(WEEK, 4, 'ml', '2026-11-13', variantById('menta').palette))
   })
 
   it('se i dati cambiano, l’immagine pronta non vale più', async () => {
@@ -59,7 +74,7 @@ describe('ShareWeekButton', () => {
     rerender(<ShareWeekButton week={changed} currentStreak={5} units="ml" today="2026-11-13" prepareDelayMs={LATE} />)
     await userEvent.click(screen.getByRole('button', { name: LABEL }))
     // Tocco prima che la nuova sia pronta: si aspetta quella nuova, non si usa la vecchia.
-    expect(prepareWeek).toHaveBeenLastCalledWith(changed, 5, 'ml', '2026-11-13')
+    expect(prepareWeek).toHaveBeenLastCalledWith(changed, 5, 'ml', '2026-11-13', CLASSIC_VARIANT.palette)
     expect(shareWeekImage).not.toHaveBeenCalled()
     second.resolve(newer)
     await waitFor(() => expect(shareWeekImage).toHaveBeenCalledWith(newer))

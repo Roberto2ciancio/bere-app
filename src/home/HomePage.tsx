@@ -19,7 +19,7 @@ import { pendingOnboardingStep } from '../onboarding/onboardingFlag'
 import { pushSupportState } from '../push/subscribe'
 import { readCache, writeCache } from '../lib/cache'
 import { useLevels } from '../levels/useLevels'
-import { useLevelUp } from '../levels/useLevelUp'
+import { levelUpDetail, useLevelUp } from '../levels/useLevelUp'
 import { Celebration } from '../mascot/Celebration'
 import { isGluCalm } from '../mascot/calm'
 import { useGluMood } from '../mascot/useGluMood'
@@ -386,7 +386,7 @@ export function HomePage() {
       </footer>
 
       {levelParty && levelUp && (
-        <Celebration kind="level" title={`Livello ${levelUp.level.level} · ${levelUp.level.name}`} detail="Sei salito di livello: continua così." onClose={levelUp.dismiss} />
+        <Celebration kind="level" title={`Livello ${levelUp.level.level} · ${levelUp.level.name}`} detail={levelUpDetail(levelUp.level.level)} onClose={levelUp.dismiss} />
       )}
       {party && !levelParty && <Celebration kind="goal" title="Obiettivo raggiunto!" detail={`Hai bevuto ${formatVolume(totalMl, units)}: oggi hai fatto centro.`} onClose={() => setParty(false)} />}
       {sheetOpen && <DrinkSheet userId={userId} units={units} defaultMl={drinkMl} onDrink={onDrink} onClose={() => setSheetOpen(false)} />}

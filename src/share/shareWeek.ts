@@ -1,5 +1,6 @@
 import type { Units } from '../domain/hydration'
 import type { DayResult } from '../history/stats'
+import type { GluVariant } from '../mascot/variants'
 import { drawWeekCard } from './drawWeekCard'
 import { shareImage, type ShareOutcome } from './shareImage'
 import { weekCardData } from './weekCard'
@@ -10,9 +11,9 @@ export interface PreparedWeek {
 }
 
 /** Disegna l'immagine della settimana: si fa in anticipo, così al tocco si condivide subito. */
-export async function prepareWeek(week: DayResult[], currentStreak: number, units: Units | undefined, today: string): Promise<PreparedWeek> {
+export async function prepareWeek(week: DayResult[], currentStreak: number, units: Units | undefined, today: string, palette?: GluVariant['palette']): Promise<PreparedWeek> {
   const data = weekCardData(week, currentStreak, units, today)
-  return { blob: await drawWeekCard(data), title: data.title }
+  return { blob: await drawWeekCard(data, undefined, palette), title: data.title }
 }
 
 /**

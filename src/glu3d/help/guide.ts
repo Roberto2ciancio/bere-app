@@ -2,6 +2,7 @@
 // sezioni e pulsanti. Se cambia una schermata, cambia anche la voce qui (e il test in guide.test.ts).
 // Le schede in basso sono: «Oggi», «Storico», «Classifica», «Profilo».
 
+import { GLU_VARIANTS } from '../../mascot/variantsFlag'
 import { NEW_PROFILE } from '../../profile/newProfile'
 import type { GuideEntry } from './search'
 
@@ -11,6 +12,8 @@ import type { GuideEntry } from './search'
  */
 export interface GuideSource extends GuideEntry {
   legacy?: { answer: string[]; route?: string }
+  /** `variants`: la voce c'è solo dove le varianti di Glu sono accese (GLU_VARIANTS, per ora solo l'app di prova). */
+  onlyWhen?: 'variants'
 }
 
 /** Le voci nella forma del Profilo nuovo (app di prova). Per l'app usare activeGuide(). */
@@ -1162,6 +1165,24 @@ export const GUIDE: GuideSource[] = [
     },
   },
   {
+    id: 'glu-variants',
+    title: 'Cambiare Glu',
+    questions: [
+      'come cambio Glu',
+      'come sblocco Glu Menta',
+      'posso avere un Glu di un altro colore',
+      'perché alcuni Glu hanno il lucchetto',
+    ],
+    keywords: ['glu', 'varianti', 'variante', 'colore', 'colori', 'menta', 'limone', 'fragola', 'cocco', 'sbloccare', 'sblocco', 'sbloccato', 'lucchetto', 'scegliere', 'scelgo', 'scelta', 'verde', 'rosa', 'giallo'],
+    answer: [
+      'Apri «Profilo» › «Aspetto e Glu» e scorri fino a «Il tuo Glu».',
+      'Tocca il Glu che preferisci: vale subito, ovunque ci sia Glu.',
+      'I Glu col lucchetto si sbloccano salendo di livello: Glu Menta al livello 2, poi uno nuovo a ogni livello fino al 6. Toccandoli vedi quanti punti mancano.',
+    ],
+    route: '/profilo/aspetto',
+    onlyWhen: 'variants',
+  },
+  {
     id: 'dark',
     title: 'Tema scuro',
     questions: [
@@ -1408,17 +1429,20 @@ export const PAGE_TIPS: Record<'home' | 'storico' | 'classifica' | 'profilo', st
   profilo: ['push-on', 'photo', 'pause', 'backup'],
 }
 
-const strip = ({ legacy: _legacy, ...entry }: GuideSource): GuideEntry => entry
+const strip = ({ legacy: _legacy, onlyWhen: _onlyWhen, ...entry }: GuideSource): GuideEntry => entry
 
-/** La guida per un Profilo: nuovo (pagine per voce) o di sempre (`legacy` dove serve). */
-export function guideFor(newProfile: boolean): GuideEntry[] {
-  return GUIDE.map((e) => (newProfile || !e.legacy ? strip(e) : { ...strip(e), answer: e.legacy.answer, route: e.legacy.route }))
+/** La guida per un Profilo: nuovo (pagine per voce) o di sempre (`legacy` dove serve); le voci `onlyWhen: 'variants'` solo con variants. */
+export function guideFor(newProfile: boolean, variants = false): GuideEntry[] {
+  return GUIDE.filter((e) => variants || e.onlyWhen !== 'variants').map((e) =>
+    newProfile || !e.legacy ? strip(e) : { ...strip(e), answer: e.legacy.answer, route: e.legacy.route },
+  )
 }
 
-const cache = new Map<boolean, GuideEntry[]>()
-/** La guida che vede l'utente: quella del Profilo nuovo solo dove NEW_PROFILE è acceso. */
+const cache = new Map<string, GuideEntry[]>()
+/** La guida che vede l'utente: quella del Profilo nuovo solo dove NEW_PROFILE è acceso, «Cambiare Glu» solo con GLU_VARIANTS. */
 export function activeGuide(): GuideEntry[] {
-  let guide = cache.get(NEW_PROFILE)
-  if (!guide) cache.set(NEW_PROFILE, (guide = guideFor(NEW_PROFILE)))
+  const key = `${NEW_PROFILE}:${GLU_VARIANTS}`
+  let guide = cache.get(key)
+  if (!guide) cache.set(key, (guide = guideFor(NEW_PROFILE, GLU_VARIANTS)))
   return guide
 }

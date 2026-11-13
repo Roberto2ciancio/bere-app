@@ -15,12 +15,20 @@ vi.mock('../ui/motion/effects', async (original) => ({
   confetti: vi.fn(),
 }))
 
+const variantsFlag = vi.hoisted(() => ({ on: false }))
+vi.mock('../mascot/variantsFlag', () => ({
+  get GLU_VARIANTS() {
+    return variantsFlag.on
+  },
+}))
+
 import { AuthProvider } from '../auth/AuthProvider'
 import { ProfileProvider } from '../auth/ProfileProvider'
 import { localParts } from '../domain/time'
 import { HistoryPage } from '../history/HistoryPage'
 import { HomePage } from '../home/HomePage'
 import { LeaderboardPage } from '../leaderboard/LeaderboardPage'
+import { resetSharedLevels } from './useLevels'
 import { readCache, writeCache } from '../lib/cache'
 import { confetti } from '../ui/motion/effects'
 
@@ -39,6 +47,8 @@ function renderIn(children: React.ReactNode) {
 
 beforeEach(() => {
   localStorage.clear()
+  variantsFlag.on = false
+  resetSharedLevels()
   vi.mocked(confetti).mockClear()
   fake = createFakeSupabase()
   fake.signIn()
@@ -94,6 +104,35 @@ describe('festa al nuovo livello', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Evviva!' }))
     expect(await screen.findByRole('dialog', { name: 'Obiettivo raggiunto!' })).toBeInTheDocument()
     expect(confetti).toHaveBeenCalledWith('goal')
+  })
+})
+
+describe('festa al nuovo livello: Glu sbloccati (app di prova)', () => {
+  it('al livello 2 dice che si è sbloccato Glu Menta', async () => {
+    variantsFlag.on = true
+    fake.rpcResults.get_levels = [{ user_id: 'u1', points: 120 }]
+    writeCache('bere.lastLevel.u1', 1)
+    renderIn(<HomePage />)
+    const dialog = await screen.findByRole('dialog', { name: 'Livello 2 · Goccia' })
+    expect(dialog).toHaveTextContent('Hai sbloccato Glu Menta! Provalo in Aspetto e Glu.')
+  })
+
+  it('un livello senza Glu nuovo (7) non ne parla', async () => {
+    variantsFlag.on = true
+    fake.rpcResults.get_levels = [{ user_id: 'u1', points: 2200 }]
+    writeCache('bere.lastLevel.u1', 6)
+    renderIn(<HomePage />)
+    const dialog = await screen.findByRole('dialog', { name: /^Livello 7/ })
+    expect(dialog).not.toHaveTextContent('Hai sbloccato')
+  })
+
+  it('in produzione (flag spento) nessun messaggio di sblocco', async () => {
+    fake.rpcResults.get_levels = [{ user_id: 'u1', points: 120 }]
+    writeCache('bere.lastLevel.u1', 1)
+    renderIn(<HomePage />)
+    const dialog = await screen.findByRole('dialog', { name: 'Livello 2 · Goccia' })
+    expect(dialog).toHaveTextContent('Sei salito di livello: continua così.')
+    expect(dialog).not.toHaveTextContent('Hai sbloccato')
   })
 })
 

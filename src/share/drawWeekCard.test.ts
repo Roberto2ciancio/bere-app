@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { CARD_HEIGHT, CARD_WIDTH, drawWeekCard, GLU_TIMEOUT_MS } from './drawWeekCard'
+import { variantById } from '../mascot/variants'
+import { CARD_HEIGHT, CARD_WIDTH, drawWeekCard, GLU_TIMEOUT_MS, recolorGlu } from './drawWeekCard'
+import festa from './glu/festa.svg?raw'
 import type { WeekCardData } from './weekCard'
 
 const DATA: WeekCardData = {
@@ -122,5 +124,30 @@ describe('drawWeekCard', () => {
     const { canvas } = fakeCanvas()
     vi.spyOn(canvas, 'toBlob').mockImplementation((cb) => cb(null))
     await expect(drawWeekCard(DATA, canvas)).rejects.toThrow()
+  })
+
+  it('con Glu Menta l’SVG di Glu usa i colori della menta', async () => {
+    const { canvas } = fakeCanvas()
+    await drawWeekCard(DATA, canvas, variantById('menta').palette)
+    const svg = await (vi.mocked(URL.createObjectURL).mock.calls[0][0] as Blob).text()
+    expect(svg).toContain('#D3F5E9')
+    expect(svg).toContain('#1FB58F')
+    expect(svg).not.toMatch(/#CFEBFB|#19A0E8/i)
+  })
+})
+
+describe('recolorGlu', () => {
+  it('col classico (o senza tavolozza) l’SVG resta identico: in produzione l’immagine non cambia', () => {
+    expect(recolorGlu(festa, variantById('glu').palette)).toBe(festa)
+    expect(recolorGlu(festa)).toBe(festa)
+  })
+  it('sostituisce corpo e acqua del classico con quelli della variante', () => {
+    const notte = variantById('notte').palette
+    const out = recolorGlu(festa, notte)
+    expect(out).toContain(`fill="${notte.body}"`)
+    expect(out).toContain(`fill="${notte.water}"`)
+    expect(out).not.toMatch(/#CFEBFB|#19A0E8/i)
+    // Occhi e bocca restano blu notte.
+    expect(out).toContain('#0B2545')
   })
 })

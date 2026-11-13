@@ -1,7 +1,10 @@
 import assetato from './glu/assetato.svg?raw'
 import festa from './glu/festa.svg?raw'
 import tranquillo from './glu/tranquillo.svg?raw'
+import type { GluVariant } from '../mascot/variants'
 import type { WeekCardData, WeekMood } from './weekCard'
+
+type GluPalette = GluVariant['palette']
 
 export const CARD_WIDTH = 1080
 export const CARD_HEIGHT = 1350
@@ -37,12 +40,22 @@ async function loadFonts() {
   }
 }
 
+// I colori del Glu classico negli SVG della proposta (corpo e acqua; braccia e piedi sono dentro la stessa sagoma).
+const CLASSIC_BODY = /#CFEBFB/gi
+const CLASSIC_WATER = /#19A0E8/gi
+
+/** L'SVG di Glu nei colori della variante. Senza tavolozza (o col classico) resta identico. */
+export function recolorGlu(svg: string, palette?: GluPalette): string {
+  if (!palette) return svg
+  return svg.replace(CLASSIC_BODY, palette.body).replace(CLASSIC_WATER, palette.water)
+}
+
 /** Oltre questa attesa Glu si lascia perdere: l'immagine non resta mai appesa. */
 export const GLU_TIMEOUT_MS = 3000
 
 /** Glu dall'SVG, come immagine. null se il browser non riesce a leggerlo: l'immagine si fa senza. */
-function loadGlu(mood: WeekMood): Promise<HTMLImageElement | null> {
-  const url = URL.createObjectURL(new Blob([GLU[mood]], { type: 'image/svg+xml' }))
+function loadGlu(mood: WeekMood, palette?: GluPalette): Promise<HTMLImageElement | null> {
+  const url = URL.createObjectURL(new Blob([recolorGlu(GLU[mood], palette)], { type: 'image/svg+xml' }))
   return new Promise((resolve) => {
     const img = new Image()
     const done = (result: HTMLImageElement | null) => {
@@ -83,8 +96,8 @@ function centered(ctx: CanvasRenderingContext2D, text: string, y: number, weight
 }
 
 /** Disegna «La mia settimana su Bere» (1080×1350, per le storie e i messaggi) e la restituisce come PNG. */
-export async function drawWeekCard(data: WeekCardData, canvas: HTMLCanvasElement = document.createElement('canvas')): Promise<Blob> {
-  const [, glu] = await Promise.all([loadFonts(), loadGlu(data.mood)])
+export async function drawWeekCard(data: WeekCardData, canvas: HTMLCanvasElement = document.createElement('canvas'), palette?: GluPalette): Promise<Blob> {
+  const [, glu] = await Promise.all([loadFonts(), loadGlu(data.mood, palette)])
   canvas.width = CARD_WIDTH
   canvas.height = CARD_HEIGHT
   const ctx = canvas.getContext('2d')

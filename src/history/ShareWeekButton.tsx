@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Units } from '../domain/hydration'
+import { useGluVariant } from '../mascot/useGluVariant'
 import type { PreparedWeek } from '../share/shareWeek'
 import type { DayResult } from './stats'
 
@@ -27,10 +28,12 @@ export function ShareWeekButton({ week, currentStreak, units, today, prepareDela
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
   const pending = useRef<Pending | null>(null)
-  // Cambiano i dati (una bevuta, un altro giorno): l'immagine pronta non vale più.
-  const key = JSON.stringify([week, currentStreak, units, today])
-  const latest = useRef({ week, currentStreak, units, today })
-  latest.current = { week, currentStreak, units, today }
+  // Glu dell'immagine nei colori della variante scelta (classico in produzione: stessa immagine di sempre).
+  const { id: variantId, palette } = useGluVariant()
+  // Cambiano i dati (una bevuta, un altro giorno, un altro Glu): l'immagine pronta non vale più.
+  const key = JSON.stringify([week, currentStreak, units, today, variantId])
+  const latest = useRef({ week, currentStreak, units, today, palette })
+  latest.current = { week, currentStreak, units, today, palette }
 
   function prepare(forKey: string): Pending {
     if (pending.current?.key === forKey) return pending.current
@@ -39,7 +42,7 @@ export function ShareWeekButton({ week, currentStreak, units, today, prepareDela
       key: forKey,
       promise: import('../share/shareWeek').then(async (mod) => ({
         mod,
-        prepared: await mod.prepareWeek(args.week, args.currentStreak, args.units, args.today),
+        prepared: await mod.prepareWeek(args.week, args.currentStreak, args.units, args.today, args.palette),
       })),
     }
     entry.promise.then(

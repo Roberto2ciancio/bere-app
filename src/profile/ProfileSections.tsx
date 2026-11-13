@@ -8,6 +8,7 @@ import { PushToggle } from '../push/PushToggle'
 import { ActiveHoursForm } from './ActiveHoursForm'
 import { AppearanceForm, DrinkPrefs, ProfileHeader } from './AppearanceForm'
 import { DataBackup } from './DataBackup'
+import { GluVariantPicker } from './GluVariantPicker'
 import { GoalForm } from './GoalForm'
 import { HeatForm } from './HeatForm'
 import { PasswordForm } from './PasswordForm'
@@ -76,6 +77,7 @@ export function AppearanceSettingsPage() {
   return (
     <ProfileSectionPage title="Aspetto e Glu" description="Nome, immagine del profilo, sfondo e animazioni di Glu.">
       <ProfileHeader />
+      <GluVariantPicker />
       <AppearanceForm />
     </ProfileSectionPage>
   )
