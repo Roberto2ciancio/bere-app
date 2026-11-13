@@ -245,8 +245,8 @@ export function Glu({ mood, fill, size = 160, onTap, extras = {}, variant = CLAS
   const varStyle = {
     '--glu-body': palette.body,
     '--glu-water': palette.water,
-    '--glu-limb': palette.limb,
-    '--glu-feet': palette.feet,
+    // Il classico lascia il valore di riserva del CSS (mantella invariata).
+    ...(variant.id === CLASSIC_VARIANT.id ? {} : { '--glu-limb': palette.limb, '--glu-feet': palette.feet }),
   } as CSSProperties
 
   // Braccia: una molla per lato; il saluto la fa oscillare. Col ventaglio il braccio sinistro resta alzato.

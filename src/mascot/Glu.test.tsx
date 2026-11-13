@@ -287,11 +287,20 @@ describe('Glu: varianti', () => {
     expect(el).toHaveAttribute('data-variant', variant.id)
     expect(el.style.getPropertyValue('--glu-body').toLowerCase()).toBe(variant.palette.body.toLowerCase())
     expect(el.style.getPropertyValue('--glu-water').toLowerCase()).toBe(variant.palette.water.toLowerCase())
-    expect(el.style.getPropertyValue('--glu-limb').toLowerCase()).toBe(variant.palette.limb.toLowerCase())
-    expect(el.style.getPropertyValue('--glu-feet').toLowerCase()).toBe(variant.palette.feet.toLowerCase())
+    const isClassic = variant.id === CLASSIC_VARIANT.id
+    expect(el.style.getPropertyValue('--glu-limb').toLowerCase()).toBe(isClassic ? '' : variant.palette.limb.toLowerCase())
+    expect(el.style.getPropertyValue('--glu-feet').toLowerCase()).toBe(isClassic ? '' : variant.palette.feet.toLowerCase())
     const detail = el.querySelector('.glu-detail')
     if (variant.detail === 'none') expect(detail).toBeNull()
     else expect(detail).toHaveAttribute('data-detail', variant.detail)
+  })
+
+  it('il classico non imposta --glu-limb, la menta sì', () => {
+    const { unmount } = renderGlu({ mood: 'idle', fill: 0.5 })
+    expect(svg().style.getPropertyValue('--glu-limb')).toBe('')
+    unmount()
+    renderGlu({ mood: 'idle', fill: 0.5, variant: GLU_VARIANTS_LIST[1] })
+    expect(svg().style.getPropertyValue('--glu-limb')).not.toBe('')
   })
 
   it('senza variante è il Glu classico', () => {
