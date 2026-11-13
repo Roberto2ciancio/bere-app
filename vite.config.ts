@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
   // L'app di prova usa lo stesso codice, ma il finto backend prende il posto di Supabase.
   const dev = mode === 'devapp'
   const iconPrefix = dev ? 'dev-' : ''
-  const themeColor = dev ? '#fff1e0' : '#e8f7fb'
+  const themeColor = dev ? '#fff1e0' : '#f2faff'
 
   return {
     base: dev ? '/bere-app/dev/' : '/bere-app/',

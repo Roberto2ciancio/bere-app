@@ -44,8 +44,8 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 - [x] 🟡 **Test automatici su telefono simulato** (fatto in 1.6.1: `npm run test:e2e`, bloccano la pubblicazione se falliscono) (Playwright con le misure di un iPhone): avrebbero preso il bug
       della bottiglia sopra «Prossimo promemoria» prima della pubblicazione.
 - [x] 🟢 🗄️ **Avviso se il job delle notifiche si ferma** (fatto: workflow «Controllo notifiche» ogni 10 minuti, apre e chiude da solo una issue su GitHub, che manda l'email): un'email se `send-reminders` non gira per 10 minuti.
-- [x] 🟢 📦 **Tema scuro** automatico, che segue il telefono (fatto in 1.9.0 nell'app; resta da fare il colore della barra di stato nell'APK, che richiede un nuovo APK).
-- [ ] 🟢 **Esporta in CSV** per aprire i dati in Excel.
+- [x] 🟢 📦 **Tema scuro** automatico, che segue il telefono (fatto in 1.9.0 nell'app; barra di stato e di navigazione scure nell'APK dalla versione 1.12.0, codice 3).
+- [x] 🟢 **Esporta in CSV** (c'era già: Profilo › Account e privacy › «Copia e ripristino dei dati» › «Scarica bevute (CSV)») per aprire i dati in Excel.
 
 ## Più avanti: Glu in 3D
 
