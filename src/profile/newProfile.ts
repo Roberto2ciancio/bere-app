@@ -15,4 +15,5 @@
  *   - Con Glu in 3D, in «Aiuto e suggerimenti» c’è «Chiedi a Glu»; la guida di Glu conosce le nuove pagine e
  *     ti porta nel posto giusto.
  */
-export const NEW_PROFILE: boolean = import.meta.env.MODE === 'devapp'
+// `import.meta.env` manca quando i test e2e (Node) importano la guida: lì vale come produzione.
+export const NEW_PROFILE: boolean = import.meta.env?.MODE === 'devapp'
