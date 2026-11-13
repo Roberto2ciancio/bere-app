@@ -383,7 +383,9 @@ function Stage() {
   useEffect(() => {
     if (!helpRequest) return
     takeHelp(helpRequest.seq)
-    opener.current = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null
+    // Il pulsante passato da chi apre; in mancanza l'elemento col focus (Safari su iOS non lo dà ai pulsanti toccati).
+    const active = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null
+    opener.current = helpRequest.opener ?? active
     startChat(helpRequest.page)
   }, [helpRequest, takeHelp, startChat])
   const closeChat = useCallback((reason?: HelpCloseReason) => {

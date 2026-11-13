@@ -1021,6 +1021,24 @@ export const GUIDE: GuideEntry[] = [
 
   // --- Suggerimenti, segnalazioni, novità ---
   {
+    id: 'ask-glu',
+    title: 'Chiedere aiuto a Glu',
+    questions: [
+      'come chiedo aiuto a Glu',
+      "cos'è chiedi a Glu",
+      'come apro la chat di Glu',
+      "c'è una guida dell'app",
+    ],
+    keywords: ['aiuto', 'guida', 'chiedi a glu', 'chat', 'chiedere', 'chiedo', 'assistente', 'help', 'istruzioni', 'spiegazioni'],
+    answer: [
+      "Tocca Glu quando è fermo nell'angolo o nell'anello di «Oggi»: si apre «Chiedi a Glu».",
+      'Oppure apri «Profilo» › «Aiuto e suggerimenti» e tocca «Chiedi a Glu».',
+      'Scrivi la domanda o tocca un suggerimento: Glu risponde con i passaggi e «Portami lì» ti porta nella schermata giusta.',
+      "La chat c'è con «Glu in 3D» acceso, in «Profilo» › «Aspetto e Glu».",
+    ],
+    route: '/profilo/aiuto',
+  },
+  {
     id: 'feedback',
     title: 'Inviare un suggerimento',
     questions: [

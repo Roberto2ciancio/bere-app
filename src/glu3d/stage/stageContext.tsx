@@ -26,6 +26,8 @@ interface Entry {
 export interface HelpRequest {
   page: HelpPage
   seq: number
+  /** Chi l'ha aperta: chiusa la chat, il focus torna lì (Safari su iOS non dà il focus ai pulsanti toccati). */
+  opener: HTMLElement | null
 }
 
 interface StageValue {
@@ -39,7 +41,7 @@ interface StageValue {
   setRing(el: HTMLElement | null): void
   fail(): void
   helpRequest: HelpRequest | null
-  openHelp(page: HelpPage): void
+  openHelp(page: HelpPage, opener?: HTMLElement | null): void
   /** Il palcoscenico ha preso in carico la richiesta. */
   takeHelp(seq: number): void
 }
@@ -67,7 +69,10 @@ export function GluStageProvider({ active, children }: { active: boolean; childr
   }, [])
   const fail = useCallback(() => setFailed(true), [])
   const [helpRequest, setHelpRequest] = useState<HelpRequest | null>(null)
-  const openHelp = useCallback((page: HelpPage) => setHelpRequest((r) => ({ page, seq: (r?.seq ?? 0) + 1 })), [])
+  const openHelp = useCallback(
+    (page: HelpPage, opener?: HTMLElement | null) => setHelpRequest((r) => ({ page, seq: (r?.seq ?? 0) + 1, opener: opener ?? null })),
+    [],
+  )
   const takeHelp = useCallback((seq: number) => setHelpRequest((r) => (r && r.seq === seq ? null : r)), [])
 
   const current = entries.length ? entries[entries.length - 1] : null
@@ -111,10 +116,11 @@ export function useGluStageShowsGlu(): boolean {
 }
 
 /**
- * Apre la chat «Chiedi a Glu» da un pulsante della pagina, con i suggerimenti di `page`.
+ * Apre la chat «Chiedi a Glu» da un pulsante della pagina, con i suggerimenti di `page`; `opener` (il pulsante)
+ * riprende il focus quando la chat si chiude.
  * null se il palcoscenico non c'è (2D o 3D spento): senza palcoscenico la chat non esiste.
  */
-export function useOpenGluHelp(): ((page: HelpPage) => void) | null {
+export function useOpenGluHelp(): ((page: HelpPage, opener?: HTMLElement | null) => void) | null {
   const ctx = useContext(StageContext)
   return ctx?.active ? ctx.openHelp : null
 }

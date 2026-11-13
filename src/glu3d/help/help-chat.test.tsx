@@ -421,6 +421,30 @@ describe('openHelp: la chat aperta da fuori', () => {
     expect(screen.queryByText(/Con «Glu in 3D» acceso/)).toBeNull()
   })
 
+  it('il pulsante passato a openHelp riprende il focus anche se il tocco non gliel’ha dato (Safari iOS)', () => {
+    function NoFocusButton() {
+      const openHelp = useOpenGluHelp()!
+      return <button onClick={(event) => openHelp('profilo', event.currentTarget)}>Chiedi a Glu</button>
+    }
+    render(<App><Page spec={null} /><NoFocusButton /></App>)
+    const ask = screen.getByRole('button', { name: 'Chiedi a Glu' })
+    // fireEvent.click non sposta il focus: come un tocco su iOS, resta sul body.
+    ;(document.activeElement as HTMLElement | null)?.blur()
+    fireEvent.click(ask)
+    expect(screen.getByRole('dialog', { name: 'Chiedi a Glu' })).toBeTruthy()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(document.activeElement).toBe(ask)
+  })
+
+  it('Profilo › Aiuto: il pulsante vero passa sé stesso e riprende il focus', () => {
+    render(<App><HelpSettingsPage /></App>)
+    const ask = screen.getByRole('button', { name: 'Chiedi a Glu' })
+    ;(document.activeElement as HTMLElement | null)?.blur()
+    fireEvent.click(ask)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(document.activeElement).toBe(ask)
+  })
+
   it('si può riaprire dopo averla chiusa', () => {
     render(<App><Page spec={null} /><AskButton /></App>)
     const ask = screen.getByRole('button', { name: 'Chiedi a Glu' })

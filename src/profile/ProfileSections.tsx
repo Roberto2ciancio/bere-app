@@ -107,7 +107,7 @@ export function HelpSettingsPage() {
       {openHelp ? (
         <section className="card help-ask">
           <p>Glu risponde alle domande sull'app: dove trovare un'impostazione, come segnare una bevuta, come funziona la serie.</p>
-          <button type="button" className="primary" onClick={() => openHelp('profilo')}>Chiedi a Glu</button>
+          <button type="button" className="primary" onClick={(event) => openHelp('profilo', event.currentTarget)}>Chiedi a Glu</button>
         </section>
       ) : (
         <p className="hint">Con «Glu in 3D» acceso puoi anche chiedere a Glu come si fa qualcosa: lo trovi in «Aspetto e Glu», se il telefono lo permette.</p>

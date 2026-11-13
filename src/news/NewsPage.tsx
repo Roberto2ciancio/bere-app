@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { CHANGELOG } from '../profile/changelog'
 import { markNewsRead } from '../profile/whatsNew'
 
@@ -9,11 +9,28 @@ const longDate = (day: string) =>
 /** Newsletter: tutte le novità di Bere, versione per versione, dalla più recente. */
 export function NewsPage() {
   useEffect(() => markNewsRead(), [])
+  // Si arriva dall'icona di Oggi, dal popup delle novità o da Profilo › Aiuto: si torna da dove si è venuti.
+  // Aperta direttamente (nessuna storia nell'app) si torna a Oggi.
+  const navigate = useNavigate()
+  const hasHistory = useLocation().key !== 'default'
 
   return (
     <main className="page news">
       <header className="news-head">
-        <Link className="back-link" to="/profilo/aiuto">‹ Aiuto e suggerimenti</Link>
+        {hasHistory ? (
+          <Link
+            className="back-link"
+            to="/home"
+            onClick={(event) => {
+              event.preventDefault()
+              navigate(-1)
+            }}
+          >
+            ‹ Indietro
+          </Link>
+        ) : (
+          <Link className="back-link" to="/home">‹ Oggi</Link>
+        )}
         <h1>Newsletter</h1>
         <p className="hint">Tutte le novità di Bere, versione per versione. Stai usando la {__APP_VERSION__}.</p>
       </header>

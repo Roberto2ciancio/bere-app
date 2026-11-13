@@ -115,6 +115,9 @@ const REAL: [string, string][] = [
   ['quanta caffeina posso bere', 'caffeine-limit'],
   ['quanta acqua ha un caffè', 'hydration-pct'],
   ['quanto caffè posso bere al giorno', 'caffeine-limit'],
+  // «Chiedi a Glu»
+  ['come faccio a chiedere aiuto', 'ask-glu'],
+  ['dove trovo la guida', 'ask-glu'],
 ]
 
 describe('GUIDE', () => {
