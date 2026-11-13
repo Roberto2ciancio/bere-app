@@ -28,23 +28,32 @@ const GLU: Record<WeekMood, string> = { festa, tranquillo, assetato }
 async function loadFonts() {
   const fonts = typeof document !== 'undefined' ? document.fonts : undefined
   if (!fonts?.load) return
-  const timeout = new Promise((resolve) => setTimeout(resolve, 2000))
-  await Promise.race([Promise.all([fonts.load(`800 64px "Baloo 2"`), fonts.load('800 36px Nunito'), fonts.load('700 36px Nunito')]).catch(() => {}), timeout])
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise((resolve) => (timer = setTimeout(resolve, 2000)))
+  try {
+    await Promise.race([Promise.all([fonts.load(`800 64px "Baloo 2"`), fonts.load('800 36px Nunito'), fonts.load('700 36px Nunito')]).catch(() => {}), timeout])
+  } finally {
+    clearTimeout(timer)
+  }
 }
+
+/** Oltre questa attesa Glu si lascia perdere: l'immagine non resta mai appesa. */
+export const GLU_TIMEOUT_MS = 3000
 
 /** Glu dall'SVG, come immagine. null se il browser non riesce a leggerlo: l'immagine si fa senza. */
 function loadGlu(mood: WeekMood): Promise<HTMLImageElement | null> {
   const url = URL.createObjectURL(new Blob([GLU[mood]], { type: 'image/svg+xml' }))
   return new Promise((resolve) => {
     const img = new Image()
-    img.onload = () => {
+    const done = (result: HTMLImageElement | null) => {
+      clearTimeout(timer)
+      img.onload = img.onerror = null
       URL.revokeObjectURL(url)
-      resolve(img)
+      resolve(result)
     }
-    img.onerror = () => {
-      URL.revokeObjectURL(url)
-      resolve(null)
-    }
+    const timer = setTimeout(() => done(null), GLU_TIMEOUT_MS)
+    img.onload = () => done(img)
+    img.onerror = () => done(null)
     img.src = url
   })
 }

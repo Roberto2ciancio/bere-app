@@ -85,3 +85,4 @@
 .jolly-note { margin: 10px 0 0; }
 .history .chart-col.saved .chart-bar { outline: 2px solid var(--water); outline-offset: -2px; }
 .share-week { width: 100%; margin-top: 12px; }
+.share-week[aria-disabled='true'] { opacity: 0.55; cursor: default; }

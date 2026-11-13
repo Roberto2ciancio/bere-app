@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { CARD_HEIGHT, CARD_WIDTH, drawWeekCard } from './drawWeekCard'
+import { CARD_HEIGHT, CARD_WIDTH, drawWeekCard, GLU_TIMEOUT_MS } from './drawWeekCard'
 import type { WeekCardData } from './weekCard'
 
 const DATA: WeekCardData = {
@@ -98,6 +98,24 @@ describe('drawWeekCard', () => {
     const { canvas, ctx } = fakeCanvas()
     await expect(drawWeekCard(DATA, canvas)).resolves.toBeInstanceOf(Blob)
     expect(ctx.drawImage).not.toHaveBeenCalled()
+  })
+
+  it('se Glu non risponde mai, dopo 3 secondi l’immagine si fa senza di lui', async () => {
+    class SilentImage extends FakeImage {
+      override set src(_value: string) {}
+    }
+    vi.stubGlobal('Image', SilentImage)
+    vi.useFakeTimers()
+    try {
+      const { canvas, ctx } = fakeCanvas()
+      const result = drawWeekCard(DATA, canvas)
+      await vi.advanceTimersByTimeAsync(GLU_TIMEOUT_MS)
+      await expect(result).resolves.toBeInstanceOf(Blob)
+      expect(ctx.drawImage).not.toHaveBeenCalled()
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:glu')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('se il canvas non dà il PNG, l’errore arriva a chi chiama', async () => {

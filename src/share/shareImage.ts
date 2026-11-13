@@ -2,7 +2,7 @@ export type ShareOutcome = 'shared' | 'downloaded' | 'cancelled'
 
 /**
  * Condivide l'immagine (WhatsApp, Instagram… dal menu del telefono) dove si possono condividere file;
- * altrimenti la scarica. Se chi condivide chiude il menu: «cancelled». Gli altri errori passano a chi chiama.
+ * altrimenti la scarica. Se chi condivide chiude il menu: «cancelled». Se il telefono rifiuta la condivisione (NotAllowedError) si scarica; gli altri errori passano a chi chiama.
  */
 export async function shareImage(blob: Blob, filename: string, title: string): Promise<ShareOutcome> {
   const file = new File([blob], filename, { type: blob.type || 'image/png' })
@@ -12,7 +12,8 @@ export async function shareImage(blob: Blob, filename: string, title: string): P
       return 'shared'
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled'
-      throw error
+      // Safari: se il tocco è «scaduto» la condivisione viene rifiutata. L'immagine si scarica lo stesso.
+      if (!(error instanceof DOMException && error.name === 'NotAllowedError')) throw error
     }
   }
   const url = URL.createObjectURL(blob)

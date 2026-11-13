@@ -59,9 +59,24 @@ describe('shareImage', () => {
     expect(clicked).toHaveLength(0)
   })
 
-  it('altri errori arrivano a chi chiama', async () => {
+  it('condivisione rifiutata (Safari, tocco scaduto): scarica il PNG', async () => {
     stubShare(async () => {
       throw new DOMException('no', 'NotAllowedError')
+    })
+    await expect(shareImage(blob, 'bere-settimana.png', 'x')).resolves.toBe('downloaded')
+    expect(clicked).toHaveLength(1)
+    expect(clicked[0].download).toBe('bere-settimana.png')
+  })
+
+  it('navigator.share parte subito, senza attese prima', () => {
+    stubShare(async () => {})
+    void shareImage(blob, 'bere-settimana.png', 'x')
+    expect(navigator.share).toHaveBeenCalledTimes(1)
+  })
+
+  it('altri errori arrivano a chi chiama', async () => {
+    stubShare(async () => {
+      throw new DOMException('no', 'DataError')
     })
     await expect(shareImage(blob, 'bere-settimana.png', 'x')).rejects.toThrow('no')
   })
