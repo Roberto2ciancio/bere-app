@@ -2,13 +2,14 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import type { Activity, Units } from '../domain/hydration'
 import { readCache, removeCache, writeCache } from '../lib/cache'
 import { supabase } from '../lib/supabase'
+import type { GluVariantId } from '../mascot/variants'
 import { useAuth } from './AuthProvider'
 
 const cacheKey = (userId: string) => `bere.profile.${userId}`
 // Chiave lasciata da versioni vecchie (ripiego dello stile Glu): si toglie al caricamento del profilo.
 const homeStyleKey = (userId: string) => `bere.homeStyle.${userId}`
 
-export type HomeStyle = 'glu'
+export type HomeStyle = GluVariantId
 
 export interface Profile {
   id: string

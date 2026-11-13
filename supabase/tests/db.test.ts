@@ -80,6 +80,7 @@ beforeAll(async () => {
   await db.query(`update profiles set home_style = 'cat' where id = $1`, [A])
   pre24 = (await db.query<{ id: string; home_style: string }>(`select id, home_style from profiles`)).rows
   await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0024_only_glu.sql'), 'utf8'))
+  await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0025_glu_variants.sql'), 'utf8'))
 }, 60_000)
 
 beforeEach(async () => {
@@ -1089,6 +1090,18 @@ describe('migrazione 0023: Glu', () => {
     expect(def).toContain("'glu'")
     expect(preMigration.find((r) => r.id === A)?.home_style).toBe('glu')
     expect(preMigration.find((r) => r.id === B)?.home_style).toBe('ring')
+  })
+})
+
+describe('varianti di Glu (0025)', () => {
+  it('accetta le sei varianti e rifiuta ogni altro valore', async () => {
+    for (const style of ['glu', 'menta', 'limone', 'fragola', 'cocco', 'notte']) {
+      await db.query(`update profiles set home_style = $2 where id = $1`, [A, style])
+      expect((await db.query<{ home_style: string }>(`select home_style from profiles where id = $1`, [A])).rows[0].home_style).toBe(style)
+    }
+    await expect(db.query(`update profiles set home_style = 'cat' where id = $1`, [A])).rejects.toThrow(/check/)
+    await expect(db.query(`update profiles set home_style = 'Menta' where id = $1`, [A])).rejects.toThrow(/check/)
+    await db.query(`update profiles set home_style = 'glu' where id = $1`, [A])
   })
 })
 
