@@ -12,6 +12,15 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '1.12.0',
+    date: '2026-11-13',
+    title: 'Condividi la settimana',
+    notes: [
+      'Nello Storico c’è «Condividi la settimana»: un’immagine con i giorni a obiettivo, i litri e la serie, da mandare su WhatsApp o Instagram.',
+      'L’immagine non mostra il tuo nome né la tua foto.',
+    ],
+  },
+  {
     version: '1.11.0',
     date: '2026-11-13',
     title: 'Profilo più semplice',
