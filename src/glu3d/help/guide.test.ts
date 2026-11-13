@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { GUIDE, PAGE_TIPS } from './guide'
+import { GUIDE, guideFor, PAGE_TIPS } from './guide'
 import { MIN_SCORE, normalize, rankGuide, searchGuide } from './search'
 
 // Rotte dichiarate in src/App.tsx (copiate qui: se App.tsx cambia, va aggiornata anche questa lista).
-const ROUTES = ['/home', '/classifica', '/storico', '/storico/calendario', '/tazze', '/profilo', '/profilo/obiettivo', '/profilo/avvisi', '/profilo/bevute', '/profilo/aspetto', '/profilo/account', '/profilo/aiuto', '/promemoria', '/notifiche', '/feedback', '/privacy', '/novita', '/segnala']
+const ROUTES = ['/home', '/classifica', '/storico', '/storico/calendario', '/tazze', '/profilo', '/promemoria', '/notifiche', '/feedback', '/privacy', '/novita', '/segnala']
+// Le pagine delle voci del Profilo nuovo: registrate sempre, ma solo l'app di prova ci porta.
+const NEW_PROFILE_ROUTES = ['/profilo/obiettivo', '/profilo/avvisi', '/profilo/bevute', '/profilo/aspetto', '/profilo/account', '/profilo/aiuto']
+
+// La guida si prova in entrambe le forme: Profilo nuovo (app di prova) e Profilo di sempre (app vera).
+const VARIANTS = [
+  { name: 'app di prova, Profilo nuovo', guide: guideFor(true), routes: [...ROUTES, ...NEW_PROFILE_ROUTES] },
+  { name: 'app vera, Profilo di sempre', guide: guideFor(false), routes: ROUTES },
+]
 
 // Frasi scritte diversamente dalle `questions`: sinonimi, errori comuni, frasi lunghe.
 const REAL: [string, string][] = [
@@ -120,14 +128,14 @@ const REAL: [string, string][] = [
   ['dove trovo la guida', 'ask-glu'],
 ]
 
-describe('GUIDE', () => {
+describe.each(VARIANTS)('GUIDE ($name)', ({ guide, routes }) => {
   it('ha almeno 40 voci con id unici', () => {
-    expect(GUIDE.length).toBeGreaterThanOrEqual(40)
-    expect(new Set(GUIDE.map((e) => e.id)).size).toBe(GUIDE.length)
+    expect(guide.length).toBeGreaterThanOrEqual(40)
+    expect(new Set(guide.map((e) => e.id)).size).toBe(guide.length)
   })
 
   it('ogni voce ha 3-6 domande, 1-5 passi, titolo e parole chiave', () => {
-    for (const e of GUIDE) {
+    for (const e of guide) {
       expect(e.title.trim(), e.id).not.toBe('')
       expect(e.questions.length, `${e.id} questions`).toBeGreaterThanOrEqual(3)
       expect(e.questions.length, `${e.id} questions`).toBeLessThanOrEqual(6)
@@ -138,13 +146,50 @@ describe('GUIDE', () => {
   })
 
   it('ogni route è una rotta di App.tsx', () => {
-    for (const e of GUIDE) if (e.route) expect(ROUTES, e.id).toContain(e.route)
+    for (const e of guide) if (e.route) expect(routes, e.id).toContain(e.route)
   })
 
+  it('ogni domanda di ogni voce porta a quella voce', () => {
+    const failures: string[] = []
+    for (const e of guide) {
+      for (const q of e.questions) {
+        const got = searchGuide(q, guide).best?.id ?? null
+        if (got !== e.id) failures.push(`«${q}» → ${got} (atteso ${e.id})`)
+      }
+    }
+    expect(failures).toEqual([])
+  })
+
+  it('almeno 40 frasi reali, scritte a parte, portano alla voce giusta', () => {
+    expect(REAL.length).toBeGreaterThanOrEqual(40)
+    const ids = new Set(guide.map((e) => e.id))
+    const own = new Set(guide.flatMap((e) => e.questions.map((q) => q.toLowerCase())))
+    const failures: string[] = []
+    for (const [phrase, id] of REAL) {
+      expect(ids.has(id), `id ${id} inesistente`).toBe(true)
+      if (own.has(phrase.toLowerCase())) failures.push(`«${phrase}» è già una question`)
+      const got = searchGuide(phrase, guide).best?.id ?? null
+      if (got !== id) failures.push(`«${phrase}» → ${got} (atteso ${id})`)
+    }
+    expect(failures).toEqual([])
+  })
+
+  it('frasi senza senso o fuori tema: nessuna risposta sicura', () => {
+    const wrong = ['xyz qwerty', 'ricetta della pizza margherita', 'chi ha vinto la partita di calcio', 'asdf jkl', 'che tempo fa domani a Roma', 'qual è la capitale della Francia', 'raccontami una barzelletta']
+      .filter((q) => searchGuide(q, guide).best !== null)
+    expect(wrong).toEqual([])
+  })
+
+  it('i passi non sono vuoti', () => {
+    for (const e of guide) for (const step of e.answer) expect(step.trim().length, e.id).toBeGreaterThan(5)
+  })
+})
+
+describe('GUIDE: solo il Profilo nuovo (app di prova)', () => {
   it('i percorsi «Profilo» › «…» usano i nomi delle sei voci del Profilo', () => {
     const sections = ['Obiettivo', 'Promemoria e notifiche', 'Bevute e tazze', 'Aspetto e Glu', 'Account e privacy', 'Aiuto e suggerimenti']
     const wrong: string[] = []
-    for (const e of GUIDE) {
+    for (const e of guideFor(true)) {
       for (const step of e.answer) {
         if (/«Profilo», sezione|scheda «Profilo»|nel «Profilo»/.test(step)) wrong.push(`${e.id}: «${step}»`)
         for (const m of step.matchAll(/«Profilo» › «([^»]+)»/g)) if (!sections.includes(m[1])) wrong.push(`${e.id}: ${m[1]}`)
@@ -163,46 +208,28 @@ describe('GUIDE', () => {
       'Aiuto e suggerimenti': ['/profilo/aiuto', '/feedback', '/novita', '/segnala'],
     }
     const wrong: string[] = []
-    for (const e of GUIDE) {
+    for (const e of guideFor(true)) {
       const m = /^Apri «Profilo» › «([^»]+)»/.exec(e.answer[0])
       if (m && !pages[m[1]]?.includes(e.route ?? '')) wrong.push(`${e.id}: ${m[1]} → ${e.route}`)
     }
     expect(wrong).toEqual([])
   })
 
-  it('ogni domanda di ogni voce porta a quella voce', () => {
-    const failures: string[] = []
-    for (const e of GUIDE) {
-      for (const q of e.questions) {
-        const got = searchGuide(q, GUIDE).best?.id ?? null
-        if (got !== e.id) failures.push(`«${q}» → ${got} (atteso ${e.id})`)
-      }
-    }
-    expect(failures).toEqual([])
-  })
+})
 
-  it('almeno 40 frasi reali, scritte a parte, portano alla voce giusta', () => {
-    expect(REAL.length).toBeGreaterThanOrEqual(40)
-    const ids = new Set(GUIDE.map((e) => e.id))
-    const own = new Set(GUIDE.flatMap((e) => e.questions.map((q) => q.toLowerCase())))
-    const failures: string[] = []
-    for (const [phrase, id] of REAL) {
-      expect(ids.has(id), `id ${id} inesistente`).toBe(true)
-      if (own.has(phrase.toLowerCase())) failures.push(`«${phrase}» è già una question`)
-      const got = searchGuide(phrase, GUIDE).best?.id ?? null
-      if (got !== id) failures.push(`«${phrase}» → ${got} (atteso ${id})`)
+describe('GUIDE: app vera (Profilo di sempre)', () => {
+  it('nessuna risposta porta alle pagine nuove né nomina le voci nuove', () => {
+    const wrong: string[] = []
+    for (const e of guideFor(false)) {
+      if (e.route?.startsWith('/profilo/')) wrong.push(`${e.id}: ${e.route}`)
+      for (const step of e.answer) if (/Bevute e tazze|Aspetto e Glu|Account e privacy|Aiuto e suggerimenti/.test(step)) wrong.push(`${e.id}: «${step}»`)
     }
-    expect(failures).toEqual([])
-  })
-
-  it('frasi senza senso o fuori tema: nessuna risposta sicura', () => {
-    const wrong = ['xyz qwerty', 'ricetta della pizza margherita', 'chi ha vinto la partita di calcio', 'asdf jkl', 'che tempo fa domani a Roma', 'qual è la capitale della Francia', 'raccontami una barzelletta']
-      .filter((q) => searchGuide(q, GUIDE).best !== null)
     expect(wrong).toEqual([])
   })
 
-  it('i passi non sono vuoti', () => {
-    for (const e of GUIDE) for (const step of e.answer) expect(step.trim().length, e.id).toBeGreaterThan(5)
+  it('stesse domande, parole chiave e titoli del Profilo nuovo: cambiano solo risposte e rotte', () => {
+    const strip = (g: ReturnType<typeof guideFor>) => g.map(({ answer: _a, route: _r, ...rest }) => rest)
+    expect(strip(guideFor(false))).toEqual(strip(guideFor(true)))
   })
 })
 

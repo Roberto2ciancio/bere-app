@@ -17,6 +17,8 @@ import { NewsPage } from './news/NewsPage'
 import { OnboardingPage } from './onboarding/OnboardingPage'
 import { PrivacyPage } from './profile/PrivacyPage'
 import { NotificationStatusPage } from './push/NotificationStatusPage'
+import { LegacyProfilePage } from './profile/LegacyProfilePage'
+import { NEW_PROFILE } from './profile/newProfile'
 import { ProfilePage } from './profile/ProfilePage'
 import { AccountSettingsPage, AppearanceSettingsPage, DrinkSettingsPage, GoalSettingsPage, HelpSettingsPage, NotificationSettingsPage } from './profile/ProfileSections'
 import { SchedulesPage } from './schedules/SchedulesPage'
@@ -60,7 +62,8 @@ export default function App() {
                 <Route path="/storico" element={<HistoryPage />} />
                 <Route path="/storico/calendario" element={<CalendarPage />} />
                 <Route path="/tazze" element={<CupsPage />} />
-                <Route path="/profilo" element={<ProfilePage />} />
+                {/* Profilo nuovo solo nell'app di prova; le sue pagine restano registrate ma l'app vera non ci porta. */}
+                <Route path="/profilo" element={NEW_PROFILE ? <ProfilePage /> : <LegacyProfilePage />} />
                 <Route path="/profilo/obiettivo" element={<GoalSettingsPage />} />
                 <Route path="/profilo/avvisi" element={<NotificationSettingsPage />} />
                 <Route path="/profilo/bevute" element={<DrinkSettingsPage />} />

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { BackToProfileHeader } from '../profile/BackToProfileHeader'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
 import { formatTime } from '../domain/format'
@@ -130,10 +130,7 @@ export function NotificationStatusPage() {
 
   return (
     <main className="page">
-      <header className="profile-section-head">
-        <Link className="back-link" to="/profilo/avvisi">‹ Promemoria e notifiche</Link>
-        <h1>Stato notifiche</h1>
-      </header>
+      <BackToProfileHeader section="avvisi" title="Stato notifiche" />
 
       {state === 'needs-install' && <InstallGuide />}
       {state === 'unsupported' && (

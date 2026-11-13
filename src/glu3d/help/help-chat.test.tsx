@@ -3,6 +3,8 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const h = vi.hoisted(() => ({
+  // Profilo nuovo (app di prova) salvo dove un test prova l'app vera.
+  newProfile: true,
   navigate: vi.fn(),
   realNavigate: false,
   props: [] as Array<Record<string, unknown>>,
@@ -26,15 +28,24 @@ vi.mock('../Glu3D', () => ({
 }))
 vi.mock('../../ui/motion/effects', () => ({ prefersReducedMotion: () => false }))
 vi.mock('../../lib/errorReporting', () => ({ reportError: vi.fn() }))
+vi.mock('../../profile/newProfile', () => ({
+  get NEW_PROFILE() {
+    return h.newProfile
+  },
+}))
 
 import { HelpChat } from './HelpChat'
-import { GUIDE, PAGE_TIPS } from './guide'
+import { GUIDE, guideFor, PAGE_TIPS } from './guide'
 import { GluStage } from '../stage/GluStage'
 import { GluStageProvider, useGluSpot, useOpenGluHelp, useRingSlot } from '../stage/stageContext'
 import type { GluSpotSpec } from '../stage/stageContext'
 import { HelpSettingsPage } from '../../profile/ProfileSections'
 
 const title = (id: string) => GUIDE.find((e) => e.id === id)!.title
+
+beforeEach(() => {
+  h.newProfile = true
+})
 
 function renderChat(page: 'home' | 'storico' | 'classifica' | 'profilo' = 'home') {
   const onClose = vi.fn()
@@ -53,7 +64,10 @@ function ask(text: string) {
 }
 
 describe('HelpChat', () => {
-  beforeEach(() => h.navigate.mockReset())
+  beforeEach(() => {
+    h.navigate.mockReset()
+    h.newProfile = true
+  })
 
   it('dialogo «Chiedi a Glu» con saluto, 4 suggerimenti della pagina e focus sul campo', () => {
     renderChat('storico')
@@ -98,6 +112,19 @@ describe('HelpChat', () => {
     expect(h.navigate).toHaveBeenCalledWith('/profilo/obiettivo')
     expect(onClose).toHaveBeenCalled()
     expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe('')
+  })
+
+  it('app vera (Profilo di sempre): risposta e «Portami lì» di sempre', () => {
+    h.newProfile = false
+    const { onClose } = renderChat()
+    ask("come cambio l'obiettivo")
+    const log = screen.getByRole('log')
+    const entry = guideFor(false).find((e) => e.id === 'goal-change')!
+    expect(within(log).getAllByRole('listitem').map((li) => li.textContent)).toEqual(entry.answer)
+    expect(entry.answer[0]).toBe('Apri la scheda «Profilo» e vai alla sezione «Obiettivo».')
+    fireEvent.click(within(log).getByRole('button', { name: 'Portami lì' }))
+    expect(h.navigate).toHaveBeenCalledWith('/profilo')
+    expect(onClose).toHaveBeenCalled()
   })
 
   it('suggerimento toccato → risposta della voce', () => {

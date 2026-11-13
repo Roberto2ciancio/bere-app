@@ -10,6 +10,14 @@ vi.mock('../lib/supabase', () => ({
   },
 }))
 
+// Profilo nuovo (app di prova) salvo dove un test prova l'app vera (Profilo di sempre).
+const np = vi.hoisted(() => ({ on: true }))
+vi.mock('../profile/newProfile', () => ({
+  get NEW_PROFILE() {
+    return np.on
+  },
+}))
+
 import App from '../App'
 
 const ENDPOINT = 'https://push.example/telefono'
@@ -48,6 +56,7 @@ function browser(permission: NotificationPermission = 'granted') {
 const registrations = () => fake.rpcCalls.filter((call) => call.name === 'register_push_subscription')
 
 beforeEach(() => {
+  np.on = true
   localStorage.clear()
   fake = createFakeSupabase()
   fake.signIn()

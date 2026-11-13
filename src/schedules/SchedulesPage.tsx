@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { BackToProfileHeader } from '../profile/BackToProfileHeader'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
@@ -117,10 +118,7 @@ export function SchedulesPage() {
 
   return (
     <main className="page">
-      <header className="profile-section-head">
-        <Link className="back-link" to="/profilo/avvisi">‹ Promemoria e notifiche</Link>
-        <h1>Promemoria</h1>
-      </header>
+      <BackToProfileHeader section="avvisi" title="Promemoria" />
 
       {error && <p role="alert" className="error">{error}</p>}
       {message && <p role="status" className="hint">{message}</p>}

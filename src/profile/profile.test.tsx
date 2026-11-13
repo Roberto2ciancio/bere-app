@@ -10,6 +10,14 @@ vi.mock('../lib/supabase', () => ({
   },
 }))
 
+// Profilo nuovo (app di prova) salvo dove un test prova l'app vera (Profilo di sempre).
+const np = vi.hoisted(() => ({ on: true }))
+vi.mock('./newProfile', () => ({
+  get NEW_PROFILE() {
+    return np.on
+  },
+}))
+
 import App from '../App'
 import { MAX_UPLOAD_BYTES, prepareImage, type ImageTools } from './imageUpload'
 
@@ -28,6 +36,7 @@ function tools(width: number, height: number) {
 }
 
 beforeEach(() => {
+  np.on = true
   fake = createFakeSupabase()
   fake.signIn()
   fake.tables.profiles = [{ id: 'u1', display_name: 'Anna', home_style: 'bottle', drink_ml: 200, tz: 'Europe/Rome', sound: 'none', avatar_path: null, background_path: null }]
@@ -272,3 +281,33 @@ describe('ProfilePage', () => {
     expect(screen.queryByText('Novità')).toBeNull()
   })
 })
+
+describe('app vera: il Profilo di sempre (NEW_PROFILE spento)', () => {
+  beforeEach(() => {
+    np.on = false
+  })
+
+  it('/profilo è la pagina unica di sempre, senza indice né voci', async () => {
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: 'Profilo', level: 1 })).toBeInTheDocument()
+    expect(await screen.findByLabelText('Obiettivo giornaliero (litri)')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Esci' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Suggerisci un miglioramento' })).toHaveAttribute('href', '#/feedback')
+    expect(screen.queryByRole('navigation', { name: 'Impostazioni del profilo' })).toBeNull()
+    for (const link of screen.getAllByRole('link')) expect(link.getAttribute('href') ?? '').not.toMatch(/^#\/profilo\//)
+    expect(screen.getByText(`Bere ${__APP_VERSION__}`)).toBeInTheDocument()
+  })
+
+  it('le pagine di dettaglio tornano al Profilo come sempre («Profilo» → /profilo)', async () => {
+    for (const [hash, title] of [['#/tazze', 'Tazze e bevande'], ['#/promemoria', 'Promemoria'], ['#/notifiche', 'Stato notifiche'], ['#/privacy', 'Privacy'], ['#/feedback', 'Suggerimenti']] as const) {
+      window.location.hash = hash
+      const { unmount } = render(<App />)
+      expect(await screen.findByRole('heading', { name: title, level: 1 })).toBeInTheDocument()
+      expect(screen.queryByRole('link', { name: /^‹/ })).toBeNull()
+      const back = screen.getAllByRole('link', { name: 'Profilo' }).find((l) => !l.closest('nav.tabs'))!
+      expect(back).toHaveAttribute('href', '#/profilo')
+      unmount()
+    }
+  })
+})
+

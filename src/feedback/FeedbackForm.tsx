@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { BackToProfileHeader } from '../profile/BackToProfileHeader'
 import { useAuth } from '../auth/AuthProvider'
 import { supabase } from '../lib/supabase'
 
@@ -30,10 +30,7 @@ export function FeedbackForm() {
 
   return (
     <main className="page">
-      <header className="profile-section-head">
-        <Link className="back-link" to="/profilo/aiuto">‹ Aiuto e suggerimenti</Link>
-        <h1>Suggerimenti</h1>
-      </header>
+      <BackToProfileHeader section="aiuto" title="Suggerimenti" />
       <form className="stack" onSubmit={submit} noValidate>
         <label>
           Cosa miglioreresti?

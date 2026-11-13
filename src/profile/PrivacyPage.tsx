@@ -1,13 +1,11 @@
 import { Link } from 'react-router-dom'
+import { BackToProfileHeader } from './BackToProfileHeader'
 import { DeleteAccount } from './DeleteAccount'
 
 export function PrivacyPage() {
   return (
     <main className="page">
-      <header className="profile-section-head">
-        <Link className="back-link" to="/profilo/account">‹ Account e privacy</Link>
-        <h1>Privacy</h1>
-      </header>
+      <BackToProfileHeader section="account" title="Privacy" />
 
       <section className="section">
         <h2>Cosa salviamo</h2>

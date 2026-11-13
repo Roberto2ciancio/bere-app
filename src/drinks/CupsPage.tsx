@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { BackToProfileHeader } from '../profile/BackToProfileHeader'
 import { useAuth } from '../auth/AuthProvider'
 import { useProfile } from '../auth/ProfileProvider'
 import { drinkLabel, formatAmount } from '../domain/hydration'
@@ -61,10 +61,7 @@ export function CupsPage() {
 
   return (
     <main className="page">
-      <header className="profile-section-head">
-        <Link className="back-link" to="/profilo/bevute">‹ Bevute e tazze</Link>
-        <h1>Tazze e bevande</h1>
-      </header>
+      <BackToProfileHeader section="bevute" title="Tazze e bevande" />
       {error && <p role="alert" className="error">{error}</p>}
 
       <section className="section">

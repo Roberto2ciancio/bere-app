@@ -2,9 +2,19 @@
 // sezioni e pulsanti. Se cambia una schermata, cambia anche la voce qui (e il test in guide.test.ts).
 // Le schede in basso sono: «Oggi», «Storico», «Classifica», «Profilo».
 
+import { NEW_PROFILE } from '../../profile/newProfile'
 import type { GuideEntry } from './search'
 
-export const GUIDE: GuideEntry[] = [
+/**
+ * Una voce della guida. `legacy`: risposta e rotta del Profilo di sempre (una sola pagina), che vale
+ * nell'app vera finché il Profilo nuovo (pagine per voce, NEW_PROFILE) è solo nell'app di prova.
+ */
+export interface GuideSource extends GuideEntry {
+  legacy?: { answer: string[]; route?: string }
+}
+
+/** Le voci nella forma del Profilo nuovo (app di prova). Per l'app usare activeGuide(). */
+export const GUIDE: GuideSource[] = [
   // --- Obiettivo ---
   {
     id: 'goal-change',
@@ -24,6 +34,15 @@ export const GUIDE: GuideEntry[] = [
       'Con un obiettivo sotto 1,5 L non entri in classifica.',
     ],
     route: '/profilo/obiettivo',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo» e vai alla sezione «Obiettivo».",
+        "Scrivi i litri nel campo «Obiettivo giornaliero (litri)»: da 0,1 a 10.",
+        "Tocca «Salva obiettivo». Vale da domani.",
+        "Con un obiettivo sotto 1,5 L non entri in classifica.",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'goal-calc',
@@ -43,6 +62,16 @@ export const GUIDE: GuideEntry[] = [
       'È solo una stima, non un consiglio medico.',
     ],
     route: '/profilo/obiettivo',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo», sezione «Obiettivo», e tocca «Calcolalo per me».",
+        "Scrivi il tuo «Peso (kg)» e scegli l'«Attività»: Sedentaria, Leggera, Moderata o Intensa.",
+        "Spunta «Oggi fa caldo», oppure tocca «Controlla il meteo di oggi».",
+        "Leggi il «Suggerito» e tocca «Usa questo obiettivo»; poi «Salva obiettivo» per confermarlo.",
+        "È solo una stima, non un consiglio medico.",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'goal-heat',
@@ -61,6 +90,15 @@ export const GUIDE: GuideEntry[] = [
       "Nei giorni caldi l'obiettivo sale: +250 ml dai 25 °C, +500 ml dai 30 °C, +750 ml dai 35 °C. Lo vedi nella scheda «Oggi».",
     ],
     route: '/profilo/obiettivo',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo», sezione «Obiettivo», e trova «Giorni caldi».",
+        "Attiva «Più acqua nei giorni caldi».",
+        "Scegli la città: scrivila e tocca «Cerca», oppure tocca «Usa la mia posizione». Con «Cambia» la modifichi.",
+        "Nei giorni caldi l'obiettivo sale: +250 ml dai 25 °C, +500 ml dai 30 °C, +750 ml dai 35 °C. Lo vedi nella scheda «Oggi».",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'workout',
@@ -97,6 +135,14 @@ export const GUIDE: GuideEntry[] = [
       'Per cambiare la quantità del pulsante vai su «Profilo» › «Bevute e tazze».',
     ],
     route: '/home',
+    legacy: {
+      answer: [
+        "Nella scheda «Oggi» tocca il pulsante grande «Ho bevuto», con la quantità scritta accanto.",
+        "Il totale sale e Glu si riempie. Un secondo tocco subito dopo viene ignorato, per evitare doppioni.",
+        "Per cambiare la quantità del pulsante vai su «Profilo», sezione «Bevute».",
+      ],
+      route: "/home",
+    },
   },
   {
     id: 'drink-amount',
@@ -114,6 +160,14 @@ export const GUIDE: GuideEntry[] = [
       'Il pulsante «Ho bevuto» nella scheda «Oggi» userà quella quantità.',
     ],
     route: '/profilo/bevute',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo» e vai alla sezione «Bevute».",
+        "In «Quantità per bevuta» scegli 150, 200, 250, 300 o 500 ml.",
+        "Il pulsante «Ho bevuto» nella scheda «Oggi» userà quella quantità.",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'drink-other',
@@ -198,6 +252,14 @@ export const GUIDE: GuideEntry[] = [
       "Con «Elimina» la togli. Senza tazze tue l'app propone Bicchiere, Tazza e Bottiglia.",
     ],
     route: '/tazze',
+    legacy: {
+      answer: [
+        "Apri «Tazze e bevande»: dal «Profilo», sezione «Bevute».",
+        "In «Le tue tazze» scrivi il «Nome della tazza» e i «Millilitri», scegli la bevanda e tocca «Aggiungi tazza».",
+        "Con «Elimina» la togli. Senza tazze tue l'app propone Bicchiere, Tazza e Bottiglia.",
+      ],
+      route: "/tazze",
+    },
   },
   {
     id: 'custom-drinks',
@@ -215,6 +277,14 @@ export const GUIDE: GuideEntry[] = [
       'Tocca «Aggiungi bevanda»: la trovi poi tra le bevande quando segni una bevuta.',
     ],
     route: '/tazze',
+    legacy: {
+      answer: [
+        "Apri «Tazze e bevande»: dal «Profilo», sezione «Bevute».",
+        "In «Le tue bevande» scrivi il «Nome della bevanda» e «Quanto idrata (%)», da 0 a 150.",
+        "Tocca «Aggiungi bevanda»: la trovi poi tra le bevande quando segni una bevuta.",
+      ],
+      route: "/tazze",
+    },
   },
   {
     id: 'hydration-pct',
@@ -322,6 +392,14 @@ export const GUIDE: GuideEntry[] = [
       'Senza fascia attiva il confronto usa gli orari dei tuoi promemoria: «… per essere in pari» oppure «Sei in pari».',
     ],
     route: '/home',
+    legacy: {
+      answer: [
+        "Nella scheda «Oggi», sotto il totale, l'app confronta quanto hai bevuto con quanto dovresti aver bevuto a quest'ora.",
+        "Con la «Fascia attiva» accesa (Profilo › Obiettivo) leggi «Sei in linea», «Sei indietro di…» o «Sei avanti di…», e «Da ora circa … all'ora».",
+        "Senza fascia attiva il confronto usa gli orari dei tuoi promemoria: «… per essere in pari» oppure «Sei in pari».",
+      ],
+      route: "/home",
+    },
   },
   {
     id: 'glu-fill',
@@ -359,6 +437,15 @@ export const GUIDE: GuideEntry[] = [
       'Per un altro programma tocca «Nuovo programma». Servono le notifiche attive: vedi «Stato notifiche».',
     ],
     route: '/promemoria',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo» › «Promemoria e notifiche» › «Gestisci i promemoria».",
+        "In «Ricordamelo ogni…» scegli 30 min, 1 ora, 1 ora e mezza, 2 ore, 3 ore oppure «Altro» (da 15 a 720 minuti).",
+        "Imposta «Dalle» e «Alle», scegli i giorni e tocca «Crea promemoria».",
+        "Per un altro programma tocca «Nuovo programma». Servono le notifiche attive: vedi «Stato notifiche».",
+      ],
+      route: "/promemoria",
+    },
   },
   {
     id: 'reminders-manual',
@@ -396,6 +483,15 @@ export const GUIDE: GuideEntry[] = [
       'Se due programmi attivi hanno gli stessi orari compare «Stai ricevendo notifiche doppie»: spegni o elimina uno dei due.',
     ],
     route: '/promemoria',
+    legacy: {
+      answer: [
+        "Apri la pagina «Promemoria» (Profilo › «Gestisci i promemoria»).",
+        "In «I tuoi programmi» togli la spunta per spegnere un programma senza perderlo.",
+        "«Modifica» apre il programma; da lì puoi cambiare orari e giorni, oppure toccare «Elimina programma».",
+        "Se due programmi attivi hanno gli stessi orari compare «Stai ricevendo notifiche doppie»: spegni o elimina uno dei due.",
+      ],
+      route: "/promemoria",
+    },
   },
   {
     id: 'reminders-hours',
@@ -414,6 +510,15 @@ export const GUIDE: GuideEntry[] = [
       "L'app conta e manda promemoria solo dentro la fascia, e nella scheda «Oggi» ricalcola quanto bere ogni ora.",
     ],
     route: '/profilo/obiettivo',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo», sezione «Obiettivo», e trova «Fascia attiva».",
+        "Attiva «Dividi l'obiettivo sulle ore attive» e scegli «Dalle» e «Alle».",
+        "Tocca «Salva fascia».",
+        "L'app conta e manda promemoria solo dentro la fascia, e nella scheda «Oggi» ricalcola quanto bere ogni ora.",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'reminders-snooze',
@@ -464,6 +569,15 @@ export const GUIDE: GuideEntry[] = [
       'Per finire prima tocca «Riprendi adesso».',
     ],
     route: '/profilo/avvisi',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo», sezione «Promemoria e notifiche», e trova «Pausa».",
+        "Scegli la durata: «Oggi», «3 giorni», «7 giorni» o «14 giorni».",
+        "Le notifiche si fermano e la serie non si rompe.",
+        "Per finire prima tocca «Riprendi adesso».",
+      ],
+      route: "/profilo",
+    },
   },
 
   // --- Notifiche ---
@@ -484,6 +598,15 @@ export const GUIDE: GuideEntry[] = [
       'I promemoria si creano in «Gestisci i promemoria».',
     ],
     route: '/profilo/avvisi',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo», sezione «Promemoria e notifiche», e tocca «Attiva le notifiche» (anche in «Stato notifiche»).",
+        "Accetta la richiesta del telefono.",
+        "Se sono bloccate, riattivale da Impostazioni › Notifiche › Bere e riapri l'app.",
+        "I promemoria si creano in «Gestisci i promemoria».",
+      ],
+      route: "/notifiche",
+    },
   },
   {
     id: 'push-off',
@@ -502,6 +625,15 @@ export const GUIDE: GuideEntry[] = [
       'Per fermarle solo per qualche giorno usa «Pausa».',
     ],
     route: '/profilo/avvisi',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo», sezione «Promemoria e notifiche».",
+        "Tocca «Disattiva le notifiche» (c'è anche in «Stato notifiche»).",
+        "I tuoi programmi restano salvati: per riaccenderle tocca «Attiva le notifiche».",
+        "Per fermarle solo per qualche giorno usa «Pausa».",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'push-problems',
@@ -538,6 +670,14 @@ export const GUIDE: GuideEntry[] = [
       'Su Android i pulsanti sono al massimo due: le quantità prendono il posto di «Bevuto ✓» e «Tra 15 min».',
     ],
     route: '/profilo/avvisi',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo», sezione «Promemoria e notifiche».",
+        "Attiva «Nel promemoria «Bevuto 200 ml» e «Bevuto 500 ml»».",
+        "Su Android i pulsanti sono al massimo due: le quantità prendono il posto di «Bevuto ✓» e «Tra 15 min».",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'push-stop',
@@ -554,6 +694,14 @@ export const GUIDE: GuideEntry[] = [
       "Una volta raggiunto l'obiettivo di oggi, i promemoria si fermano.",
     ],
     route: '/profilo/avvisi',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo», sezione «Promemoria e notifiche».",
+        "Attiva «Fermati quando raggiungo l'obiettivo».",
+        "Una volta raggiunto l'obiettivo di oggi, i promemoria si fermano.",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'push-friends',
@@ -572,6 +720,15 @@ export const GUIDE: GuideEntry[] = [
       '«Avvisami quando un amico raggiunge l\'obiettivo»: decidi se lo sai tu.',
     ],
     route: '/profilo/avvisi',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo», sezione «Promemoria e notifiche».",
+        "«Gli amici possono spronarmi»: spegnilo per non ricevere sproni.",
+        "«Avvisa gli amici quando raggiungo l'obiettivo»: decidi se loro lo sanno.",
+        "«Avvisami quando un amico raggiunge l'obiettivo»: decidi se lo sai tu.",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'push-summary',
@@ -588,6 +745,13 @@ export const GUIDE: GuideEntry[] = [
       '«Ricordami di bere se non apro l\'app da un giorno», «Riepilogo serale se oggi mi è mancato parecchio» e «Resoconto della settimana il lunedì» si accendono e spengono qui.',
     ],
     route: '/profilo/avvisi',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo», sezione «Promemoria e notifiche».",
+        "«Ricordami di bere se non apro l'app da un giorno», «Riepilogo serale se oggi mi è mancato parecchio» e «Resoconto della settimana il lunedì» si accendono e spengono qui.",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'iphone',
@@ -676,6 +840,14 @@ export const GUIDE: GuideEntry[] = [
       'Puoi spegnere questi avvisi in «Profilo» › «Promemoria e notifiche».',
     ],
     route: '/classifica',
+    legacy: {
+      answer: [
+        "Quando un amico raggiunge l'obiettivo del giorno, nella «Classifica» la sua riga mostra «🎉 obiettivo di oggi».",
+        "Tocca «👏 Complimenti» su quella riga (oppure il pulsante «👏 Complimenti» nella notifica). Dopo l'invio diventa «👏 Inviati».",
+        "Puoi spegnere questi avvisi nel «Profilo», in «Promemoria e notifiche».",
+      ],
+      route: "/classifica",
+    },
   },
   {
     id: 'levels',
@@ -818,6 +990,14 @@ export const GUIDE: GuideEntry[] = [
       'Nome e foto sono visibili agli altri utenti nella classifica.',
     ],
     route: '/profilo/aspetto',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo»: in alto, nel campo «Nome», scrivi il nuovo nome (massimo 40 caratteri).",
+        "Tocca «Salva nome».",
+        "Nome e foto sono visibili agli altri utenti nella classifica.",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'photo',
@@ -835,6 +1015,14 @@ export const GUIDE: GuideEntry[] = [
       'Per togliere la foto scegli uno degli avatar. Nome e foto sono visibili a tutti in classifica.',
     ],
     route: '/profilo/aspetto',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo»: in alto trovi la tua immagine.",
+        "Tocca «Cambia foto» per caricarne una tua, oppure scegli un avatar in «Oppure scegli un avatar».",
+        "Per togliere la foto scegli uno degli avatar. Nome e foto sono visibili a tutti in classifica.",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'background',
@@ -852,6 +1040,14 @@ export const GUIDE: GuideEntry[] = [
       'Per toglierlo tocca «Rimuovi sfondo». Lo sfondo lo vedi solo tu.',
     ],
     route: '/profilo/aspetto',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo» e vai alla sezione «Aspetto».",
+        "In «Sfondo dell'app» tocca «Scegli uno sfondo» (poi diventa «Cambia sfondo») e scegli un'immagine.",
+        "Per toglierlo tocca «Rimuovi sfondo». Lo sfondo lo vedi solo tu.",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'units',
@@ -868,6 +1064,13 @@ export const GUIDE: GuideEntry[] = [
       'In «Unità di misura» scegli «Litri» oppure «Once».',
     ],
     route: '/profilo/bevute',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo» e vai alla sezione «Bevute».",
+        "In «Unità di misura» scegli «Litri» oppure «Once».",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'sound',
@@ -885,6 +1088,14 @@ export const GUIDE: GuideEntry[] = [
       'Il suono si sente solo con l\'app aperta; le notifiche usano il suono scelto nelle impostazioni del telefono.',
     ],
     route: '/profilo/bevute',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo» e vai alla sezione «Bevute».",
+        "In «Suono» scegli Goccia, Campanella, Bolla, Gong oppure Nessuno: toccandolo lo senti subito.",
+        "Il suono si sente solo con l'app aperta; le notifiche usano il suono scelto nelle impostazioni del telefono.",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'glu-calm',
@@ -901,6 +1112,13 @@ export const GUIDE: GuideEntry[] = [
       'Attiva «Glu tranquillo»: Glu resta, ma senza scenette e tremarelle.',
     ],
     route: '/profilo/aspetto',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo» e vai alla sezione «Aspetto».",
+        "Attiva «Glu tranquillo»: Glu resta, ma senza scenette e tremarelle.",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'glu-3d',
@@ -917,6 +1135,13 @@ export const GUIDE: GuideEntry[] = [
       'Con «Glu in 3D» attivo Glu si muove in tre dimensioni. Spegnilo per risparmiare batteria: vale subito.',
     ],
     route: '/profilo/aspetto',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo» e vai alla sezione «Aspetto».",
+        "Con «Glu in 3D» attivo Glu si muove in tre dimensioni. Spegnilo per risparmiare batteria: vale subito.",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'dark',
@@ -951,6 +1176,14 @@ export const GUIDE: GuideEntry[] = [
       '«Ripristina da una copia» aggiunge le bevute, la caffeina, le tazze e le bevande che mancano, senza duplicarle. Non cambia programmi e obiettivi.',
     ],
     route: '/profilo/account',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo», sezione «Account», e tocca «Copia e ripristino dei dati».",
+        "«Scarica copia (JSON)» salva tutto in un file; «Scarica bevute (CSV)» salva solo le bevute, apribili in un foglio di calcolo.",
+        "«Ripristina da una copia» aggiunge le bevute, la caffeina, le tazze e le bevande che mancano, senza duplicarle. Non cambia programmi e obiettivi.",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'password',
@@ -968,6 +1201,14 @@ export const GUIDE: GuideEntry[] = [
       'Se non la ricordi tocca «Non la ricordo: inviami un link». Da fuori dall\'app, nella pagina di accesso, usa «Password dimenticata?».',
     ],
     route: '/profilo/account',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo», sezione «Account», e tocca «Password».",
+        "Scrivi la «Password attuale» e la «Nuova password» (almeno 8 caratteri), poi tocca «Cambia password».",
+        "Se non la ricordi tocca «Non la ricordo: inviami un link». Da fuori dall'app, nella pagina di accesso, usa «Password dimenticata?».",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'signout',
@@ -984,6 +1225,13 @@ export const GUIDE: GuideEntry[] = [
       'Tocca «Esci».',
     ],
     route: '/profilo/account',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo», in fondo alla sezione «Account».",
+        "Tocca «Esci».",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'delete',
@@ -1001,6 +1249,14 @@ export const GUIDE: GuideEntry[] = [
       'Tocca «Elimina definitivamente il profilo»: cancella subito profilo, foto, bevute, caffeina e promemoria. Non si può annullare.',
     ],
     route: '/privacy',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo», sezione «Account», e tocca «Privacy e cancellazione dell'account».",
+        "Nella sezione «Cancellare il profilo» scrivi ELIMINA.",
+        "Tocca «Elimina definitivamente il profilo»: cancella subito profilo, foto, bevute, caffeina e promemoria. Non si può annullare.",
+      ],
+      route: "/privacy",
+    },
   },
   {
     id: 'privacy',
@@ -1017,6 +1273,13 @@ export const GUIDE: GuideEntry[] = [
       'Nome, foto e giorni a obiettivo sono visibili a tutti; acqua, caffè, orari e sfondo restano privati.',
     ],
     route: '/privacy',
+    legacy: {
+      answer: [
+        "La pagina «Privacy» spiega cosa salviamo, chi lo vede, dove sono conservati i dati e l'età minima (14 anni). La trovi nel «Profilo», sezione «Account».",
+        "Nome, foto e giorni a obiettivo sono visibili a tutti; acqua, caffè, orari e sfondo restano privati.",
+      ],
+      route: "/privacy",
+    },
   },
 
   // --- Suggerimenti, segnalazioni, novità ---
@@ -1037,6 +1300,14 @@ export const GUIDE: GuideEntry[] = [
       "La chat c'è con «Glu in 3D» acceso, in «Profilo» › «Aspetto e Glu».",
     ],
     route: '/profilo/aiuto',
+    legacy: {
+      answer: [
+        "Tocca Glu quando è fermo nell'angolo o nell'anello di «Oggi»: si apre «Chiedi a Glu».",
+        "Scrivi la domanda o tocca un suggerimento: Glu risponde con i passaggi e «Portami lì» ti porta nella schermata giusta.",
+        "La chat c'è con «Glu in 3D» acceso: lo trovi nel «Profilo», sezione «Aspetto».",
+      ],
+      route: "/profilo",
+    },
   },
   {
     id: 'feedback',
@@ -1053,6 +1324,13 @@ export const GUIDE: GuideEntry[] = [
       'Scrivi nel campo «Cosa miglioreresti?» (fino a 2000 caratteri) e tocca «Invia».',
     ],
     route: '/feedback',
+    legacy: {
+      answer: [
+        "Apri la scheda «Profilo», sezione «Account», e tocca «Suggerisci un miglioramento».",
+        "Scrivi nel campo «Cosa miglioreresti?» (fino a 2000 caratteri) e tocca «Invia».",
+      ],
+      route: "/feedback",
+    },
   },
   {
     id: 'report',
@@ -1070,6 +1348,14 @@ export const GUIDE: GuideEntry[] = [
       'Tocca «Invia la segnalazione»: la controlliamo e, se serve, togliamo il contenuto.',
     ],
     route: '/segnala',
+    legacy: {
+      answer: [
+        "Apri la scheda «Classifica», tocca «Come funziona» e poi «Segnalalo» (lo trovi anche nella pagina «Privacy»).",
+        "Scegli «Cosa segnali?», scrivi il «Nome in classifica» e i dettagli.",
+        "Tocca «Invia la segnalazione»: la controlliamo e, se serve, togliamo il contenuto.",
+      ],
+      route: "/segnala",
+    },
   },
   {
     id: 'news',
@@ -1086,6 +1372,13 @@ export const GUIDE: GuideEntry[] = [
       'La pagina elenca le novità di Bere, versione per versione, dalla più recente.',
     ],
     route: '/novita',
+    legacy: {
+      answer: [
+        "Nella scheda «Oggi», in alto a destra, tocca l'icona «Newsletter»: ha un pallino se ci sono novità da leggere.",
+        "La pagina elenca le novità di Bere, versione per versione, dalla più recente.",
+      ],
+      route: "/novita",
+    },
   },
 ]
 
@@ -1095,4 +1388,19 @@ export const PAGE_TIPS: Record<'home' | 'storico' | 'classifica' | 'profilo', st
   storico: ['history-calendar', 'streak', 'challenges', 'drink-remove'],
   classifica: ['board-how', 'board-poke', 'levels', 'board-cheer'],
   profilo: ['push-on', 'photo', 'pause', 'backup'],
+}
+
+const strip = ({ legacy: _legacy, ...entry }: GuideSource): GuideEntry => entry
+
+/** La guida per un Profilo: nuovo (pagine per voce) o di sempre (`legacy` dove serve). */
+export function guideFor(newProfile: boolean): GuideEntry[] {
+  return GUIDE.map((e) => (newProfile || !e.legacy ? strip(e) : { ...strip(e), answer: e.legacy.answer, route: e.legacy.route }))
+}
+
+const cache = new Map<boolean, GuideEntry[]>()
+/** La guida che vede l'utente: quella del Profilo nuovo solo dove NEW_PROFILE è acceso. */
+export function activeGuide(): GuideEntry[] {
+  let guide = cache.get(NEW_PROFILE)
+  if (!guide) cache.set(NEW_PROFILE, (guide = guideFor(NEW_PROFILE)))
+  return guide
 }

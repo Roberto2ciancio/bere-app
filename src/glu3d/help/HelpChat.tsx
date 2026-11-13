@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { GUIDE, PAGE_TIPS } from './guide'
+import { activeGuide, PAGE_TIPS } from './guide'
 import { searchGuide, type GuideEntry } from './search'
 
 export type HelpPage = 'home' | 'storico' | 'classifica' | 'profilo'
@@ -14,7 +14,7 @@ type Draft =
   | { from: 'glu'; kind: 'none' }
 type Msg = Draft & { id: number }
 
-const byId = (id: string) => GUIDE.find((e) => e.id === id)
+const byId = (id: string) => activeGuide().find((e) => e.id === id)
 
 const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
 
@@ -110,7 +110,7 @@ export function HelpChat({ page, onClose }: { page: HelpPage; onClose: (reason?:
   }
 
   function pick(entry: GuideEntry) {
-    const more = searchGuide(entry.title, GUIDE).suggestions.filter((e) => e.id !== entry.id).slice(0, 2)
+    const more = searchGuide(entry.title, activeGuide()).suggestions.filter((e) => e.id !== entry.id).slice(0, 2)
     push({ from: 'user', text: entry.title }, { from: 'glu', kind: 'answer', entry, more })
   }
 
@@ -119,7 +119,7 @@ export function HelpChat({ page, onClose }: { page: HelpPage; onClose: (reason?:
     const q = text.trim()
     if (!q) return
     setText('')
-    const { best, suggestions } = searchGuide(q, GUIDE)
+    const { best, suggestions } = searchGuide(q, activeGuide())
     const reply: Draft = best
       ? { from: 'glu', kind: 'answer', entry: best, more: suggestions }
       : suggestions.length
