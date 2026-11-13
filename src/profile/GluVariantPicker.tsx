@@ -25,6 +25,8 @@ function Picker() {
   const refs = useRef<(HTMLButtonElement | null)[]>([])
   const [message, setMessage] = useState('')
   const [failed, setFailed] = useState(false)
+  // Un salvataggio alla volta: i tocchi arrivati nel frattempo si ignorano (ref: due tocchi di fila lo vedono subito).
+  const saving = useRef(false)
   if (!profile || !userId) return null
 
   // Come useGluVariant: finché i punti non arrivano vale l'ultimo livello salvato sul telefono, altrimenti 1.
@@ -40,6 +42,7 @@ function Picker() {
   }
 
   async function pick(variant: GluVariant) {
+    if (saving.current) return
     setFailed(false)
     if (variant.level > level) {
       setMessage(
@@ -52,7 +55,12 @@ function Picker() {
     setMessage('')
     if (variant.id === chosen.id) return
     // Prima il server: se il salvataggio non riesce resta la scelta di prima.
-    if (!(await saveProfile({ home_style: variant.id }))) setFailed(true)
+    saving.current = true
+    try {
+      if (!(await saveProfile({ home_style: variant.id }))) setFailed(true)
+    } finally {
+      saving.current = false
+    }
   }
 
   return (

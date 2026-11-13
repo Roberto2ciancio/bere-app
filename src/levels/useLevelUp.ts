@@ -4,18 +4,20 @@ import { GLU_VARIANTS_LIST } from '../mascot/variants'
 import { GLU_VARIANTS } from '../mascot/variantsFlag'
 import { levelOf, type Level } from './levels'
 
-/** Il testo della festa del livello; con le varianti di Glu dice anche quale Glu si è appena sbloccato. */
-export function levelUpDetail(level: number): string {
+/** Il testo della festa del livello; con le varianti di Glu dice anche quali Glu si sono sbloccati salendo da `from` a `to`. */
+export function levelUpDetail(from: number, to: number): string {
   const base = 'Sei salito di livello: continua così.'
-  const unlocked = GLU_VARIANTS ? GLU_VARIANTS_LIST.find((v) => v.level === level && v.level > 1) : undefined
-  return unlocked ? `${base} Hai sbloccato ${unlocked.name}! Provalo in Aspetto e Glu.` : base
+  const names = GLU_VARIANTS ? GLU_VARIANTS_LIST.filter((v) => v.level > from && v.level <= to).map((v) => v.name) : []
+  if (names.length === 0) return base
+  const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`
+  return `${base} Hai sbloccato ${list}! ${names.length === 1 ? 'Provalo' : 'Provali'} in Aspetto e Glu.`
 }
 
 /**
  * Il livello raggiunto da ultimo, per far festa solo quando sale. Alla prima volta (nessun valore salvato)
  * il livello di partenza si scrive in silenzio: chi ha già dei punti non ha niente da festeggiare.
  */
-export function useLevelUp(userId: string, points: number | null): { level: Level; isNew: boolean; dismiss: () => void } | null {
+export function useLevelUp(userId: string, points: number | null): { level: Level; from: number | null; isNew: boolean; dismiss: () => void } | null {
   const key = `bere.lastLevel.${userId}`
   const [dismissed, setDismissed] = useState(0)
   const level = points === null ? null : levelOf(points)
@@ -29,6 +31,8 @@ export function useLevelUp(userId: string, points: number | null): { level: Leve
   const isNew = stored !== null && level.level > stored && dismissed < level.level
   return {
     level,
+    /** Il livello salvato prima di questa festa (null alla prima volta). */
+    from: stored,
     isNew,
     dismiss: () => {
       writeCache(key, level.level)

@@ -28,6 +28,7 @@ import { localParts } from '../domain/time'
 import { HistoryPage } from '../history/HistoryPage'
 import { HomePage } from '../home/HomePage'
 import { LeaderboardPage } from '../leaderboard/LeaderboardPage'
+import { levelUpDetail } from './useLevelUp'
 import { resetSharedLevels } from './useLevels'
 import { readCache, writeCache } from '../lib/cache'
 import { confetti } from '../ui/motion/effects'
@@ -115,6 +116,27 @@ describe('festa al nuovo livello: Glu sbloccati (app di prova)', () => {
     renderIn(<HomePage />)
     const dialog = await screen.findByRole('dialog', { name: 'Livello 2 · Goccia' })
     expect(dialog).toHaveTextContent('Hai sbloccato Glu Menta! Provalo in Aspetto e Glu.')
+  })
+
+  it('salto 1→3: nomina Glu Menta e Glu Limone, al plurale', async () => {
+    variantsFlag.on = true
+    fake.rpcResults.get_levels = [{ user_id: 'u1', points: 350 }]
+    writeCache('bere.lastLevel.u1', 1)
+    renderIn(<HomePage />)
+    const dialog = await screen.findByRole('dialog', { name: /^Livello 3/ })
+    expect(dialog).toHaveTextContent('Hai sbloccato Glu Menta e Glu Limone! Provali in Aspetto e Glu.')
+  })
+
+  it('levelUpDetail: ogni Glu tra il livello di prima (escluso) e quello nuovo', () => {
+    variantsFlag.on = true
+    const base = 'Sei salito di livello: continua così.'
+    expect(levelUpDetail(1, 2)).toBe(`${base} Hai sbloccato Glu Menta! Provalo in Aspetto e Glu.`)
+    expect(levelUpDetail(1, 3)).toBe(`${base} Hai sbloccato Glu Menta e Glu Limone! Provali in Aspetto e Glu.`)
+    expect(levelUpDetail(2, 3)).toBe(`${base} Hai sbloccato Glu Limone! Provalo in Aspetto e Glu.`)
+    expect(levelUpDetail(1, 4)).toBe(`${base} Hai sbloccato Glu Menta, Glu Limone e Glu Fragola! Provali in Aspetto e Glu.`)
+    expect(levelUpDetail(6, 7)).toBe(base)
+    variantsFlag.on = false
+    expect(levelUpDetail(1, 3)).toBe(base)
   })
 
   it('un livello senza Glu nuovo (7) non ne parla', async () => {

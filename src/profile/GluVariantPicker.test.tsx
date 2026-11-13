@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createFakeSupabase, type FakeSupabase } from '../test/fakeSupabase'
@@ -81,6 +81,17 @@ describe('GluVariantPicker', () => {
     await waitFor(() => expect(option(/^Glu Menta/)).toHaveAttribute('aria-checked', 'true'))
     expect(fake.tables.profiles[0].home_style).toBe('menta')
     expect(option(/^Glu$/)).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('mentre un salvataggio è in corso gli altri tocchi non contano', async () => {
+    renderPicker()
+    await waitFor(() => expect(option(/^Glu Limone/)).not.toHaveAttribute('data-locked'))
+    fireEvent.click(option(/^Glu Menta/))
+    fireEvent.click(option(/^Glu Limone/))
+    await waitFor(() => expect(option(/^Glu Menta/)).toHaveAttribute('aria-checked', 'true'))
+    await new Promise((r) => setTimeout(r, 20))
+    expect(fake.tables.profiles[0].home_style).toBe('menta')
+    expect(option(/^Glu Limone/)).toHaveAttribute('aria-checked', 'false')
   })
 
   it('errore di salvataggio: messaggio e scelta invariata', async () => {

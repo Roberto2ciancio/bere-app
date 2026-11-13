@@ -386,7 +386,7 @@ export function HomePage() {
       </footer>
 
       {levelParty && levelUp && (
-        <Celebration kind="level" title={`Livello ${levelUp.level.level} · ${levelUp.level.name}`} detail={levelUpDetail(levelUp.level.level)} onClose={levelUp.dismiss} />
+        <Celebration kind="level" title={`Livello ${levelUp.level.level} · ${levelUp.level.name}`} detail={levelUpDetail(levelUp.from ?? levelUp.level.level - 1, levelUp.level.level)} onClose={levelUp.dismiss} />
       )}
       {party && !levelParty && <Celebration kind="goal" title="Obiettivo raggiunto!" detail={`Hai bevuto ${formatVolume(totalMl, units)}: oggi hai fatto centro.`} onClose={() => setParty(false)} />}
       {sheetOpen && <DrinkSheet userId={userId} units={units} defaultMl={drinkMl} onDrink={onDrink} onClose={() => setSheetOpen(false)} />}
