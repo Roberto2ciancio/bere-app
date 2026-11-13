@@ -12,6 +12,14 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '1.13.0',
+    date: '2026-11-14',
+    title: 'Reazioni',
+    notes: [
+      'In Classifica, a chi ha raggiunto l’obiettivo di oggi puoi mandare 👏, 💪 o 🔥: gli arriva una notifica con la tua reazione.',
+    ],
+  },
+  {
     version: '1.12.0',
     date: '2026-11-13',
     title: 'Condividi la settimana',

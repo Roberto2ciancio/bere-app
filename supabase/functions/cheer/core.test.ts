@@ -36,7 +36,7 @@ describe('runCheer', () => {
   it('dalla classifica', async () => {
     const d = deps()
     expect(await runCheer(d, { from: 'b', to: 'a' })).toBe('sent')
-    expect(d.claim).toHaveBeenCalledWith('b', 'a')
+    expect(d.claim).toHaveBeenCalledWith('b', 'a', '👏')
   })
 
   it.each(['already', 'no-goal', 'self'])('con esito %s non manda nulla', async (result) => {
@@ -57,5 +57,19 @@ describe('parseCheer', () => {
     expect(parseCheer({ to: ID_A }, null)).toBeNull()
     expect(parseCheer({ token: 'x; drop' }, null)).toBeNull()
     expect(parseCheer(null, ID_B)).toBeNull()
+  })
+})
+
+describe('reazioni', () => {
+  it('🔥 cambia il titolo della notifica', async () => {
+    const d = deps()
+    expect(await runCheer(d, { from: 'b', to: 'a', reaction: '🔥' })).toBe('sent')
+    expect(d.claim).toHaveBeenCalledWith('b', 'a', '🔥')
+    expect(d.push.mock.calls[0][1]).toMatchObject({ title: 'Bruno ti dice: sei on fire! 🔥' })
+  })
+
+  it('accetta solo le tre reazioni', () => {
+    expect(parseCheer({ to: ID_A, reaction: '💪' }, ID_B)).toEqual({ from: ID_B, to: ID_A, reaction: '💪' })
+    expect(parseCheer({ to: ID_A, reaction: '💩' }, ID_B)).toBeNull()
   })
 })

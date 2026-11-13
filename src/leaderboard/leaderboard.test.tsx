@@ -127,7 +127,7 @@ describe('LeaderboardPage', () => {
     expect(within(bruno).getByText(/obiettivo di oggi/)).toBeInTheDocument()
     expect(within(screen.getByText('Carla').closest('li')!).queryByRole('button', { name: /Complimenti/ })).toBeNull()
     await userEvent.click(within(bruno).getByRole('button', { name: 'Complimenti a Bruno' }))
-    expect(fake.invocations).toContainEqual({ name: 'cheer', body: { to: 'u2' } })
+    expect(fake.invocations).toContainEqual({ name: 'cheer', body: { to: 'u2', reaction: '👏' } })
     expect(await screen.findByRole('status')).toHaveTextContent('Complimenti inviati a Bruno 👏')
     expect(within(bruno).getByRole('button', { name: 'Complimenti già inviati a Bruno' })).toBeDisabled()
   })
@@ -137,5 +137,16 @@ describe('LeaderboardPage', () => {
     fake.rpcResults.cheerable_today = [{ user_id: 'u2', cheered: true }]
     renderPage()
     expect(await screen.findByRole('button', { name: 'Complimenti già inviati a Bruno' })).toBeDisabled()
+  })
+
+  it('si può reagire anche con 💪 o 🔥', async () => {
+    fake.rpcResults.get_leaderboard = [entry('u2', 'Bruno', 3, 2)]
+    fake.rpcResults.cheerable_today = [{ user_id: 'u2', cheered: false, reaction: null }]
+    fake.setInvokeResult({ status: 'sent' })
+    renderPage()
+    await userEvent.click(await screen.findByRole('button', { name: 'Sei on fire a Bruno' }))
+    expect(fake.invocations).toContainEqual({ name: 'cheer', body: { to: 'u2', reaction: '🔥' } })
+    expect(await screen.findByRole('button', { name: 'Complimenti già inviati a Bruno' })).toHaveTextContent('🔥 Inviati')
+    expect(screen.queryByRole('button', { name: 'Che forza a Bruno' })).toBeNull()
   })
 })

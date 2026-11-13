@@ -81,6 +81,7 @@ beforeAll(async () => {
   pre24 = (await db.query<{ id: string; home_style: string }>(`select id, home_style from profiles`)).rows
   await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0024_only_glu.sql'), 'utf8'))
   await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0025_glu_variants.sql'), 'utf8'))
+  await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0026_reactions.sql'), 'utf8'))
 }, 60_000)
 
 beforeEach(async () => {
@@ -506,11 +507,20 @@ describe('notifiche sociali', () => {
     expect(await claim(B, A)).toBe('no-goal')
     await drinkToday(A, 2000)
     expect(await claim(A, A)).toBe('self')
-    expect(await cheerable(B)).toEqual([{ user_id: A, cheered: false }])
+    expect(await cheerable(B)).toEqual([{ user_id: A, cheered: false, reaction: null }])
     expect(await claim(B, A)).toBe('ok')
     expect(await claim(B, A)).toBe('already')
-    expect(await cheerable(B)).toEqual([{ user_id: A, cheered: true }])
+    expect(await cheerable(B)).toEqual([{ user_id: A, cheered: true, reaction: '👏' }])
     expect(await cheerable(A)).toEqual([])
+  })
+
+  it('reazioni: 💪 e 🔥 oltre a 👏, niente emoji inventate', async () => {
+    const claim = async (r: string) => (await db.query<{ r: string }>(`select claim_cheer($1, $2, $3) r`, [B, A, r])).rows[0].r
+    await drinkToday(A, 2000)
+    expect(await claim('💩')).toBe('invalid')
+    expect(await claim('🔥')).toBe('ok')
+    expect(await claim('💪')).toBe('already')
+    expect(await asUser(B, async () => (await db.query(`select reaction from cheerable_today()`)).rows)).toEqual([{ reaction: '🔥' }])
   })
 
   it('le tabelle non si leggono direttamente', async () => {

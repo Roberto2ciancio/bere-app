@@ -320,7 +320,7 @@ if (import.meta.env.MODE === 'devapp') {
   setInterval(() => void checkDueReminders(new Date()), 20_000)
 }
 
-const cheeredToday = new Set<string>()
+const cheeredToday = new Map<string, string>()
 
 /** Come la funzione SQL set_initial_goal: obiettivo da oggi (nel fuso del profilo), solo senza bevute. */
 function setInitialGoal(goal: number | undefined): Result {
@@ -343,16 +343,17 @@ export const supabase = {
     if (name === 'daily_totals') return { data: dailyTotals(), error: null }
     if (name === 'get_levels') return { data: levels(), error: null }
     // Marta (finta) ha già raggiunto l'obiettivo oggi: così si vedono i complimenti in classifica.
-    if (name === 'cheerable_today') return { data: [{ user_id: 'finto-1', cheered: cheeredToday.has('finto-1') }], error: null }
+    if (name === 'cheerable_today') return { data: [{ user_id: 'finto-1', cheered: cheeredToday.has('finto-1'), reaction: cheeredToday.get('finto-1') ?? null }], error: null }
     return { data: name === 'get_leaderboard' ? leaderboard(args?.week_start ?? '') : null, error: null }
   },
   functions: {
     async invoke(name: string, _options?: unknown): Promise<Result> {
       if (name === 'poke') return { data: { status: 'sent' }, error: null }
       if (name === 'cheer') {
-        const to = (_options as { body?: { to?: string } } | undefined)?.body?.to ?? ''
+        const body = (_options as { body?: { to?: string; reaction?: string } } | undefined)?.body
+        const to = body?.to ?? ''
         if (cheeredToday.has(to)) return { data: { status: 'already' }, error: null }
-        cheeredToday.add(to)
+        cheeredToday.set(to, body?.reaction ?? '👏')
         return { data: { status: 'sent' }, error: null }
       }
       if (name === 'delete-account') {

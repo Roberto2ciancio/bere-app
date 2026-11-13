@@ -14,6 +14,13 @@ import { CORNER_PHRASES } from '../mascot/phrases'
 import { weekStart } from './weekStart'
 import { Stagger } from '../ui/motion/Stagger'
 
+/** Le reazioni ai traguardi degli amici, con il nome letto dagli screen reader. */
+const REACTIONS = [
+  ['👏', 'Complimenti'],
+  ['💪', 'Che forza'],
+  ['🔥', 'Sei on fire'],
+] as const
+
 interface Entry {
   user_id: string
   display_name: string
@@ -55,7 +62,8 @@ export function LeaderboardPage() {
   const [pokeMessage, setPokeMessage] = useState<string | null>(null)
   const [poking, setPoking] = useState(false)
   // Chi ha raggiunto l'obiettivo oggi, e se gli ho già fatto i complimenti.
-  const [cheerable, setCheerable] = useState<Map<string, boolean>>(new Map())
+  /** Chi ha raggiunto l'obiettivo oggi → la reazione che gli ho già mandato (null se nessuna). */
+  const [cheerable, setCheerable] = useState<Map<string, string | null>>(new Map())
   const levels = useLevels()
 
   useEffect(() => {
@@ -73,26 +81,26 @@ export function LeaderboardPage() {
   useEffect(() => {
     let active = true
     Promise.resolve(supabase.rpc('cheerable_today')).then(({ data }) => {
-      if (active && Array.isArray(data)) setCheerable(new Map((data as { user_id: string; cheered: boolean }[]).map((r) => [r.user_id, r.cheered])))
+      if (active && Array.isArray(data)) setCheerable(new Map((data as { user_id: string; cheered: boolean; reaction?: string | null }[]).map((r) => [r.user_id, r.cheered ? (r.reaction ?? '👏') : null])))
     })
     return () => {
       active = false
     }
   }, [])
 
-  async function cheer(entry: Entry) {
+  async function cheer(entry: Entry, reaction: string) {
     setPoking(true)
-    const { data, error } = await supabase.functions.invoke('cheer', { body: { to: entry.user_id } })
+    const { data, error } = await supabase.functions.invoke('cheer', { body: { to: entry.user_id, reaction } })
     const status = (data as { status?: string } | null)?.status
     const name = entry.display_name
     const messages: Record<string, string> = {
-      sent: `Complimenti inviati a ${name} 👏`,
+      sent: `Complimenti inviati a ${name} ${reaction}`,
       'no-device': `Complimenti inviati: ${name} li vedrà in classifica.`,
       already: `Hai già fatto i complimenti a ${name} oggi.`,
       'no-goal': `${name} non ha ancora raggiunto l'obiettivo di oggi.`,
     }
     setPokeMessage((!error && status && messages[status]) || `Non è stato possibile mandare i complimenti a ${name}. Riprova.`)
-    if (!error && (status === 'sent' || status === 'no-device' || status === 'already')) setCheerable((m) => new Map(m).set(entry.user_id, true))
+    if (!error && (status === 'sent' || status === 'no-device' || status === 'already')) setCheerable((m) => new Map(m).set(entry.user_id, status === 'already' ? (m.get(entry.user_id) ?? reaction) : reaction))
     setPoking(false)
   }
 
@@ -189,16 +197,24 @@ export function LeaderboardPage() {
                     </span>
                     {!isMe && (
                       <span className="board-actions">
-                        {cheerable.has(entry.user_id) && (
-                          <button
-                            className="poke cheer"
-                            disabled={poking || cheerable.get(entry.user_id)}
-                            aria-label={cheerable.get(entry.user_id) ? `Complimenti già inviati a ${entry.display_name}` : `Complimenti a ${entry.display_name}`}
-                            onClick={() => void cheer(entry)}
-                          >
-                            {cheerable.get(entry.user_id) ? '👏 Inviati' : '👏 Complimenti'}
-                          </button>
-                        )}
+                        {cheerable.has(entry.user_id) &&
+                          (cheerable.get(entry.user_id) ? (
+                            <button className="poke cheer" disabled aria-label={`Complimenti già inviati a ${entry.display_name}`}>
+                              {cheerable.get(entry.user_id)} Inviati
+                            </button>
+                          ) : (
+                            REACTIONS.map(([emoji, label]) => (
+                              <button
+                                key={emoji}
+                                className="poke cheer"
+                                disabled={poking}
+                                aria-label={`${label} a ${entry.display_name}`}
+                                onClick={() => void cheer(entry, emoji)}
+                              >
+                                {emoji}
+                              </button>
+                            ))
+                          ))}
                         <button className="poke" disabled={poking} aria-label={`Sprona ${entry.display_name}`} onClick={() => void poke(entry)}>
                           👋 Sprona
                         </button>

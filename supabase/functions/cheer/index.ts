@@ -23,8 +23,8 @@ Deno.serve(async (request) => {
           if (error) throw new Error(error.message)
           return ((data ?? []) as { to_user: string; from_name: string }[])[0] ?? null
         },
-        async claim(from, to) {
-          const { data, error } = await db.rpc('claim_cheer', { p_from: from, p_to: to })
+        async claim(from, to, reaction) {
+          const { data, error } = await db.rpc('claim_cheer', { p_from: from, p_to: to, p_reaction: reaction })
           if (error) throw new Error(error.message)
           return data as string
         },
