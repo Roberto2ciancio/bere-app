@@ -12,6 +12,15 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '2.2.0',
+    date: '2026-11-14',
+    title: 'Scegli il tuo Glu',
+    notes: [
+      'In Profilo › Aspetto puoi scegliere il tuo Glu: Menta, Limone, Fragola, Cocco e Notte si sbloccano salendo di livello, dal 2 al 6.',
+      'Quando sali di livello ti diciamo quale Glu hai appena sbloccato.',
+    ],
+  },
+  {
     version: '2.1.1',
     date: '2026-11-14',
     title: 'Notifiche delle sfide',

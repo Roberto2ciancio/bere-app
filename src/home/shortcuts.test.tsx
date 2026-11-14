@@ -56,7 +56,7 @@ describe("scorciatoie dall'icona", () => {
     expect(await screen.findByRole('status', { name: '' })).toHaveTextContent('Segnati 250 ml ✓')
     await waitFor(() => expect(fake.tables.drinks).toHaveLength(1))
     expect(fake.tables.drinks[0]).toMatchObject({ user_id: 'u1', amount_ml: 250 })
-    expect(location).toBe('/home')
+    await waitFor(() => expect(location).toBe('/home'))
     await new Promise((r) => setTimeout(r, 50))
     expect(fake.tables.drinks).toHaveLength(1)
   })

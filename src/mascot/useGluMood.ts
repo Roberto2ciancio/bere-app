@@ -99,6 +99,14 @@ export function useGluMood({
   // Il saluto spetta una volta al giorno. I timer non si fermano al cleanup: lo StrictMode rilancia l'effetto
   // e la seconda volta il giorno risulta già segnato.
   const greeted = useRef<string | null>(null)
+  // Il timer non si cancella, ma a componente smontato non tocca più lo stato (né React dopo la fine dei test).
+  const mounted = useRef(false)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   useEffect(() => {
     if (!enabled || !userId || greeted.current === `${userId}:${today}`) return
     greeted.current = `${userId}:${today}`
@@ -106,7 +114,9 @@ export function useGluMood({
     if (readCache<string>(key) !== today) {
       writeCache(key, today)
       setFirstOpenToday(true)
-      setTimeout(() => setFirstOpenToday(false), HELLO_MS)
+      setTimeout(() => {
+        if (mounted.current) setFirstOpenToday(false)
+      }, HELLO_MS)
     }
   }, [enabled, userId, today])
 

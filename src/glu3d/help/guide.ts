@@ -12,7 +12,7 @@ import type { GuideEntry } from './search'
  */
 export interface GuideSource extends GuideEntry {
   legacy?: { answer: string[]; route?: string }
-  /** `variants`: la voce c'è solo dove le varianti di Glu sono accese (GLU_VARIANTS, per ora solo l'app di prova). */
+  /** `variants`: la voce c'è solo dove le varianti di Glu sono accese (GLU_VARIANTS, accese per tutti dalla 2.2.0). */
   onlyWhen?: 'variants'
 }
 

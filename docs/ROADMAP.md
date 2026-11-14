@@ -1,6 +1,6 @@
 # Bere: idee per le prossime versioni
 
-Ultimo aggiornamento: 14 novembre 2026 (app alla versione 2.1.1).
+Ultimo aggiornamento: 14 novembre 2026 (app alla versione 2.2.0).
 
 Legenda: 🟢 piccolo · 🟡 medio · 🔴 grande · 🗄️ tocca il server (database o funzioni) · 📦 serve un nuovo APK
 
@@ -49,7 +49,7 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 
 ## Più avanti: Glu in 3D
 
-- [ ] 🟡 **Più Glu tra cui scegliere**: altri personaggi oltre a Glu, da scegliere in Profilo › Aspetto.
+- [x] 🟡 **Più Glu tra cui scegliere** (fatto in 2.2.0: 5 varianti che si sbloccano con i livelli): altri personaggi oltre a Glu, da scegliere in Profilo › Aspetto.
 - [ ] 🔴 **Glu 3D**: Glu 3D animato come nei video della proposta: saluta, salta quando bevi, si sposta tra le schermate e va a mettersi in basso sopra la barra, cammina, dà un consiglio quando lo tocchi; sostituisce il Glu 2D della Home e i Glu piccoli di Storico, Classifica e Profilo.
 
 ## Verso il Play Store (2.1)
@@ -71,7 +71,7 @@ Richiede di passare da TWA a Capacitor e rifare le notifiche con Firebase Cloud 
 
 ## Da dove partire
 
-1. 🟡 Più Glu tra cui scegliere (le varianti sono già nel devapp), poi 🟢 App in inglese.
+1. 🟢 App in inglese, poi 🔴 Glu 3D al posto di quello 2D.
 2. Per il Play Store servono scheda, tester e dominio: decisioni tue.
 
 ## Come si pubblica una versione
