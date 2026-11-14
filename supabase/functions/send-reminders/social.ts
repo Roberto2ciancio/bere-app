@@ -37,6 +37,14 @@ export interface WeeklyRow {
   subscriptions: Subscription[] | null
 }
 
+export interface ChallengeAlertRow {
+  /** 'new': ti hanno sfidato; 'accepted': hanno accettato la tua sfida. */
+  kind: 'new' | 'accepted'
+  to_user: string
+  other_name: string
+  subscriptions: Subscription[] | null
+}
+
 export interface SocialDeps extends Pick<Deps, 'push' | 'removeSubscription' | 'touchSubscription' | 'paused'> {
   /** Prende (una volta sola) gli avvisi da mandare agli amici di chi ha appena raggiunto l'obiettivo. */
   takeGoalAlerts(): Promise<GoalAlertRow[]>
@@ -46,6 +54,8 @@ export interface SocialDeps extends Pick<Deps, 'push' | 'removeSubscription' | '
   takeEveningSummaries(): Promise<EveningRow[]>
   /** Prende (una volta sola) i resoconti del lunedì. */
   takeWeeklyReports(): Promise<WeeklyRow[]>
+  /** Prende (una volta sola) gli avvisi delle sfide: nuove e accettate. */
+  takeChallengeAlerts(): Promise<ChallengeAlertRow[]>
 }
 
 export interface SocialSummary {
@@ -53,6 +63,7 @@ export interface SocialSummary {
   nudges: number
   evenings: number
   weeklies: number
+  challenges: number
 }
 
 function formatGoal(ml: number): string {
@@ -71,6 +82,13 @@ export function goalAlertPayload(row: GoalAlertRow): PushPayload {
     logId: '',
     cheerToken: row.token,
   }
+}
+
+export function challengePayload(row: ChallengeAlertRow): PushPayload {
+  const name = row.other_name.trim() || 'Un amico'
+  return row.kind === 'new'
+    ? { title: `⚔️ ${name} ti sfida`, body: "Chi raggiunge l'obiettivo in più giorni questa settimana? Accetta in Classifica.", url: '#/classifica', logId: '' }
+    : { title: `⚔️ ${name} ha accettato la sfida`, body: "Vince chi raggiunge l'obiettivo in più giorni questa settimana. Il punteggio è in Classifica.", url: '#/classifica', logId: '' }
 }
 
 /** Promemoria personalizzato: nome, giorni di assenza e obiettivo. Diventa più leggero a ogni passo. */
@@ -113,19 +131,20 @@ export function weeklyPayload(row: WeeklyRow): PushPayload {
 }
 
 export async function runSocial(deps: SocialDeps): Promise<SocialSummary> {
-  const summary: SocialSummary = { alerts: 0, nudges: 0, evenings: 0, weeklies: 0 }
+  const summary: SocialSummary = { alerts: 0, nudges: 0, evenings: 0, weeklies: 0, challenges: 0 }
   // Una parte che fallisce non deve fermare le altre.
   const safe = <T>(what: string, take: () => Promise<T[]>) =>
     take().catch((error) => {
       console.error(`${what} non letti`, error)
       return [] as T[]
     })
-  const [paused, alerts, nudges, evenings, weeklies] = await Promise.all([
+  const [paused, alerts, nudges, evenings, weeklies, challenges] = await Promise.all([
     pausedUsers(deps),
     safe('avvisi obiettivo', () => deps.takeGoalAlerts()),
     safe('promemoria di assenza', () => deps.takeNudges()),
     safe('riepiloghi serali', () => deps.takeEveningSummaries()),
     safe('resoconti settimanali', () => deps.takeWeeklyReports()),
+    safe('avvisi delle sfide', () => deps.takeChallengeAlerts()),
   ])
   // Chi è in pausa non riceve niente: l'avviso è già stato preso e non tornerà a pausa finita.
   const send = async (key: keyof SocialSummary, userId: string, subscriptions: Subscription[] | null, payload: PushPayload) => {
@@ -137,6 +156,7 @@ export async function runSocial(deps: SocialDeps): Promise<SocialSummary> {
     ...nudges.map((row) => send('nudges', row.user_id, row.subscriptions, nudgePayload(row))),
     ...evenings.map((row) => send('evenings', row.user_id, row.subscriptions, eveningPayload(row))),
     ...weeklies.map((row) => send('weeklies', row.user_id, row.subscriptions, weeklyPayload(row))),
+    ...challenges.map((row) => send('challenges', row.to_user, row.subscriptions, challengePayload(row))),
   ])
   return summary
 }

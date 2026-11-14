@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest'
-import { eveningPayload, goalAlertPayload, nudgePayload, runSocial, weeklyPayload, type GoalAlertRow, type NudgeRow, type SocialDeps, type WeeklyRow } from './social.ts'
+import { challengePayload, eveningPayload, goalAlertPayload, nudgePayload, runSocial, weeklyPayload, type GoalAlertRow, type NudgeRow, type SocialDeps, type WeeklyRow } from './social.ts'
 
 const sub = (id: string) => ({ id, endpoint: `https://push/${id}`, p256dh: 'k', auth: 'a' })
 const alert = (over: Partial<GoalAlertRow> = {}): GoalAlertRow => ({ event_id: 'e1', achiever: 'Anna', to_user: 'b', token: 't1', subscriptions: [sub('b1')], ...over })
@@ -12,6 +12,7 @@ function deps(over: Partial<SocialDeps> = {}) {
     takeNudges: vi.fn(async () => [nudge()]),
     takeEveningSummaries: vi.fn(async () => []),
     takeWeeklyReports: vi.fn(async () => []),
+    takeChallengeAlerts: vi.fn(async () => []),
     push: vi.fn(async () => 201),
     removeSubscription: vi.fn(async () => {}),
     touchSubscription: vi.fn(async () => {}),
@@ -43,7 +44,7 @@ describe('promemoria a chi non apre l’app', () => {
 describe('runSocial', () => {
   it('manda avvisi e promemoria ai dispositivi giusti', async () => {
     const d = deps()
-    expect(await runSocial(d)).toEqual({ alerts: 1, nudges: 1, evenings: 0, weeklies: 0 })
+    expect(await runSocial(d)).toEqual({ alerts: 1, nudges: 1, evenings: 0, weeklies: 0, challenges: 0 })
     expect(d.push).toHaveBeenCalledWith(sub('b1'), expect.objectContaining({ cheerToken: 't1' }))
     expect(d.push).toHaveBeenCalledWith(sub('a1'), expect.objectContaining({ title: 'Anna, da ieri non ti vediamo 💧' }))
   })
@@ -51,12 +52,12 @@ describe('runSocial', () => {
   it('se una lettura fallisce, l’altra parte va avanti', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const d = deps({ takeGoalAlerts: vi.fn(async () => { throw new Error('giù') }) })
-    expect(await runSocial(d)).toEqual({ alerts: 0, nudges: 1, evenings: 0, weeklies: 0 })
+    expect(await runSocial(d)).toEqual({ alerts: 0, nudges: 1, evenings: 0, weeklies: 0, challenges: 0 })
   })
 
   it('senza dispositivi non manda nulla', async () => {
     const d = deps({ takeGoalAlerts: vi.fn(async () => [alert({ subscriptions: null })]), takeNudges: vi.fn(async () => []) })
-    expect(await runSocial(d)).toEqual({ alerts: 0, nudges: 0, evenings: 0, weeklies: 0 })
+    expect(await runSocial(d)).toEqual({ alerts: 0, nudges: 0, evenings: 0, weeklies: 0, challenges: 0 })
     expect(d.push).not.toHaveBeenCalled()
   })
 })
@@ -85,19 +86,39 @@ describe('resoconto del lunedì', () => {
   })
   it('runSocial manda anche riepiloghi e resoconti', async () => {
     const d = deps({ takeGoalAlerts: vi.fn(async () => []), takeNudges: vi.fn(async () => []), takeWeeklyReports: vi.fn(async () => [week({ subscriptions: [sub('w')] })]) })
-    expect(await runSocial(d)).toEqual({ alerts: 0, nudges: 0, evenings: 0, weeklies: 1 })
+    expect(await runSocial(d)).toEqual({ alerts: 0, nudges: 0, evenings: 0, weeklies: 1, challenges: 0 })
   })
 })
 
 describe('pausa', () => {
   it('chi è in pausa non riceve avvisi sociali', async () => {
     const d = deps({ paused: async () => new Set(['a', 'b']) })
-    expect(await runSocial(d)).toEqual({ alerts: 0, nudges: 0, evenings: 0, weeklies: 0 })
+    expect(await runSocial(d)).toEqual({ alerts: 0, nudges: 0, evenings: 0, weeklies: 0, challenges: 0 })
     expect(d.push).not.toHaveBeenCalled()
   })
 
   it('gli altri li ricevono', async () => {
     const d = deps({ paused: async () => new Set(['a']) })
-    expect(await runSocial(d)).toEqual({ alerts: 1, nudges: 0, evenings: 0, weeklies: 0 })
+    expect(await runSocial(d)).toEqual({ alerts: 1, nudges: 0, evenings: 0, weeklies: 0, challenges: 0 })
+  })
+})
+
+describe('avvisi delle sfide', () => {
+  it('a chi è sfidato e a chi ha sfidato, quando accetta', async () => {
+    const d = deps({
+      takeGoalAlerts: vi.fn(async () => []),
+      takeNudges: vi.fn(async () => []),
+      takeChallengeAlerts: vi.fn(async () => [
+        { kind: 'new' as const, to_user: 'a', other_name: 'Bruno', subscriptions: [sub('c1')] },
+        { kind: 'accepted' as const, to_user: 'b', other_name: 'Anna', subscriptions: [sub('c2')] },
+      ]),
+    })
+    expect(await runSocial(d)).toMatchObject({ challenges: 2 })
+    const titles = d.push.mock.calls.map((call) => (call[1] as { title: string }).title)
+    expect(titles).toEqual(expect.arrayContaining(['⚔️ Bruno ti sfida', '⚔️ Anna ha accettato la sfida']))
+  })
+
+  it('il testo della sfida nuova invita ad accettare', () => {
+    expect(challengePayload({ kind: 'new', to_user: 'a', other_name: ' ', subscriptions: null })).toMatchObject({ title: '⚔️ Un amico ti sfida', url: '#/classifica' })
   })
 })

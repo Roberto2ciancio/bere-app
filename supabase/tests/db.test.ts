@@ -84,6 +84,7 @@ beforeAll(async () => {
   await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0026_reactions.sql'), 'utf8'))
   await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0027_friends_groups.sql'), 'utf8'))
   await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0028_challenges.sql'), 'utf8'))
+  await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0029_challenge_alerts.sql'), 'utf8'))
 }, 60_000)
 
 beforeEach(async () => {
@@ -1233,6 +1234,21 @@ describe('sfide 1 contro 1 (0028)', () => {
     expect(await asUser(B, async () => (await db.query<{ r: boolean }>(`select answer_challenge($1, true) r`, [id])).rows[0].r)).toBe(true)
     await db.query(`insert into drinks (user_id, client_id, amount_ml, drunk_at, local_date) values ($1, gen_random_uuid(), 2000, now(), ${TODAY_ROME}), ($1, gen_random_uuid(), 1500, now(), ${TODAY_ROME})`, [A])
     expect(await mine(A)).toEqual([{ other_name: 'Bruno', incoming: false, status: 'accepted', my_days: 1, their_days: 0 }])
+  })
+
+  it('avvisi: la sfida nuova a chi è sfidato, l’accettazione a chi ha sfidato, una volta sola e solo di giorno', async () => {
+    const take = async (at: string) => (await db.query<{ kind: string; to_user: string; other_name: string }>(`select kind, to_user, other_name from take_challenge_alerts($1)`, [at])).rows
+    const noonRome = `${await week()}T11:00:00Z`
+    await db.query(`insert into push_subscriptions (user_id, endpoint, p256dh, auth) values ($1, 'https://push/a', 'k', 'a'), ($2, 'https://push/b', 'k', 'a')`, [A, B])
+    await challenge(A, B)
+    await db.query(`update challenges set created_at = $1::timestamptz - interval '1 minute'`, [noonRome])
+    expect(await take(`${await week()}T23:30:00Z`)).toEqual([])
+    expect(await take(noonRome)).toEqual([{ kind: 'new', to_user: B, other_name: 'Anna' }])
+    expect(await take(noonRome)).toEqual([])
+    const id = (await db.query<{ id: string }>(`select id from challenges`)).rows[0].id
+    await asUser(B, () => db.query(`select answer_challenge($1, true)`, [id]))
+    await db.query(`update challenges set answered_at = $1::timestamptz - interval '1 minute'`, [noonRome])
+    expect(await take(noonRome)).toEqual([{ kind: 'accepted', to_user: A, other_name: 'Bruno' }])
   })
 
   it('una sfida rifiutata sparisce per chi la rifiuta, chi l’ha lanciata lo vede', async () => {

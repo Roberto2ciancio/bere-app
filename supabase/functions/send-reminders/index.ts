@@ -1,7 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { pushMessage } from '../_shared/webpush.ts'
 import { handleRequest, runSendReminders, type Deps, type ReminderRow, type SnoozeRow } from './core.ts'
-import { runSocial, type EveningRow, type GoalAlertRow, type NudgeRow, type WeeklyRow } from './social.ts'
+import { runSocial, type EveningRow, type GoalAlertRow, type NudgeRow, type WeeklyRow, type ChallengeAlertRow } from './social.ts'
 
 const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
@@ -79,6 +79,11 @@ async function run() {
       const { data, error } = await db.rpc('take_weekly_reports')
       fail(error)
       return (data ?? []) as WeeklyRow[]
+    },
+    async takeChallengeAlerts() {
+      const { data, error } = await db.rpc('take_challenge_alerts')
+      fail(error)
+      return (data ?? []) as ChallengeAlertRow[]
     },
   })])
   return { ...reminders, ...social }

@@ -12,6 +12,14 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '2.1.1',
+    date: '2026-11-14',
+    title: 'Notifiche delle sfide',
+    notes: [
+      'Quando un amico ti sfida ti arriva una notifica, e un’altra quando qualcuno accetta la tua sfida (dalle 8 alle 22).',
+    ],
+  },
+  {
     version: '2.1.0',
     date: '2026-11-14',
     title: 'Sfide 1 contro 1',
