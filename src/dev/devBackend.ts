@@ -323,9 +323,18 @@ if (import.meta.env.MODE === 'devapp') {
 const cheeredToday = new Map<string, string>()
 
 // Gruppi finti, solo in memoria: per provare amici e classifiche private senza server.
+const devChallenges: { id: string; other: string; other_name: string; incoming: boolean; status: string; my_days: number; their_days: number }[] = []
 const devGroups: { id: string; name: string; invite_code: string; members: number }[] = []
 function devSocial(name: string, args: { p_code?: string; p_name?: string; p_group?: string }): Result | null {
   if (name === 'my_groups') return { data: devGroups, error: null }
+  if (name === 'my_challenges') return { data: devChallenges, error: null }
+  if (name === 'challenge') {
+    const to = (args as { p_to?: string }).p_to ?? ''
+    if (devChallenges.some((c) => c.other === to)) return { data: 'already', error: null }
+    devChallenges.push({ id: `sfida-${devChallenges.length + 1}`, other: to, other_name: 'Marta', incoming: false, status: 'accepted', my_days: 1, their_days: 2 })
+    return { data: 'ok', error: null }
+  }
+  if (name === 'answer_challenge') return { data: true, error: null }
   if (name === 'remove_friend') return { data: null, error: null }
   if (name === 'leave_group') {
     const i = devGroups.findIndex((g) => g.id === args.p_group)

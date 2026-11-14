@@ -192,4 +192,27 @@ describe('LeaderboardPage', () => {
     expect(fake.rpcCalls).toContainEqual({ name: 'create_group', args: { p_name: 'Famiglia' } })
     expect(await screen.findByText(/Codice invito: FAMIGL7/)).toBeInTheDocument()
   })
+
+  it('sfida un amico e mostra il punteggio della sfida', async () => {
+    fake.rpcResults.get_leaderboard = [entry('u2', 'Bruno', 3, 2), entry('u1', 'Anna', 2, 1)]
+    fake.rpcResults.challenge = 'ok'
+    renderPage()
+    await userEvent.click(await screen.findByRole('button', { name: 'Sfida Bruno' }))
+    expect(fake.rpcCalls).toContainEqual({ name: 'challenge', args: { p_to: 'u2', p_week: expect.any(String) } })
+    expect(await screen.findByText(/Sfida lanciata a Bruno/)).toBeInTheDocument()
+  })
+
+  it('le sfide della settimana: punteggio e risposta a chi ti sfida', async () => {
+    fake.rpcResults.get_leaderboard = [entry('u2', 'Bruno', 3, 2), entry('u3', 'Carla', 1, 1), entry('u1', 'Anna', 2, 1)]
+    fake.rpcResults.my_challenges = [
+      { id: 'c1', other: 'u2', other_name: 'Bruno', incoming: false, status: 'accepted', my_days: 2, their_days: 3 },
+      { id: 'c2', other: 'u3', other_name: 'Carla', incoming: true, status: 'pending', my_days: 2, their_days: 1 },
+    ]
+    renderPage()
+    expect(await screen.findByText('Tu 2 – 3 Bruno')).toBeInTheDocument()
+    expect(screen.getByText('Sei dietro')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Sfida Bruno' })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Accetta' }))
+    expect(fake.rpcCalls).toContainEqual({ name: 'answer_challenge', args: { p_id: 'c2', p_accept: true } })
+  })
 })

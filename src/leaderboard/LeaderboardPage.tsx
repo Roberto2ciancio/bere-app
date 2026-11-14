@@ -13,6 +13,7 @@ import { useGluSpot, useGluStageActive } from '../glu3d/stage/stageContext'
 import { CORNER_PHRASES } from '../mascot/phrases'
 import { weekStart } from './weekStart'
 import { FriendsPanel, type Group } from './FriendsPanel'
+import { ChallengesCard, type Challenge } from './ChallengesCard'
 import { Stagger } from '../ui/motion/Stagger'
 
 /** Le reazioni ai traguardi degli amici, con il nome letto dagli screen reader. */
@@ -96,6 +97,32 @@ export function LeaderboardPage() {
       active = false
     }
   }, [reload])
+
+  const [challenges, setChallenges] = useState<Challenge[]>([])
+  useEffect(() => {
+    let active = true
+    Promise.resolve(supabase.rpc('my_challenges', { p_week: week })).then(({ data }) => {
+      if (active) setChallenges(Array.isArray(data) ? (data as Challenge[]) : [])
+    })
+    return () => {
+      active = false
+    }
+  }, [week, reload])
+  const challenged = new Set(challenges.map((c) => c.other))
+
+  async function challenge(entry: Entry) {
+    setPoking(true)
+    const { data, error } = await supabase.rpc('challenge', { p_to: entry.user_id, p_week: week })
+    const name = entry.display_name
+    const messages: Record<string, string> = {
+      ok: `Sfida lanciata a ${name}: vince chi raggiunge l'obiettivo in più giorni questa settimana.`,
+      already: `Con ${name} c'è già una sfida questa settimana.`,
+      limit: 'Hai già lanciato 5 sfide questa settimana.',
+    }
+    setPokeMessage((!error && typeof data === 'string' && messages[data]) || `Non è stato possibile sfidare ${name}. Riprova.`)
+    if (!error && (data === 'ok' || data === 'already')) setReload((n) => n + 1)
+    setPoking(false)
+  }
 
   function changed(select?: string | null) {
     if (select !== undefined) setGroupId(select)
@@ -196,6 +223,8 @@ export function LeaderboardPage() {
         </section>
       )}
 
+      <ChallengesCard challenges={challenges} onChanged={() => setReload((n) => n + 1)} />
+
       {entries && entries.length <= 1 && (
         <EmptyState
           mood="idle"
@@ -253,6 +282,11 @@ export function LeaderboardPage() {
                               </button>
                             ))
                           ))}
+                        {!challenged.has(entry.user_id) && (
+                          <button className="poke" disabled={poking} aria-label={`Sfida ${entry.display_name}`} onClick={() => void challenge(entry)}>
+                            ⚔️ Sfida
+                          </button>
+                        )}
                         <button className="poke" disabled={poking} aria-label={`Sprona ${entry.display_name}`} onClick={() => void poke(entry)}>
                           👋 Sprona
                         </button>
@@ -280,6 +314,7 @@ export function LeaderboardPage() {
         <div className="fold-body">
           <p className="hint">Vince chi raggiunge il proprio obiettivo in più giorni, da lunedì a domenica. A parità, conta la serie più lunga di giorni consecutivi. Valgono solo obiettivi da 1,5 L in su.</p>
           <p className="hint">Il numero accanto al nome è il livello: si sale bevendo e raggiungendo l'obiettivo, settimana dopo settimana. I dettagli sono nello Storico.</p>
+          <p className="hint">Con «Sfida» proponi a un amico una sfida 1 contro 1: se accetta, vince chi raggiunge l'obiettivo in più giorni questa settimana. Il punteggio si vede qui sopra.</p>
           <p className="hint">Con «Sprona» mandi a un amico una notifica per ricordargli di bere. Al massimo 3 volte al giorno, e una volta all'ora per la stessa persona.</p>
           <p className="hint">In classifica ci sono solo i tuoi amici, oppure i membri di un gruppo. Per aggiungere un amico inserisci il suo codice; per un gruppo, il codice invito che ti manda chi ne fa parte.</p>
           <p className="hint">Quando qualcuno raggiunge l'obiettivo del giorno, i suoi amici e compagni di gruppo ricevono un avviso e possono mandargli i complimenti 👏, dalla notifica o da qui. Puoi spegnere questi avvisi nel Profilo.</p>

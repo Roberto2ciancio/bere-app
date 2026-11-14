@@ -83,6 +83,7 @@ beforeAll(async () => {
   await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0025_glu_variants.sql'), 'utf8'))
   await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0026_reactions.sql'), 'utf8'))
   await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0027_friends_groups.sql'), 'utf8'))
+  await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0028_challenges.sql'), 'utf8'))
 }, 60_000)
 
 beforeEach(async () => {
@@ -1199,5 +1200,46 @@ describe('amici e classifiche private (0027)', () => {
 
   it('le tabelle di amici e gruppi non si leggono direttamente', async () => {
     expect(await asUser(A, () => count(`select count(*) n from friendships`))).toBe(0)
+  })
+})
+
+describe('sfide 1 contro 1 (0028)', () => {
+  const C = '00000000-0000-0000-0000-00000000000c'
+  const MONDAY = `date_trunc('week', now() at time zone 'Europe/Rome')::date`
+  const week = async () => (await db.query<{ w: string }>(`select ${MONDAY}::text w`)).rows[0].w
+  const challenge = async (from: string, to: string, w?: string) =>
+    asUser(from, async () => (await db.query<{ r: string }>(`select challenge($1, $2) r`, [to, w ?? (await week())])).rows[0].r)
+  const mine = async (id: string) =>
+    asUser(id, async () => (await db.query(`select other_name, incoming, status, my_days, their_days from my_challenges(${MONDAY})`)).rows)
+
+  beforeEach(async () => {
+    await addUser(C, 'Carla')
+  })
+
+  it('si sfida solo chi è collegato, una volta a settimana', async () => {
+    expect(await challenge(A, A)).toBe('self')
+    expect(await challenge(A, C)).toBe('not-connected')
+    expect(await challenge(A, B, '2026-11-03')).toBe('invalid')
+    expect(await challenge(A, B, '2020-01-06')).toBe('invalid')
+    expect(await challenge(A, B)).toBe('ok')
+    expect(await challenge(B, A)).toBe('already')
+  })
+
+  it('chi è sfidato accetta o rifiuta; il punteggio sono i giorni a obiettivo', async () => {
+    await challenge(A, B)
+    expect(await mine(B)).toEqual([{ other_name: 'Anna', incoming: true, status: 'pending', my_days: 0, their_days: 0 }])
+    const id = (await db.query<{ id: string }>(`select id from challenges`)).rows[0].id
+    expect(await asUser(A, async () => (await db.query<{ r: boolean }>(`select answer_challenge($1, true) r`, [id])).rows[0].r)).toBe(false)
+    expect(await asUser(B, async () => (await db.query<{ r: boolean }>(`select answer_challenge($1, true) r`, [id])).rows[0].r)).toBe(true)
+    await db.query(`insert into drinks (user_id, client_id, amount_ml, drunk_at, local_date) values ($1, gen_random_uuid(), 2000, now(), ${TODAY_ROME}), ($1, gen_random_uuid(), 1500, now(), ${TODAY_ROME})`, [A])
+    expect(await mine(A)).toEqual([{ other_name: 'Bruno', incoming: false, status: 'accepted', my_days: 1, their_days: 0 }])
+  })
+
+  it('una sfida rifiutata sparisce per chi la rifiuta, chi l’ha lanciata lo vede', async () => {
+    await challenge(A, B)
+    const id = (await db.query<{ id: string }>(`select id from challenges`)).rows[0].id
+    await asUser(B, () => db.query(`select answer_challenge($1, false)`, [id]))
+    expect(await mine(B)).toEqual([])
+    expect(await mine(A)).toMatchObject([{ status: 'declined' }])
   })
 })

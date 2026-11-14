@@ -77,3 +77,11 @@
 .inline-form input { min-width: 0; }
 .friends-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .friends-list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+/* Sfide 1 contro 1 */
+.challenges { display: grid; gap: 8px; }
+.challenges h2 { margin: 0; }
+.challenge-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.challenge-list li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 10px; }
+.challenge-score { font-weight: 700; }
+.challenge-actions { display: flex; gap: 8px; }

@@ -12,6 +12,14 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '2.1.0',
+    date: '2026-11-14',
+    title: 'Sfide 1 contro 1',
+    notes: [
+      'In Classifica, «⚔️ Sfida» propone a un amico chi raggiunge l’obiettivo in più giorni questa settimana: se accetta, il punteggio si aggiorna in diretta in «Sfide della settimana».',
+    ],
+  },
+  {
     version: '2.0.0',
     date: '2026-11-14',
     title: 'Amici e classifiche private',
