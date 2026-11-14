@@ -12,6 +12,7 @@ import { useGluAccessories } from '../mascot/accessories'
 import { useGluSpot, useGluStageActive } from '../glu3d/stage/stageContext'
 import { CORNER_PHRASES } from '../mascot/phrases'
 import { weekStart } from './weekStart'
+import { FriendsPanel, type Group } from './FriendsPanel'
 import { Stagger } from '../ui/motion/Stagger'
 
 /** Le reazioni ai traguardi degli amici, con il nome letto dagli screen reader. */
@@ -65,18 +66,41 @@ export function LeaderboardPage() {
   /** Chi ha raggiunto l'obiettivo oggi → la reazione che gli ho già mandato (null se nessuna). */
   const [cheerable, setCheerable] = useState<Map<string, string | null>>(new Map())
   const levels = useLevels()
+  // Classifica «Amici» (null) o quella di un gruppo.
+  const [groupId, setGroupId] = useState<string | null>(null)
+  const [groups, setGroups] = useState<Group[]>([])
+  const [reload, setReload] = useState(0)
+  const group = groups.find((g) => g.id === groupId) ?? null
 
   useEffect(() => {
     let active = true
-    Promise.resolve(supabase.rpc('get_leaderboard', { week_start: week })).then(({ data, error }) => {
+    Promise.resolve(supabase.rpc('get_leaderboard', groupId ? { week_start: week, p_group: groupId } : { week_start: week })).then(({ data, error }) => {
       if (!active) return
       if (error) setFailed(true)
-      else setEntries((data ?? []) as Entry[])
+      else {
+        setFailed(false)
+        setEntries((data ?? []) as Entry[])
+      }
     })
     return () => {
       active = false
     }
-  }, [week])
+  }, [week, groupId, reload])
+
+  useEffect(() => {
+    let active = true
+    Promise.resolve(supabase.rpc('my_groups')).then(({ data }) => {
+      if (active) setGroups(Array.isArray(data) ? (data as Group[]) : [])
+    })
+    return () => {
+      active = false
+    }
+  }, [reload])
+
+  function changed(select?: string | null) {
+    if (select !== undefined) setGroupId(select)
+    setReload((n) => n + 1)
+  }
 
   useEffect(() => {
     let active = true
@@ -86,7 +110,7 @@ export function LeaderboardPage() {
     return () => {
       active = false
     }
-  }, [])
+  }, [reload])
 
   async function cheer(entry: Entry, reaction: string) {
     setPoking(true)
@@ -144,6 +168,17 @@ export function LeaderboardPage() {
         <p className="hint">Settimana {weekLabel(week)}</p>
       </header>
 
+      {groups.length > 0 && (
+        <div className="choices board-tabs" role="group" aria-label="Quale classifica">
+          <button type="button" className="choice" aria-pressed={!group} onClick={() => setGroupId(null)}>Amici</button>
+          {groups.map((g) => (
+            <button key={g.id} type="button" className="choice" aria-pressed={group?.id === g.id} onClick={() => setGroupId(g.id)}>
+              {g.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {failed && <p role="alert" className="error">Classifica non disponibile. Controlla la connessione.</p>}
       {!entries && !failed && <p className="center-note">Caricamento…</p>}
 
@@ -162,7 +197,10 @@ export function LeaderboardPage() {
       )}
 
       {entries && entries.length <= 1 && (
-        <EmptyState mood="idle" title={started ? 'Per ora ci sei solo tu.' : "Nessuno ha ancora raggiunto l'obiettivo questa settimana. Il primo posto è libero."} />
+        <EmptyState
+          mood="idle"
+          title={group ? 'Nel gruppo per ora ci sei solo tu: invita qualcuno con il codice qui sotto.' : 'Per ora ci sei solo tu: aggiungi un amico con il suo codice, qui sotto.'}
+        />
       )}
       {entries && entries.length > 1 && !started && <p className="hint">Nessuno ha ancora raggiunto l'obiettivo questa settimana. Il primo posto è libero.</p>}
 
@@ -228,14 +266,24 @@ export function LeaderboardPage() {
         </ol>
       )}
 
+      {user && (
+        <FriendsPanel
+          userId={user.id}
+          group={group}
+          friends={!group && entries ? entries.filter((e) => e.user_id !== user.id) : null}
+          onChanged={changed}
+        />
+      )}
+
       <details className="fold">
         <summary>Come funziona</summary>
         <div className="fold-body">
           <p className="hint">Vince chi raggiunge il proprio obiettivo in più giorni, da lunedì a domenica. A parità, conta la serie più lunga di giorni consecutivi. Valgono solo obiettivi da 1,5 L in su.</p>
           <p className="hint">Il numero accanto al nome è il livello: si sale bevendo e raggiungendo l'obiettivo, settimana dopo settimana. I dettagli sono nello Storico.</p>
           <p className="hint">Con «Sprona» mandi a un amico una notifica per ricordargli di bere. Al massimo 3 volte al giorno, e una volta all'ora per la stessa persona.</p>
-          <p className="hint">Quando qualcuno raggiunge l'obiettivo del giorno, gli altri ricevono un avviso e possono mandargli i complimenti 👏, dalla notifica o da qui. Puoi spegnere questi avvisi nel Profilo.</p>
-          <p className="hint">Nome e foto sono visibili a tutti gli utenti dell'app, insieme ai giorni in cui hai raggiunto l'obiettivo. Le quantità bevute restano private.</p>
+          <p className="hint">In classifica ci sono solo i tuoi amici, oppure i membri di un gruppo. Per aggiungere un amico inserisci il suo codice; per un gruppo, il codice invito che ti manda chi ne fa parte.</p>
+          <p className="hint">Quando qualcuno raggiunge l'obiettivo del giorno, i suoi amici e compagni di gruppo ricevono un avviso e possono mandargli i complimenti 👏, dalla notifica o da qui. Puoi spegnere questi avvisi nel Profilo.</p>
+          <p className="hint">Nome e foto li vedono solo i tuoi amici e chi è nei tuoi gruppi, insieme ai giorni in cui hai raggiunto l'obiettivo. Le quantità bevute restano private.</p>
           <p className="hint">Una foto usa una tua opera senza permesso, o un nome o una foto è offensivo? <a href="#/segnala">Segnalalo</a>: lo controlliamo e, se serve, lo togliamo.</p>
         </div>
       </details>

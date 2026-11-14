@@ -1008,14 +1008,14 @@ export const GUIDE: GuideSource[] = [
     answer: [
       'Apri «Profilo» › «Aspetto e Glu»: nel campo «Nome», scrivi il nuovo nome (massimo 40 caratteri).',
       'Tocca «Salva nome».',
-      'Nome e foto sono visibili agli altri utenti nella classifica.',
+      'Nome e foto li vedono in classifica solo i tuoi amici e chi è nei tuoi gruppi.',
     ],
     route: '/profilo/aspetto',
     legacy: {
       answer: [
         "Apri la scheda «Profilo»: in alto, nel campo «Nome», scrivi il nuovo nome (massimo 40 caratteri).",
         "Tocca «Salva nome».",
-        "Nome e foto sono visibili agli altri utenti nella classifica.",
+        "Nome e foto li vedono in classifica solo i tuoi amici e chi è nei tuoi gruppi.",
       ],
       route: "/profilo",
     },
@@ -1033,14 +1033,14 @@ export const GUIDE: GuideSource[] = [
     answer: [
       'Apri «Profilo» › «Aspetto e Glu»: trovi la tua immagine.',
       'Tocca «Cambia foto» per caricarne una tua, oppure scegli un avatar in «Oppure scegli un avatar».',
-      'Per togliere la foto scegli uno degli avatar. Nome e foto sono visibili a tutti in classifica.',
+      'Per togliere la foto scegli uno degli avatar. Nome e foto li vedono solo i tuoi amici e i tuoi gruppi.',
     ],
     route: '/profilo/aspetto',
     legacy: {
       answer: [
         "Apri la scheda «Profilo»: in alto trovi la tua immagine.",
         "Tocca «Cambia foto» per caricarne una tua, oppure scegli un avatar in «Oppure scegli un avatar».",
-        "Per togliere la foto scegli uno degli avatar. Nome e foto sono visibili a tutti in classifica.",
+        "Per togliere la foto scegli uno degli avatar. Nome e foto li vedono solo i tuoi amici e i tuoi gruppi.",
       ],
       route: "/profilo",
     },
@@ -1309,13 +1309,13 @@ export const GUIDE: GuideSource[] = [
     keywords: ['privacy', 'chi vede', 'vede', 'vedere', 'visibile', 'privati', 'supabase', 'età', 'anni', '14', 'condivisi', 'sicurezza', 'pubblico', 'conservati', 'conserva', 'informazioni', 'personali'],
     answer: [
       'La pagina «Privacy» spiega cosa salviamo, chi lo vede, dove sono conservati i dati e l\'età minima (14 anni). La trovi in «Profilo» › «Account e privacy».',
-      'Nome, foto e giorni a obiettivo sono visibili a tutti; acqua, caffè, orari e sfondo restano privati.',
+      'Nome, foto e giorni a obiettivo li vedono solo i tuoi amici e i tuoi gruppi; acqua, caffè, orari e sfondo restano privati.',
     ],
     route: '/privacy',
     legacy: {
       answer: [
         "La pagina «Privacy» spiega cosa salviamo, chi lo vede, dove sono conservati i dati e l'età minima (14 anni). La trovi nel «Profilo», sezione «Account».",
-        "Nome, foto e giorni a obiettivo sono visibili a tutti; acqua, caffè, orari e sfondo restano privati.",
+        "Nome, foto e giorni a obiettivo li vedono solo i tuoi amici e i tuoi gruppi; acqua, caffè, orari e sfondo restano privati.",
       ],
       route: "/privacy",
     },

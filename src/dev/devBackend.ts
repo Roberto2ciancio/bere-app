@@ -322,6 +322,29 @@ if (import.meta.env.MODE === 'devapp') {
 
 const cheeredToday = new Map<string, string>()
 
+// Gruppi finti, solo in memoria: per provare amici e classifiche private senza server.
+const devGroups: { id: string; name: string; invite_code: string; members: number }[] = []
+function devSocial(name: string, args: { p_code?: string; p_name?: string; p_group?: string }): Result | null {
+  if (name === 'my_groups') return { data: devGroups, error: null }
+  if (name === 'remove_friend') return { data: null, error: null }
+  if (name === 'leave_group') {
+    const i = devGroups.findIndex((g) => g.id === args.p_group)
+    if (i >= 0) devGroups.splice(i, 1)
+    return { data: null, error: null }
+  }
+  if (name === 'create_group') {
+    const group = { id: `gruppo-${devGroups.length + 1}`, name: (args.p_name ?? '').trim() || 'Gruppo', invite_code: 'GRUPPO7', members: 1 }
+    devGroups.push(group)
+    return { data: { ok: true, ...group }, error: null }
+  }
+  if (name === 'use_code') {
+    const code = (args.p_code ?? '').replace(/[^a-z0-9]/gi, '').toUpperCase()
+    if (code.length === 6) return { data: { ok: true, kind: 'friend', name: 'Marta', already: true }, error: null }
+    return { data: { ok: false, reason: 'not-found' }, error: null }
+  }
+  return null
+}
+
 /** Come la funzione SQL set_initial_goal: obiettivo da oggi (nel fuso del profilo), solo senza bevute. */
 function setInitialGoal(goal: number | undefined): Result {
   if (goal === undefined || goal < 100 || goal > 10000) return { data: null, error: { message: 'invalid_goal' } }
@@ -338,8 +361,10 @@ function setInitialGoal(goal: number | undefined): Result {
 
 export const supabase = {
   from: (table: string) => new Query(table),
-  async rpc(name: string, args?: { week_start?: string; p_goal_ml?: number }): Promise<Result> {
+  async rpc(name: string, args?: { week_start?: string; p_goal_ml?: number; p_code?: string; p_name?: string; p_group?: string }): Promise<Result> {
     if (name === 'set_initial_goal') return setInitialGoal(args?.p_goal_ml)
+    const social = devSocial(name, args ?? {})
+    if (social) return social
     if (name === 'daily_totals') return { data: dailyTotals(), error: null }
     if (name === 'get_levels') return { data: levels(), error: null }
     // Marta (finta) ha già raggiunto l'obiettivo oggi: così si vedono i complimenti in classifica.

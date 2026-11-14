@@ -75,7 +75,7 @@ export function ProfileHeader() {
         {saved && <p role="status" className="hint">Nome salvato.</p>}
         <button className="secondary">Salva nome</button>
       </form>
-      <p className="hint">Nome e foto sono visibili agli altri utenti nella classifica.</p>
+      <p className="hint">Nome e foto li vedono in classifica solo i tuoi amici e chi è nei tuoi gruppi.</p>
     </section>
   )
 }

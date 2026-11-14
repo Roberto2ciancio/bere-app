@@ -84,7 +84,7 @@ export function RegisterPage() {
           <input type="date" autoComplete="bday" max={today} value={birth} onChange={(e) => setBirth(e.target.value)} />
         </label>
         <p className="hint">Serve almeno {MIN_AGE} anni. La data resta sul telefono: non la salviamo.</p>
-        <p className="hint">Il nome e la foto sono visibili agli altri utenti nella classifica.</p>
+        <p className="hint">Il nome e la foto li vedono in classifica solo i tuoi amici e chi è nei tuoi gruppi.</p>
         {error && <p role="alert" className="error">{error}</p>}
         <button className="primary" disabled={busy}>Registrati</button>
       </form>

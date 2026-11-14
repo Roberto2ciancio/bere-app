@@ -66,3 +66,14 @@
 @media (max-width: 360px) {
   .poke { padding: 0 10px; font-size: 0.8rem; }
 }
+
+/* Amici e gruppi */
+.board-tabs { margin: 4px 0 12px; }
+.friends-panel { display: grid; gap: 12px; }
+.friends-panel h2 { margin: 0; }
+.friends-panel p { margin: 0; }
+.inline-form { display: grid; grid-template-columns: 1fr auto; gap: 6px 8px; align-items: center; }
+.inline-form label { grid-column: 1 / -1; font-weight: 600; }
+.inline-form input { min-width: 0; }
+.friends-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.friends-list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; }

@@ -1,6 +1,6 @@
 # Bere: idee per le prossime versioni
 
-Ultimo aggiornamento: 14 novembre 2026 (app alla versione 1.13.0).
+Ultimo aggiornamento: 14 novembre 2026 (app alla versione 2.0.0).
 
 Legenda: 🟢 piccolo · 🟡 medio · 🔴 grande · 🗄️ tocca il server (database o funzioni) · 📦 serve un nuovo APK
 
@@ -34,7 +34,7 @@ scorciatoie dall'icona, «Bevuto ✓» dalla notifica.
 
 ## 2.0: social
 
-- [ ] 🔴 🗄️ **Gruppi privati** (famiglia, colleghi, amici) con codice invito, ognuno con la sua classifica.
+- [x] 🔴 🗄️ **Gruppi privati** (fatto in 2.0.0, insieme ai codici amico; la classifica generale è stata tolta) (famiglia, colleghi, amici) con codice invito, ognuno con la sua classifica.
 - [ ] 🟡 🗄️ **Sfide 1 contro 1**: «Chi raggiunge più giorni questa settimana?».
 - [x] 🟢 🗄️ **Reazioni** (fatto in 1.13.0) ai traguardi degli amici (👏 💪 🔥), non solo complimenti.
 
@@ -71,7 +71,7 @@ Richiede di passare da TWA a Capacitor e rifare le notifiche con Firebase Cloud 
 
 ## Da dove partire
 
-1. 🟡 Sfide 1 contro 1, poi 🔴 Gruppi privati (2.0 social).
+1. 🟡 Sfide 1 contro 1 (tra amici).
 2. Per il Play Store servono scheda, tester e dominio: decisioni tue.
 
 ## Come si pubblica una versione

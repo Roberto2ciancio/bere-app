@@ -110,7 +110,7 @@ describe('DeleteAccount', () => {
 describe('PrivacyPage', () => {
   it('dice cosa si raccoglie, chi lo vede e come cancellarlo', async () => {
     wrap(<PrivacyPage />)
-    expect(await screen.findByText(/nome e foto sono visibili/i)).toBeInTheDocument()
+    expect(await screen.findByText(/nome e foto li vedono solo i tuoi amici/i)).toBeInTheDocument()
     expect(screen.getByText(/supabase/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/scrivi elimina/i)).toBeInTheDocument()
   })

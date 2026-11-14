@@ -14,7 +14,7 @@ export function PrivacyPage() {
 
       <section className="section">
         <h2>Chi lo vede</h2>
-        <p>Nome e foto sono visibili a tutti gli utenti dell'app, insieme ai giorni in cui hai raggiunto l'obiettivo. L'acqua, il caffè, gli orari e lo sfondo restano privati. I suggerimenti li legge solo chi gestisce l'app.</p>
+        <p>Nome e foto li vedono solo i tuoi amici e chi è nei tuoi gruppi, insieme ai giorni in cui hai raggiunto l'obiettivo. L'acqua, il caffè, gli orari e lo sfondo restano privati. I suggerimenti li legge solo chi gestisce l'app.</p>
       </section>
 
       <section className="section">
@@ -29,7 +29,7 @@ export function PrivacyPage() {
 
       <section className="section">
         <h2>Foto e diritto d'autore</h2>
-        <p>Carica solo foto tue o che hai il permesso di usare: la foto del profilo è visibile a tutti in classifica. Se una foto usa una tua opera senza permesso, o un nome o una foto è offensivo, <Link to="/segnala">segnalalo</Link> indicando il nome in classifica e l'opera originale. Controlliamo ogni segnalazione e togliamo i contenuti che violano diritti o regole; chi lo fa più volte perde il profilo. Puoi togliere la tua foto in ogni momento scegliendo uno degli avatar pronti.</p>
+        <p>Carica solo foto tue o che hai il permesso di usare: la foto del profilo la vedono i tuoi amici e i tuoi gruppi in classifica. Se una foto usa una tua opera senza permesso, o un nome o una foto è offensivo, <Link to="/segnala">segnalalo</Link> indicando il nome in classifica e l'opera originale. Controlliamo ogni segnalazione e togliamo i contenuti che violano diritti o regole; chi lo fa più volte perde il profilo. Puoi togliere la tua foto in ogni momento scegliendo uno degli avatar pronti.</p>
       </section>
 
       <section className="section">

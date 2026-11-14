@@ -78,7 +78,7 @@ describe('Glu in cima alle pagine', () => {
     fake.rpcResults.get_leaderboard = [row('u1', 'Anna', 1)]
     window.location.hash = '#/classifica'
     render(<App />)
-    expect(await screen.findByText('Per ora ci sei solo tu.')).toBeInTheDocument()
+    expect(await screen.findByText(/Per ora ci sei solo tu/)).toBeInTheDocument()
     expect(screen.getAllByTestId('glu')).toHaveLength(1)
     expect(screen.queryByText('Ogni sorso conta per la classifica.')).not.toBeInTheDocument()
   })

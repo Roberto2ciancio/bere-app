@@ -12,6 +12,16 @@ export interface Release {
 
 export const CHANGELOG: Release[] = [
   {
+    version: '2.0.0',
+    date: '2026-11-14',
+    title: 'Amici e classifiche private',
+    notes: [
+      'La classifica ora è tra amici: ognuno ha un codice amico (Classifica › Amici e gruppi) da mandare a chi vuoi sfidare.',
+      'Crea un gruppo (famiglia, colleghi, amici) e invita gli altri con il suo codice: ogni gruppo ha la sua classifica.',
+      'La classifica con tutti gli utenti non c’è più: nome, foto, sproni, complimenti e avvisi restano tra amici e compagni di gruppo.',
+    ],
+  },
+  {
     version: '1.13.0',
     date: '2026-11-14',
     title: 'Reazioni',

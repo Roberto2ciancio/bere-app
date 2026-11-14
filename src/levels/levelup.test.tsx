@@ -163,7 +163,7 @@ describe('pagine vuote con Glu', () => {
     fake.rpcResults.get_leaderboard = [{ user_id: 'u1', display_name: 'Anna', avatar_path: null, days_met: 0, streak: 0 }]
     renderIn(<LeaderboardPage />)
     expect(await screen.findByTestId('glu')).toBeInTheDocument()
-    expect(screen.getByText(/Il primo posto è libero/)).toBeInTheDocument()
+    expect(screen.getByText(/aggiungi un amico con il suo codice/)).toBeInTheDocument()
   })
 
   it('storico senza bevute', async () => {

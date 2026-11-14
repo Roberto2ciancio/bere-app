@@ -82,12 +82,15 @@ beforeAll(async () => {
   await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0024_only_glu.sql'), 'utf8'))
   await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0025_glu_variants.sql'), 'utf8'))
   await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0026_reactions.sql'), 'utf8'))
+  await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0027_friends_groups.sql'), 'utf8'))
 }, 60_000)
 
 beforeEach(async () => {
   await db.exec(`reset role; delete from auth.users;`)
   await addUser(A, 'Anna')
   await addUser(B, 'Bruno')
+  // Anna e Bruno sono amici: classifica, sproni e complimenti passano solo tra amici o compagni di gruppo.
+  await db.exec(`insert into friendships (user_a, user_b) values ('${A}', '${B}')`)
 })
 
 describe('registrazione', () => {
@@ -1134,5 +1137,67 @@ describe('solo Glu (0024)', () => {
     } finally {
       await db.query(`delete from auth.users where id = $1`, [id])
     }
+  })
+})
+
+describe('amici e classifiche private (0027)', () => {
+  const C = '00000000-0000-0000-0000-00000000000c'
+  const use = (id: string, code: string) =>
+    asUser(id, async () => (await db.query<{ r: Record<string, unknown> }>(`select use_code($1) r`, [code])).rows[0].r)
+  const boardOf = (id: string, group: string | null = null) =>
+    asUser(id, async () => (await db.query<{ user_id: string }>(`select user_id from get_leaderboard($1, $2)`, [WEEK, group])).rows.map((r) => r.user_id))
+  const codeOf = async (id: string) => (await db.query<{ c: string }>(`select friend_code c from profiles where id = $1`, [id])).rows[0].c
+
+  const drinkToday = (id: string, ml: number) =>
+    db.query(`insert into drinks (user_id, client_id, amount_ml, drunk_at, local_date) values ($1, gen_random_uuid(), $2, now(), ${TODAY_ROME})`, [id, ml])
+
+  beforeEach(async () => {
+    await addUser(C, 'Carla')
+  })
+
+  it('niente classifica generale: vedi solo te e i tuoi amici', async () => {
+    expect((await boardOf(A)).sort()).toEqual([A, B])
+    expect(await boardOf(C)).toEqual([C])
+  })
+
+  it('il codice amico vi rende amici in entrambe le direzioni', async () => {
+    const code = await codeOf(C)
+    expect(code).toMatch(/^[A-Z2-9]{6}$/)
+    expect(await use(A, 'zzzzzz')).toEqual({ ok: false, reason: 'not-found' })
+    expect(await use(A, await codeOf(A))).toEqual({ ok: false, reason: 'self' })
+    expect(await use(A, ` ${code.slice(0, 3).toLowerCase()} ${code.slice(3)} `)).toEqual({ ok: true, kind: 'friend', name: 'Carla', already: false })
+    expect(await use(A, code)).toMatchObject({ ok: true, already: true })
+    expect(await boardOf(C)).toContain(A)
+    await asUser(C, () => db.query(`select remove_friend($1)`, [A]))
+    expect(await boardOf(A)).not.toContain(C)
+  })
+
+  it('sproni e complimenti solo tra persone collegate', async () => {
+    expect((await db.query<{ r: string }>(`select claim_poke($1, $2) r`, [C, A])).rows[0].r).toBe('blocked')
+    await drinkToday(A, 2000)
+    expect((await db.query<{ r: string }>(`select claim_cheer($1, $2) r`, [C, A])).rows[0].r).toBe('no-goal')
+    expect(await asUser(C, async () => (await db.query(`select * from cheerable_today()`)).rows)).toEqual([])
+  })
+
+  it("gruppo: codice invito, classifica dei soli membri, sparisce quando esce l'ultimo", async () => {
+    const made = await asUser(A, async () => (await db.query<{ r: { ok: boolean; id: string; invite_code: string } }>(`select create_group('Ufficio') r`)).rows[0].r)
+    expect(made.invite_code).toMatch(/^[A-Z2-9]{7}$/)
+    expect(await use(C, made.invite_code)).toMatchObject({ ok: true, kind: 'group', name: 'Ufficio', group_id: made.id })
+    expect((await boardOf(C, made.id)).sort()).toEqual([A, C])
+    expect(await boardOf(B, made.id)).toEqual([])
+    expect(await boardOf(C)).toEqual([C])
+    expect((await db.query<{ r: string }>(`select claim_poke($1, $2) r`, [C, A])).rows[0].r).toBe('ok')
+    expect(await asUser(C, async () => (await db.query(`select name, members from my_groups()`)).rows)).toEqual([{ name: 'Ufficio', members: 2 }])
+    await asUser(A, () => db.query(`select leave_group($1)`, [made.id]))
+    await asUser(C, () => db.query(`select leave_group($1)`, [made.id]))
+    expect(await count(`select count(*) n from groups`)).toBe(0)
+  })
+
+  it('il nome del gruppo non può essere vuoto', async () => {
+    expect(await asUser(A, async () => (await db.query<{ r: unknown }>(`select create_group('   ') r`)).rows[0].r)).toEqual({ ok: false, reason: 'name' })
+  })
+
+  it('le tabelle di amici e gruppi non si leggono direttamente', async () => {
+    expect(await asUser(A, () => count(`select count(*) n from friendships`))).toBe(0)
   })
 })
