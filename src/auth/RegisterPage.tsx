@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { legalUrl } from '../legal/links'
+import { PLAY_RULES } from '../legal/playFlag'
 import { ageOn, blockAge, isAgeBlocked, MIN_AGE } from './age'
 import { EmailCodeForm } from './EmailCodeForm'
 
@@ -18,6 +20,7 @@ export function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [birth, setBirth] = useState('')
+  const [accepted, setAccepted] = useState(false)
   const [tooYoung, setTooYoung] = useState(isAgeBlocked)
   const [today] = useState(() => new Date().toISOString().slice(0, 10))
   const [error, setError] = useState<string | null>(null)
@@ -35,6 +38,7 @@ export function RegisterPage() {
       blockAge()
       return setTooYoung(true)
     }
+    if (PLAY_RULES && !accepted) return setError("Per continuare accetta le condizioni d'uso")
     setBusy(true)
     setError(null)
     const { data, error } = await supabase.auth.signUp({
@@ -85,6 +89,14 @@ export function RegisterPage() {
         </label>
         <p className="hint">Serve almeno {MIN_AGE} anni. La data resta sul telefono: non la salviamo.</p>
         <p className="hint">Il nome e la foto li vedono in classifica solo i tuoi amici e chi è nei tuoi gruppi.</p>
+        {PLAY_RULES && (
+          <label className="check">
+            <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} />
+            <span>
+              Ho letto e accetto le <a href={legalUrl('termini')}>condizioni d'uso</a> e la <a href={legalUrl('privacy')}>privacy</a>
+            </span>
+          </label>
+        )}
         {error && <p role="alert" className="error">{error}</p>}
         <button className="primary" disabled={busy}>Registrati</button>
       </form>

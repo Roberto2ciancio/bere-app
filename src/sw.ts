@@ -9,7 +9,9 @@ precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
 // L'app si apre anche senza rete, dove il segnale può mancare.
 // Quella vera non deve intercettare l'app di prova, che sta in una sottocartella e ha il suo service worker.
-const denylist = self.registration.scope.endsWith('/dev/') ? [] : [/\/dev\//]
+// Le pagine pubbliche (privacy, condizioni, cancellazione) restano pagine a sé, non l'app.
+const legalPages = /\/(privacy|termini|cancella-account)\.html$/
+const denylist = self.registration.scope.endsWith('/dev/') ? [legalPages] : [/\/dev\//, legalPages]
 registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denylist }))
 
 self.addEventListener('install', () => void self.skipWaiting())

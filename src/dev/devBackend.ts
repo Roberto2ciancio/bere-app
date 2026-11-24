@@ -242,7 +242,25 @@ function leaderboard(week: string): Row[] {
     { user_id: 'finto-1', display_name: 'Marta (finta)', avatar_path: 'preset:glu-cuffie', days_met: 5, streak: 3 },
     { user_id: 'finto-2', display_name: 'Luca (finto)', avatar_path: 'preset:glu-rosso', days_met: 3, streak: 2 },
     { user_id: 'finto-3', display_name: 'Sara (finta)', avatar_path: null, days_met: 1, streak: 1 },
-  ].sort((a, b) => b.days_met - a.days_met || b.streak - a.streak || a.display_name.localeCompare(b.display_name))
+  ]
+    .filter((row) => !blockedIds().has(row.user_id))
+    .sort((a, b) => b.days_met - a.days_met || b.streak - a.streak || a.display_name.localeCompare(b.display_name))
+}
+
+/** Come la tabella blocks: le persone che ho bloccato dalla classifica. */
+const blockedIds = () => new Set(rowsOf('blocks').map((row) => row.blocked as string))
+
+const FAKE_FRIENDS: Record<string, { display_name: string; avatar_path: string | null }> = {
+  'finto-1': { display_name: 'Marta (finta)', avatar_path: 'preset:glu-cuffie' },
+  'finto-2': { display_name: 'Luca (finto)', avatar_path: 'preset:glu-rosso' },
+  'finto-3': { display_name: 'Sara (finta)', avatar_path: null },
+}
+
+function blockedPeople() {
+  return [...blockedIds()]
+    .filter((id) => FAKE_FRIENDS[id])
+    .map((id) => ({ user_id: id, ...FAKE_FRIENDS[id] }))
+    .sort((a, b) => a.display_name.localeCompare(b.display_name))
 }
 
 /** Stesse regole della funzione SQL get_levels; gli amici finti hanno punti fissi. */
@@ -336,6 +354,12 @@ function devSocial(name: string, args: { p_code?: string; p_name?: string; p_gro
   }
   if (name === 'answer_challenge') return { data: true, error: null }
   if (name === 'remove_friend') return { data: null, error: null }
+  if (name === 'block_person') {
+    const to = (args as { p_user?: string }).p_user ?? ''
+    if (!rowsOf('blocks').some((row) => row.blocked === to)) rowsOf('blocks').push({ blocker: DEV_USER_ID, blocked: to })
+    persist()
+    return { data: 'ok', error: null }
+  }
   if (name === 'leave_group') {
     const i = devGroups.findIndex((g) => g.id === args.p_group)
     if (i >= 0) devGroups.splice(i, 1)
@@ -377,7 +401,8 @@ export const supabase = {
     if (name === 'daily_totals') return { data: dailyTotals(), error: null }
     if (name === 'get_levels') return { data: levels(), error: null }
     // Marta (finta) ha già raggiunto l'obiettivo oggi: così si vedono i complimenti in classifica.
-    if (name === 'cheerable_today') return { data: [{ user_id: 'finto-1', cheered: cheeredToday.has('finto-1'), reaction: cheeredToday.get('finto-1') ?? null }], error: null }
+    if (name === 'cheerable_today') return { data: blockedIds().has('finto-1') ? [] : [{ user_id: 'finto-1', cheered: cheeredToday.has('finto-1'), reaction: cheeredToday.get('finto-1') ?? null }], error: null }
+    if (name === 'blocked_people') return { data: blockedPeople(), error: null }
     return { data: name === 'get_leaderboard' ? leaderboard(args?.week_start ?? '') : null, error: null }
   },
   functions: {

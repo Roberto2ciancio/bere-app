@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom'
 import { BackToProfileHeader } from './BackToProfileHeader'
 import { DeleteAccount } from './DeleteAccount'
+import { BlockedPeople } from '../legal/BlockedPeople'
+import { legalUrl } from '../legal/links'
+import { PLAY_RULES } from '../legal/playFlag'
 
 export function PrivacyPage() {
   return (
@@ -31,6 +34,22 @@ export function PrivacyPage() {
         <h2>Foto e diritto d'autore</h2>
         <p>Carica solo foto tue o che hai il permesso di usare: la foto del profilo la vedono i tuoi amici e i tuoi gruppi in classifica. Se una foto usa una tua opera senza permesso, o un nome o una foto è offensivo, <Link to="/segnala">segnalalo</Link> indicando il nome in classifica e l'opera originale. Controlliamo ogni segnalazione e togliamo i contenuti che violano diritti o regole; chi lo fa più volte perde il profilo. Puoi togliere la tua foto in ogni momento scegliendo uno degli avatar pronti.</p>
       </section>
+
+      {PLAY_RULES && (
+        <section className="section">
+          <h2>Persone bloccate</h2>
+          <BlockedPeople />
+        </section>
+      )}
+
+      {PLAY_RULES && (
+        <section className="section">
+          <h2>Testi completi</h2>
+          <p>
+            Leggi la <a href={legalUrl('privacy')}>privacy completa</a> e le <a href={legalUrl('termini')}>condizioni d'uso</a>. Sono pagine pubbliche: si aprono anche senza accedere.
+          </p>
+        </section>
+      )}
 
       <section className="section">
         <h2>Cancellare il profilo</h2>

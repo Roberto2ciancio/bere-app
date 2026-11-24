@@ -3,6 +3,7 @@
 // Le schede in basso sono: «Oggi», «Storico», «Classifica», «Profilo».
 
 import { GLU_VARIANTS } from '../../mascot/variantsFlag'
+import { PLAY_RULES } from '../../legal/playFlag'
 import { NEW_PROFILE } from '../../profile/newProfile'
 import type { GuideEntry } from './search'
 
@@ -12,8 +13,11 @@ import type { GuideEntry } from './search'
  */
 export interface GuideSource extends GuideEntry {
   legacy?: { answer: string[]; route?: string }
-  /** `variants`: la voce c'è solo dove le varianti di Glu sono accese (GLU_VARIANTS, accese per tutti dalla 2.2.0). */
-  onlyWhen?: 'variants'
+  /**
+   * `variants`: la voce c'è solo dove le varianti di Glu sono accese (GLU_VARIANTS, accese per tutti dalla 2.2.0).
+   * `play`: solo dove ci sono blocco e condizioni d'uso (PLAY_RULES, per ora solo l'app di prova).
+   */
+  onlyWhen?: 'variants' | 'play'
 }
 
 /** Le voci nella forma del Profilo nuovo (app di prova). Per l'app usare activeGuide(). */
@@ -1183,6 +1187,24 @@ export const GUIDE: GuideSource[] = [
     onlyWhen: 'variants',
   },
   {
+    id: 'block',
+    title: 'Bloccare qualcuno',
+    questions: [
+      'come blocco una persona',
+      'qualcuno mi dà fastidio con gli sproni',
+      'non voglio più vedere una persona',
+      'come sblocco qualcuno',
+    ],
+    keywords: ['bloccare', 'blocco', 'blocca', 'bloccato', 'bloccata', 'bloccandolo', 'bloccarla', 'sblocco', 'sbloccare', 'sblocca', 'fastidio', 'molesta', 'molestie', 'infastidisce', 'disturba', 'persona', 'persone', 'utente', 'tizio', 'nascondere'],
+    answer: [
+      'In «Classifica» tocca ⋯ accanto alla persona e poi «Blocca».',
+      'Non sarete più amici, non la vedrai più in classifica (neanche nei gruppi) e tra voi non passeranno sproni, reazioni, avvisi né sfide. Lei non riceve nessun messaggio.',
+      "Per sbloccarla: «Profilo» › «Account e privacy» › «Privacy e cancellazione dell'account», sezione «Persone bloccate».",
+    ],
+    route: '/classifica',
+    onlyWhen: 'play',
+  },
+  {
     id: 'dark',
     title: 'Tema scuro',
     questions: [
@@ -1431,18 +1453,21 @@ export const PAGE_TIPS: Record<'home' | 'storico' | 'classifica' | 'profilo', st
 
 const strip = ({ legacy: _legacy, onlyWhen: _onlyWhen, ...entry }: GuideSource): GuideEntry => entry
 
-/** La guida per un Profilo: nuovo (pagine per voce) o di sempre (`legacy` dove serve); le voci `onlyWhen: 'variants'` solo con variants. */
-export function guideFor(newProfile: boolean, variants = false): GuideEntry[] {
-  return GUIDE.filter((e) => variants || e.onlyWhen !== 'variants').map((e) =>
+/**
+ * La guida per un Profilo: nuovo (pagine per voce) o di sempre (`legacy` dove serve); le voci `onlyWhen: 'variants'`
+ * solo con variants, quelle `onlyWhen: 'play'` solo con play.
+ */
+export function guideFor(newProfile: boolean, variants = false, play = false): GuideEntry[] {
+  return GUIDE.filter((e) => (variants || e.onlyWhen !== 'variants') && (play || e.onlyWhen !== 'play')).map((e) =>
     newProfile || !e.legacy ? strip(e) : { ...strip(e), answer: e.legacy.answer, route: e.legacy.route },
   )
 }
 
 const cache = new Map<string, GuideEntry[]>()
-/** La guida che vede l'utente: quella del Profilo nuovo solo dove NEW_PROFILE è acceso, «Cambiare Glu» solo con GLU_VARIANTS. */
+/** La guida che vede l'utente: quella del Profilo nuovo solo dove NEW_PROFILE è acceso, «Cambiare Glu» solo con GLU_VARIANTS, «Bloccare qualcuno» solo con PLAY_RULES. */
 export function activeGuide(): GuideEntry[] {
-  const key = `${NEW_PROFILE}:${GLU_VARIANTS}`
+  const key = `${NEW_PROFILE}:${GLU_VARIANTS}:${PLAY_RULES}`
   let guide = cache.get(key)
-  if (!guide) cache.set(key, (guide = guideFor(NEW_PROFILE, GLU_VARIANTS)))
+  if (!guide) cache.set(key, (guide = guideFor(NEW_PROFILE, GLU_VARIANTS, PLAY_RULES)))
   return guide
 }

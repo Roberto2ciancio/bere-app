@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { supabase } from '../lib/supabase'
 
@@ -16,8 +16,11 @@ const REASONS: Record<Reason, string> = {
  */
 export function ReportPage() {
   const { user } = useAuth()
-  const [reason, setReason] = useState<Reason>('copyright')
-  const [who, setWho] = useState('')
+  // Dalla classifica (⋯ › Segnala) arriva già il nome: di solito è un nome o una foto inadatti.
+  const [params] = useSearchParams()
+  const prefilled = (params.get('chi') ?? '').slice(0, 80)
+  const [reason, setReason] = useState<Reason>(prefilled ? 'offensive' : 'copyright')
+  const [who, setWho] = useState(prefilled)
   const [details, setDetails] = useState('')
   const [goodFaith, setGoodFaith] = useState(false)
   const [accurate, setAccurate] = useState(false)

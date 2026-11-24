@@ -27,6 +27,7 @@ const USE_CODE_ERRORS: Record<string, string> = {
   self: 'Questo è il tuo codice: mandalo a un amico.',
   limit: 'Hai raggiunto il massimo (200 amici, 10 gruppi).',
   full: 'Questo gruppo è pieno (50 persone).',
+  blocked: 'Hai bloccato questa persona: sbloccala in Profilo › Account e privacy › Privacy, poi riprova.',
 }
 
 /** Condivide un testo: menu del telefono se c'è, altrimenti copia negli appunti. */

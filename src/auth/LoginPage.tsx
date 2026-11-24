@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { EmailCodeForm } from './EmailCodeForm'
+import { LegalLinks } from '../legal/LegalLinks'
+import { PLAY_RULES } from '../legal/playFlag'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
@@ -47,6 +49,7 @@ export function LoginPage() {
         <Link to="/recupera">Password dimenticata?</Link>
         <Link to="/registrati">Crea un profilo</Link>
       </p>
+      {PLAY_RULES && <LegalLinks />}
     </main>
   )
 }

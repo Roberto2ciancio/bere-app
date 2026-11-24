@@ -8,3 +8,5 @@
   gap: 24px;
 }
 .auth-links { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 20px; font-size: 0.93rem; }
+.legal-links { margin-top: 20px; text-align: center; }
+.legal-links a { display: inline-block; min-height: 44px; line-height: 44px; }

@@ -11,6 +11,7 @@ const NEW_PROFILE_ROUTES = ['/profilo/obiettivo', '/profilo/avvisi', '/profilo/b
 const VARIANTS = [
   { name: 'app di prova, Profilo nuovo', guide: guideFor(true), routes: [...ROUTES, ...NEW_PROFILE_ROUTES] },
   { name: 'app di prova con le varianti di Glu', guide: guideFor(true, true), routes: [...ROUTES, ...NEW_PROFILE_ROUTES] },
+  { name: 'app di prova con blocco e condizioni', guide: guideFor(true, true, true), routes: [...ROUTES, ...NEW_PROFILE_ROUTES] },
   { name: 'app vera, Profilo di sempre', guide: guideFor(false), routes: ROUTES },
 ]
 
@@ -265,6 +266,32 @@ describe('GUIDE: «Cambiare Glu» solo con le varianti (app di prova)', () => {
     // Le frasi delle altre voci non cambiano risposta per la voce nuova.
     expect(searchGuide('spegnere il 3d per consumare meno batteria', guideFor(true, true)).best?.id).toBe('glu-3d')
     expect(searchGuide('modalità notte', guideFor(true, true)).best?.id).toBe('dark')
+  })
+})
+
+describe('voce «Bloccare qualcuno» (solo app di prova)', () => {
+  const REAL_BLOCK = [
+    'posso bloccare un utente?',
+    'un tizio mi sprona di continuo, come lo fermo bloccandolo',
+    'voglio sbloccare una persona che avevo bloccato',
+    'mi infastidisce una persona in classifica',
+  ]
+  it('frasi reali, scritte a parte, trovano «Bloccare qualcuno»', () => {
+    const guide = guideFor(true, true, true)
+    const own = new Set(guide.flatMap((e) => e.questions.map((q) => q.toLowerCase())))
+    const failures: string[] = []
+    for (const phrase of REAL_BLOCK) {
+      if (own.has(phrase.toLowerCase())) failures.push(`«${phrase}» è già una question`)
+      const got = searchGuide(phrase, guide).best?.id ?? null
+      if (got !== 'block') failures.push(`«${phrase}» → ${got}`)
+    }
+    expect(failures).toEqual([])
+  })
+
+  it('in produzione la voce non c’è e le altre risposte non cambiano', () => {
+    for (const guide of [guideFor(true), guideFor(false), guideFor(true, true)]) expect(guide.some((e) => e.id === 'block')).toBe(false)
+    expect(guideFor(true, true, true).length).toBe(guideFor(true, true).length + 1)
+    expect(searchGuide('come funziona sprona', guideFor(true, true, true)).best?.id).toBe(searchGuide('come funziona sprona', guideFor(true, true)).best?.id)
   })
 })
 

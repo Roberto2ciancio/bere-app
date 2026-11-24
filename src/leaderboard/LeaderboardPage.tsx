@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { Avatar } from '../avatars/Avatar'
 import { useProfile } from '../auth/ProfileProvider'
 import { addDays } from '../domain/time'
 import { LevelBadge } from '../levels/LevelBadge'
 import { useLevels } from '../levels/useLevels'
+import { PLAY_RULES } from '../legal/playFlag'
 import { supabase } from '../lib/supabase'
 import { EmptyState } from '../mascot/EmptyState'
 import { GluCorner } from '../mascot/GluCorner'
@@ -66,6 +68,8 @@ export function LeaderboardPage() {
   // Chi ha raggiunto l'obiettivo oggi, e se gli ho già fatto i complimenti.
   /** Chi ha raggiunto l'obiettivo oggi → la reazione che gli ho già mandato (null se nessuna). */
   const [cheerable, setCheerable] = useState<Map<string, string | null>>(new Map())
+  // Riga con il pannello «Blocca / Segnala» aperto.
+  const [moreFor, setMoreFor] = useState<string | null>(null)
   const levels = useLevels()
   // Classifica «Amici» (null) o quella di un gruppo.
   const [groupId, setGroupId] = useState<string | null>(null)
@@ -149,6 +153,7 @@ export function LeaderboardPage() {
       'no-device': `Complimenti inviati: ${name} li vedrà in classifica.`,
       already: `Hai già fatto i complimenti a ${name} oggi.`,
       'no-goal': `${name} non ha ancora raggiunto l'obiettivo di oggi.`,
+      blocked: `Non puoi mandare i complimenti a ${name}.`,
     }
     setPokeMessage((!error && status && messages[status]) || `Non è stato possibile mandare i complimenti a ${name}. Riprova.`)
     if (!error && (status === 'sent' || status === 'no-device' || status === 'already')) setCheerable((m) => new Map(m).set(entry.user_id, status === 'already' ? (m.get(entry.user_id) ?? reaction) : reaction))
@@ -170,6 +175,16 @@ export function LeaderboardPage() {
     }
     setPokeMessage((!error && status && messages[status]) || `Non è stato possibile spronare ${name}. Riprova.`)
     setPoking(false)
+  }
+
+  async function block(entry: Entry) {
+    setPoking(true)
+    const { data, error } = await supabase.rpc('block_person', { p_user: entry.user_id })
+    setPoking(false)
+    if (error || data !== 'ok') return setPokeMessage(`Non è stato possibile bloccare ${entry.display_name}. Riprova.`)
+    setMoreFor(null)
+    setEntries((list) => list?.filter((e) => e.user_id !== entry.user_id) ?? list)
+    setPokeMessage(`Hai bloccato ${entry.display_name}. Non siete più amici; puoi sbloccarlo in Profilo › Account e privacy › Privacy.`)
   }
 
   const started = entries?.some((e) => e.days_met > 0)
@@ -290,10 +305,39 @@ export function LeaderboardPage() {
                         <button className="poke" disabled={poking} aria-label={`Sprona ${entry.display_name}`} onClick={() => void poke(entry)}>
                           👋 Sprona
                         </button>
+                        {PLAY_RULES && (
+                          <button
+                            className="poke more"
+                            aria-label={`Altre azioni per ${entry.display_name}`}
+                            aria-expanded={moreFor === entry.user_id}
+                            aria-controls={`more-${entry.user_id}`}
+                            onClick={() => setMoreFor((id) => (id === entry.user_id ? null : entry.user_id))}
+                          >
+                            ⋯
+                          </button>
+                        )}
                       </span>
                     )}
                   </div>
                 </div>
+                {PLAY_RULES && !isMe && moreFor === entry.user_id && (
+                  <div className="board-more" id={`more-${entry.user_id}`}>
+                    <p className="hint">
+                      Se blocchi {entry.display_name} non sarete più amici, non lo vedrai più in classifica (neanche nei gruppi) e tra voi non passeranno sproni, reazioni, avvisi né sfide. Non glielo diciamo.
+                    </p>
+                    <div className="board-more-actions">
+                      <button className="poke danger" disabled={poking} onClick={() => void block(entry)}>
+                        Blocca
+                      </button>
+                      <Link className="poke" to={`/segnala?chi=${encodeURIComponent(entry.display_name)}`}>
+                        Segnala
+                      </Link>
+                      <button className="poke" onClick={() => setMoreFor(null)}>
+                        Annulla
+                      </button>
+                    </div>
+                  </div>
+                )}
               </li>
             )
           })}
@@ -320,6 +364,7 @@ export function LeaderboardPage() {
           <p className="hint">Quando qualcuno raggiunge l'obiettivo del giorno, i suoi amici e compagni di gruppo ricevono un avviso e possono mandargli i complimenti 👏, dalla notifica o da qui. Puoi spegnere questi avvisi nel Profilo.</p>
           <p className="hint">Nome e foto li vedono solo i tuoi amici e chi è nei tuoi gruppi, insieme ai giorni in cui hai raggiunto l'obiettivo. Le quantità bevute restano private.</p>
           <p className="hint">Una foto usa una tua opera senza permesso, o un nome o una foto è offensivo? <a href="#/segnala">Segnalalo</a>: lo controlliamo e, se serve, lo togliamo.</p>
+          {PLAY_RULES && <p className="hint">Con ⋯ accanto a una persona puoi bloccarla: non siete più amici, non la vedi più e tra voi non passano sproni, reazioni né sfide. Le persone bloccate sono in Profilo › Account e privacy › Privacy.</p>}
         </div>
       </details>
     </Stagger>

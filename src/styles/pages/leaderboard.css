@@ -85,3 +85,12 @@
 .challenge-list li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 10px; }
 .challenge-score { font-weight: 700; }
 .challenge-actions { display: flex; gap: 8px; }
+
+/* Blocca / Segnala sotto la riga (regole di Google Play). */
+.board-row:has(.board-more) { flex-wrap: wrap; }
+.board-more { flex: 1 0 100%; display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+.board-more .hint { margin: 0; }
+.board-more-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.board-more-actions .poke { min-height: 44px; padding: 0 16px; display: inline-flex; align-items: center; color: var(--ink); text-decoration: none; }
+.poke.more { min-width: 32px; padding: 0 8px; }
+.poke.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }

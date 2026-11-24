@@ -412,6 +412,35 @@ test('Aspetto e Glu: «Il tuo Glu» sta nello schermo e Glu Menta arriva in Home
   await expect(page.locator('.home-view [data-testid="glu"]').first()).toHaveAttribute('data-variant', 'menta')
 })
 
+test('Classifica: ⋯ › Blocca sta nello schermo, toglie la persona e si sblocca dalla Privacy', async ({ page }) => {
+  await openApp(page, '/classifica')
+  const more = page.getByRole('button', { name: 'Altre azioni per Luca (finto)' })
+  await more.click()
+  const block = page.getByRole('button', { name: 'Blocca' })
+  await expect(block).toBeVisible()
+  await expectNoHorizontalScroll(page)
+  for (const control of [block, page.getByRole('link', { name: 'Segnala' }), page.getByRole('button', { name: 'Annulla' })]) {
+    const b = (await control.boundingBox())!
+    expect(b.height, 'area di tocco sotto i 44 px').toBeGreaterThanOrEqual(43.5)
+  }
+  await block.click()
+  await expect(page.locator('.board-name', { hasText: 'Luca (finto)' })).toHaveCount(0)
+  await page.goto('#/privacy')
+  await expect(page.getByRole('heading', { name: 'Persone bloccate' })).toBeVisible()
+  await page.getByRole('button', { name: 'Sblocca Luca (finto)' }).click()
+  await expect(page.getByText(/non hai bloccato nessuno/i)).toBeVisible()
+  await expectNoHorizontalScroll(page)
+})
+
+for (const file of ['privacy.html', 'termini.html', 'cancella-account.html']) {
+  test(`pagina pubblica ${file}: si apre senza accedere e niente esce di lato`, async ({ page }) => {
+    await page.goto(file)
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+    expect(overflow, 'la pagina scorre di lato').toBeLessThanOrEqual(1)
+  })
+}
+
 const SECTIONS = [
   ['Obiettivo', 'obiettivo'],
   ['Promemoria e notifiche', 'avvisi'],

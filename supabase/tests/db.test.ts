@@ -85,6 +85,7 @@ beforeAll(async () => {
   await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0027_friends_groups.sql'), 'utf8'))
   await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0028_challenges.sql'), 'utf8'))
   await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0029_challenge_alerts.sql'), 'utf8'))
+  await db.exec(readFileSync(join(process.cwd(), 'supabase/migrations', '0030_blocks.sql'), 'utf8'))
 }, 60_000)
 
 beforeEach(async () => {
@@ -1257,5 +1258,89 @@ describe('sfide 1 contro 1 (0028)', () => {
     await asUser(B, () => db.query(`select answer_challenge($1, false)`, [id]))
     expect(await mine(B)).toEqual([])
     expect(await mine(A)).toMatchObject([{ status: 'declined' }])
+  })
+})
+
+describe('bloccare una persona (0030)', () => {
+  const C = '00000000-0000-0000-0000-00000000000c'
+  const drinkToday = (id: string, ml: number) =>
+    db.query(`insert into drinks (user_id, client_id, amount_ml, drunk_at, local_date) values ($1, gen_random_uuid(), $2, now(), ${TODAY_ROME})`, [id, ml])
+  const noon = `date_trunc('day', now()) + interval '12 hours'`
+  const block = (who: string, whom: string) => asUser(who, async () => (await db.query<{ r: string }>(`select block_person($1) r`, [whom])).rows[0].r)
+  const boardOf = (id: string, group: string | null = null) =>
+    asUser(id, async () => (await db.query<{ user_id: string }>(`select user_id from get_leaderboard($1, $2)`, [WEEK, group])).rows.map((r) => r.user_id))
+  const codeOf = async (id: string) => (await db.query<{ c: string }>(`select friend_code c from profiles where id = $1`, [id])).rows[0].c
+  const use = (id: string, code: string) =>
+    asUser(id, async () => (await db.query<{ r: Record<string, unknown> }>(`select use_code($1) r`, [code])).rows[0].r)
+
+  beforeEach(async () => {
+    await db.query(`update profiles set tz = 'Europe/Rome'`)
+    await db.query(`insert into goal_changes (user_id, effective_from, goal_ml) values ($1, '2026-02-01', 2000), ($2, '2026-02-01', 2000)`, [A, B])
+  })
+
+  it('bloccare chiude l’amicizia e toglie la persona dalla classifica', async () => {
+    expect((await boardOf(A)).sort()).toEqual([A, B].sort())
+    expect(await block(A, B)).toBe('ok')
+    expect(await boardOf(A)).toEqual([A])
+    expect(await boardOf(B)).toEqual([B])
+    expect(await count(`select count(*) n from friendships`)).toBe(0)
+    expect(await block(A, A)).toBe('self')
+    expect(await block(A, '00000000-0000-0000-0000-0000000000ff')).toBe('not-found')
+  })
+
+  it('in un gruppo in comune chi blocca non vede l’altro e non interagiscono', async () => {
+    const g = await asUser(A, async () => (await db.query<{ r: { id: string; invite_code: string } }>(`select create_group('Ufficio') r`)).rows[0].r)
+    await use(B, g.invite_code)
+    await block(A, B)
+    expect(await boardOf(A, g.id)).toEqual([A])
+    expect((await boardOf(B, g.id)).sort()).toEqual([A, B].sort())
+    expect((await db.query<{ r: string }>(`select claim_poke($1, $2) r`, [B, A])).rows[0].r).toBe('blocked')
+    expect((await db.query<{ r: string }>(`select claim_poke($1, $2) r`, [A, B])).rows[0].r).toBe('blocked')
+  })
+
+  it('niente sproni, reazioni, avvisi né sfide in nessuna direzione', async () => {
+    await addUser(C, 'Carla')
+    await db.query(`insert into friendships (user_a, user_b) values (least($1::uuid, $2::uuid), greatest($1::uuid, $2::uuid))`, [A, C])
+    await db.query(`update profiles set tz = 'UTC' where id in ($1, $2)`, [B, C])
+    await db.query(`insert into push_subscriptions (user_id, endpoint, p256dh, auth) values ($1, 'https://push/b', 'k', 'a'), ($2, 'https://push/c', 'k', 'a')`, [B, C])
+    const monday = (await db.query<{ w: string }>(`select date_trunc('week', now() at time zone 'Europe/Rome')::date::text w`)).rows[0].w
+    const challenge = (from: string, to: string) => asUser(from, async () => (await db.query<{ r: string }>(`select challenge($1, $2) r`, [to, monday])).rows[0].r)
+    expect(await challenge(B, A)).toBe('ok')
+    expect(await count(`select count(*) n from challenges`)).toBe(1)
+    await block(B, A)
+    expect(await count(`select count(*) n from challenges`)).toBe(0)
+    expect(await challenge(A, B)).toBe('not-connected')
+    await drinkToday(A, 2000)
+    expect((await db.query<{ r: string }>(`select claim_cheer($1, $2) r`, [B, A])).rows[0].r).toBe('no-goal')
+    expect(await asUser(B, async () => (await db.query(`select * from cheerable_today()`)).rows)).toEqual([])
+    await db.exec(`update goal_events set created_at = ${noon} - interval '5 minutes'`)
+    const alerted = (await db.query<{ to_user: string }>(`select to_user from take_goal_alerts(${noon})`)).rows.map((r) => r.to_user)
+    expect(alerted).toEqual([C])
+  })
+
+  it('con il codice amico non si torna amici finché non si sblocca', async () => {
+    await block(A, B)
+    expect(await use(A, await codeOf(B))).toEqual({ ok: false, reason: 'blocked', name: 'Bruno' })
+    expect(await use(B, await codeOf(A))).toEqual({ ok: false, reason: 'not-found' })
+    await asUser(A, () => db.query(`delete from blocks where blocked = $1`, [B]))
+    expect(await use(B, await codeOf(A))).toMatchObject({ ok: true, kind: 'friend', already: false })
+  })
+
+  it('elenco delle persone bloccate; ognuno vede e toglie solo i propri blocchi', async () => {
+    await addUser(C, 'Carla')
+    await block(A, B)
+    expect(await asUser(A, async () => (await db.query(`select user_id, display_name from blocked_people()`)).rows)).toEqual([{ user_id: B, display_name: 'Bruno' }])
+    expect(await asUser(B, async () => (await db.query(`select * from blocked_people()`)).rows)).toEqual([])
+    expect(await asUser(C, () => count(`select count(*) n from blocks`))).toBe(0)
+    await expect(asUser(C, () => db.query(`insert into blocks (blocker, blocked) values ($1, $2)`, [C, A]))).rejects.toThrow(/permission denied|row-level security/)
+    await asUser(C, () => db.query(`delete from blocks where blocker = $1`, [A]))
+    expect(await count(`select count(*) n from blocks`)).toBe(1)
+    await expect(asUser(A, () => db.query(`select is_blocked_between('${A}', '${B}')`))).rejects.toThrow(/permission denied/)
+  })
+
+  it('cancellare un profilo toglie anche i suoi blocchi', async () => {
+    await block(A, B)
+    await db.query(`delete from auth.users where id = $1`, [B])
+    expect(await count(`select count(*) n from blocks`)).toBe(0)
   })
 })
